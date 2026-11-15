@@ -1,7 +1,5 @@
 # Prancheta
 
-> o futebol é decidido aqui
-
 Jogo de terminal em Python em que você é o técnico de um time numa liga de 8 clubes fictícios. Escale o time, escolha formação e postura, faça substituições e decida cada lance da partida: tocar, driblar, lançar, cruzar ou chutar. O campo é redesenhado a cada jogada, mostrando onde a bola está.
 
 Trabalho Prático 3 de Laboratório de Programação (Engenharia de Software, ULBRA, 2026/2).
