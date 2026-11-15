@@ -43,4 +43,7 @@ prancheta/
 
 ## Integrantes
 
-A definir.
+- Samuel Henrique
+- Eguiedson Carsoso
+- Otavio Rodrigues
+- Lucas Henrique
