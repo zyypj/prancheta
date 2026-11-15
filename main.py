@@ -1,7 +1,7 @@
 from rich.console import Console
 from rich.panel import Panel
 
-from config import NOME_JOGO, SLOGAN
+from config import NOME_JOGO
 
 console = Console()
 
@@ -11,7 +11,7 @@ OPCOES_MENU = ("Novo jogo", "Carregar", "Ranking", "Sair")
 def mostrar_menu():
     console.clear()
     titulo = " ".join(NOME_JOGO)
-    console.print(Panel.fit(f"[bold green]{titulo}[/]\n[dim]{SLOGAN}[/]", border_style="green"))
+    console.print(Panel.fit(f"[bold green]{titulo}[/]", border_style="green"))
     for numero, opcao in enumerate(OPCOES_MENU, start=1):
         console.print(f" {numero} - {opcao}")
 

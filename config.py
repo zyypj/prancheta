@@ -1,7 +1,6 @@
 from pathlib import Path
 
 NOME_JOGO = "PRANCHETA"
-SLOGAN = "o futebol é decidido aqui"
 
 PASTA_RAIZ = Path(__file__).resolve().parent
 PASTA_DADOS = PASTA_RAIZ / "dados"
