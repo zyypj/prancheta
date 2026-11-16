@@ -3,7 +3,9 @@ from datetime import datetime
 from config import (
     AGENDA,
     BONUS_COPA,
+    BONUS_DESAFIO,
     BONUS_META,
+    BONUS_OBJETIVO,
     BONUS_TITULO,
     CONFIANCA_AVANCO_COPA,
     CONFIANCA_DERROTA,
@@ -26,6 +28,7 @@ from elenco.escalacao import completar_titulares, escalar_automatico, gerar_elen
 from elenco.substituicoes import preparar_proxima_rodada
 from liga.calendario import gerar_calendario, jogo_do_clube
 from liga.copa import criar_copa, fase_neutra, preparar_fase, registrar_fase
+from liga.financas import lancar, receber_bilheteria, receber_cota_tv
 from liga.tabela import criar_tabela, ordenar_tabela, posicao_do_clube, registrar_resultado, saldo
 from mercado.transferencias import gerar_agentes_livres
 from partida.simulacao import simular_partida
@@ -376,8 +379,8 @@ def pagar_premios(estado, resultado):
     """
     Paga a premiação de um jogo da liga aos dois clubes.
 
-    Cada clube recebe no caixa PREMIO_VITORIA (0,8) pela vitória, PREMIO_EMPATE (0,3) pelo empate e nada pela
-    derrota.
+    Cada clube recebe no caixa, como "Premiação por resultado", PREMIO_VITORIA (0,8) pela vitória,
+    PREMIO_EMPATE (0,3) pelo empate e nada pela derrota.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -386,8 +389,7 @@ def pagar_premios(estado, resultado):
     for clube_id in (resultado["mandante"], resultado["visitante"]):
         letra = resultado_para(clube_id, resultado)
         premio = PREMIO_VITORIA if letra == "V" else (PREMIO_EMPATE if letra == "E" else 0)
-        clube = estado["clubes"][clube_id]
-        clube["caixa"] = round(clube.get("caixa", 0) + premio, 1)
+        lancar(estado, clube_id, "Premiação por resultado", premio)
 
 
 def preparar_elencos(estado):
@@ -417,9 +419,10 @@ def fechar_rodada(estado, resultados):
     """
     Encerra uma rodada da liga.
 
-    Registra cada resultado na tabela, paga os prêmios e guarda a rodada no histórico. Depois calcula a
-    variação de confiança pelo jogo do clube do jogador, atualiza a sequência dos últimos 5 resultados, aplica
-    a confiança, prepara os elencos e avança o número da rodada.
+    Registra cada resultado na tabela, paga os prêmios e a bilheteria do mandante, guarda a rodada no
+    histórico e paga a cota de TV a todos os clubes. Depois calcula a variação de confiança pelo jogo do clube
+    do jogador, atualiza a sequência dos últimos 5 resultados, aplica a confiança, prepara os elencos e avança
+    o número da rodada.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -432,8 +435,10 @@ def fechar_rodada(estado, resultados):
     for resultado in resultados:
         registrar_resultado(estado["tabela"], resultado)
         pagar_premios(estado, resultado)
+        receber_bilheteria(estado, resultado)
         rodada.append({chave: resultado[chave] for chave in ("mandante", "visitante", "gm", "gv")})
     estado["historico"].append(rodada)
+    receber_cota_tv(estado)
     do_jogador = next(
         resultado for resultado in resultados if estado["clube_id"] in (resultado["mandante"], resultado["visitante"])
     )
@@ -449,7 +454,8 @@ def fechar_fase_copa(estado, resultados):
     """
     Encerra uma fase da copa.
 
-    Registra os resultados da fase. Se o clube do jogador jogou, avançar conta como "V" e soma
+    Registra os resultados da fase e paga a bilheteria de cada jogo (dividida na final, em campo neutro). Se o
+    clube do jogador jogou, avançar conta como "V" e soma
     CONFIANCA_AVANCO_COPA (3), ou CONFIANCA_TITULO_COPA (10) na final; ser eliminado conta como "D" e aplica
     CONFIANCA_QUEDA_COPA (-4), com CONFIANCA_ZEBRA (4) a menos se o adversário era mais fraco por mais de
     DIFERENCA_FAVORITISMO (5). Por fim, prepara os elencos.
@@ -464,6 +470,8 @@ def fechar_fase_copa(estado, resultados):
     """
     fase = etapa_atual(estado)[1]
     jogo = registrar_fase(estado, fase, resultados)
+    for resultado in resultados:
+        receber_bilheteria(estado, resultado, fase_neutra(fase))
     variacao = 0
     letra = None
     if jogo:
@@ -537,9 +545,10 @@ def resumo_final(estado):
 
     A pontuação é (pontos × 10 + saldo × 2 + bônus) multiplicada pelo multiplicador do nível do clube, nunca
     abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta, BONUS_TITULO (200) pelo título da liga e
-    BONUS_COPA (250) pelo título da copa; técnico demitido não recebe os bônus de meta e de título da liga. O
-    desfecho informa a demissão (com a etapa em que aconteceu), o título (feito histórico se o clube não for
-    grande), a meta cumprida ou não, e acrescenta o título da copa quando houver.
+    BONUS_COPA (250) pelo título da copa, mais BONUS_DESAFIO (25) por desafio da diretoria cumprido e
+    BONUS_OBJETIVO (60) por objetivo da temporada alcançado; técnico demitido não recebe os bônus de meta e de
+    título da liga. O desfecho informa a demissão (com a etapa em que aconteceu), o título (feito histórico se
+    o clube não for grande), a meta cumprida ou não, e acrescenta o título da copa quando houver.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -556,6 +565,9 @@ def resumo_final(estado):
     copa = estado["copa"]["campeao"] == clube["id"]
     cumpriu = meta_cumprida(estado, posicao) and not estado["demitido"]
     bonus = (BONUS_META if cumpriu else 0) + (BONUS_TITULO if titulo else 0) + (BONUS_COPA if copa else 0)
+    desafios = estado.get("desafios_cumpridos", 0)
+    objetivos = len(estado.get("objetivos", []))
+    bonus += desafios * BONUS_DESAFIO + objetivos * BONUS_OBJETIVO
     pontuacao = round((linha["pontos"] * 10 + saldo(linha) * 2 + bonus) * nivel["multiplicador"])
     if estado["demitido"]:
         desfecho = f"demitido ({descricao_etapa(AGENDA[max(0, estado['etapa'] - 1)])})"
@@ -580,5 +592,7 @@ def resumo_final(estado):
         "venceu": cumpriu,
         "meta": nivel["meta"],
         "copa": copa,
+        "desafios": desafios,
+        "objetivos": objetivos,
         "data": datetime.now().strftime("%d/%m/%Y"),
     }

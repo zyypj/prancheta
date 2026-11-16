@@ -10,6 +10,7 @@ from elenco.escalacao import (
     sortear_nome,
     valor_de_mercado,
 )
+from liga.financas import lancar
 
 POSICOES_LIVRES = ("GOL", "DEF", "DEF", "MEI", "MEI", "ATA", "ATA")
 ELENCO_MINIMO = 16
@@ -207,8 +208,8 @@ def transferir(estado, jogador, vendedor, comprador, valor):
     if jogador["id"] in vendedor["titulares"]:
         vendedor["titulares"].remove(jogador["id"])
     comprador["elenco"].append(jogador)
-    vendedor["caixa"] = round(vendedor.get("caixa", 0) + valor, 1)
-    comprador["caixa"] = round(comprador.get("caixa", 0) - valor, 1)
+    lancar(estado, vendedor["id"], "Vendas de jogadores", valor)
+    lancar(estado, comprador["id"], "Compras de jogadores", -valor)
     reorganizar(estado, vendedor)
     if comprador["id"] != estado["clube_id"]:
         reorganizar(estado, comprador)
@@ -273,7 +274,7 @@ def contratar_livre(estado, jogador):
         return False, f"Dinheiro insuficiente para as luvas de {dinheiro(custo)}."
     estado["livres"].remove(jogador)
     clube["elenco"].append(jogador)
-    clube["caixa"] = round(clube["caixa"] - custo, 1)
+    lancar(estado, clube["id"], "Luvas de contratação", -custo)
     noticia(estado, f"{clube['nome']} contrata {rotulo(jogador)}, que estava sem clube.")
     return True, f"{rotulo(jogador)} assinou com o {clube['nome']} por {dinheiro(custo)} de luvas."
 
@@ -366,7 +367,7 @@ def contratacao_de_livre_ia(estado):
         if pior and livre["qualidade"] > pior["qualidade"] + 2 and clube.get("caixa", 0) >= custo:
             estado["livres"].remove(livre)
             clube["elenco"].append(livre)
-            clube["caixa"] = round(clube["caixa"] - custo, 1)
+            lancar(estado, clube["id"], "Luvas de contratação", -custo)
             reorganizar(estado, clube)
             return noticia(estado, f"{clube['nome']} contrata {rotulo(livre)}, que estava sem clube.")
     return None

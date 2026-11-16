@@ -1,6 +1,7 @@
 import random
 
 from config import CLASSIFICADOS_DIRETO_COPA, FASES_COPA, NOMES_FASES, PREMIO_FASE_COPA, PREMIO_TITULO_COPA
+from liga.financas import lancar
 
 
 def montar_confrontos(ids):
@@ -126,7 +127,7 @@ def registrar_fase(estado, fase, resultados):
     ]
     vencedores = [resultado["vencedor"] for resultado in resultados]
     for clube_id in vencedores:
-        estado["clubes"][clube_id]["caixa"] = round(estado["clubes"][clube_id].get("caixa", 0) + PREMIO_FASE_COPA, 1)
+        lancar(estado, clube_id, "Premiação da copa", PREMIO_FASE_COPA)
     if fase == "preliminar":
         copa["classificados"] = copa["classificados"] + vencedores
     else:
@@ -136,7 +137,7 @@ def registrar_fase(estado, fase, resultados):
     if fase == FASES_COPA[-1]:
         copa["campeao"] = vencedores[0]
         campeao = estado["clubes"][copa["campeao"]]
-        campeao["caixa"] = round(campeao.get("caixa", 0) + PREMIO_TITULO_COPA, 1)
+        lancar(estado, campeao["id"], "Premiação da copa", PREMIO_TITULO_COPA)
     jogo = next((r for r in resultados if estado["clube_id"] in (r["mandante"], r["visitante"])), None)
     if jogo and jogo["vencedor"] != estado["clube_id"]:
         copa["eliminado_em"] = fase
