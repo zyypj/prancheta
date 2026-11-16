@@ -65,6 +65,32 @@ def ler_opcao(minimo, maximo, rotulo=" > "):
         console.print(f"[red]Digite um número de {minimo} a {maximo}.[/]")
 
 
+def ler_opcao_ou_letra(minimo, maximo, letras, rotulo=" > "):
+    """
+    Lê um número inteiro dentro de um intervalo ou uma das letras aceitas.
+
+    Repete a pergunta, com uma mensagem de erro, até ser digitado um número entre o mínimo e o máximo ou uma
+    das letras, sem diferenciar maiúsculas.
+
+    Args:
+        minimo (int): Menor número aceito.
+        maximo (int): Maior número aceito.
+        letras (Iterable[str]): Letras aceitas, em minúsculas.
+        rotulo (str): Texto mostrado antes da digitação. Padrão " > ".
+
+    Returns:
+        int | str: Número digitado ou a letra, em minúsculas.
+    """
+    while True:
+        texto = console.input(rotulo).strip().lower()
+        if texto in letras:
+            return texto
+        if texto.isdigit() and minimo <= int(texto) <= maximo:
+            return int(texto)
+        extra = "".join(f" ou {letra.upper()}" for letra in letras)
+        console.print(f"[red]Digite um número de {minimo} a {maximo}{extra}.[/]")
+
+
 def ler_valor(rotulo, minimo, maximo):
     """
     Lê do usuário um valor decimal dentro de um intervalo, aceitando 0 para cancelar.

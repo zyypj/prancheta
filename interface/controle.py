@@ -3,7 +3,7 @@ from rich.table import Table
 from config import ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
 from elenco.escalacao import rotulo
 from interface.campo import barra, mostrar_partida
-from interface.entrada import console, ler_opcao, limpar, pausar
+from interface.entrada import console, ler_opcao, ler_opcao_ou_letra, limpar, pausar
 from partida.lances import (
     ACOES,
     CANTOS,
@@ -25,25 +25,64 @@ DESENHO_GOL = (
 )
 
 
-def escolher_no_campo(partida, time_id, pergunta, nomes):
+def revelar_chance(partida, time_id, nomes, chances, reveladas):
+    """
+    Gasta uma revelação para mostrar a chance de uma opção escolhida pelo jogador.
+
+    Pergunta qual opção revelar; se ela ainda não foi revelada, desconta uma revelação do time e guarda a
+    chance em reveladas.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        nomes (list): Textos das opções.
+        chances (list[float]): Chance de cada opção dar certo, entre 0 e 1.
+        reveladas (dict): Chances já reveladas nesta pergunta, por índice da opção; é atualizado.
+    """
+    indice = ler_opcao(1, len(nomes), " Revelar a chance de qual opção? > ") - 1
+    if indice in reveladas:
+        return
+    partida["revelacoes"][time_id] -= 1
+    reveladas[indice] = chances[indice]
+
+
+def escolher_no_campo(partida, time_id, pergunta, nomes, chances=None):
     """
     Pergunta ao jogador uma opção com o campo da partida na tela.
 
-    Mostra o campo com a pergunta e as opções numeradas. Se o usuário digitar 0, abre o menu de pausa; ao
-    voltar, se ele tiver passado a partida para simulação, desiste da pergunta, e senão pergunta de novo.
+    Mostra o campo com a pergunta e as opções numeradas. Quando a pergunta tem as chances de cada opção e o
+    time ainda tem revelações, aparece a opção R: o jogador escolhe uma única opção para ver a porcentagem
+    dela, que fica ao lado do nome, e depois escolhe o que fazer. Se o usuário digitar 0, abre o menu de
+    pausa; ao voltar, se ele tiver passado a partida para simulação, desiste da pergunta, e senão pergunta de
+    novo.
 
     Args:
         partida (dict): Estado da partida em andamento.
         time_id (str): Identificador do clube do jogador.
         pergunta (str): Texto da pergunta.
         nomes (list): Textos das opções, na ordem em que aparecem.
+        chances (list[float] | None): Chance de cada opção dar certo, entre 0 e 1, ou None se a pergunta não
+            permite revelação. Padrão None.
 
     Returns:
         int | None: Índice da opção escolhida, começando em 0, ou None se a partida passou a ser simulada.
     """
+    reveladas = {}
     while True:
-        mostrar_partida(partida, time_id, pergunta=pergunta, opcoes=nomes)
-        escolha = ler_opcao(0, len(nomes))
+        restantes = partida.get("revelacoes", {}).get(time_id, 0)
+        pode_revelar = bool(chances) and restantes > 0 and len(reveladas) < len(nomes)
+        rotulos = [
+            f"{nome} [bold cyan]({round(reveladas[indice] * 100)}%)[/]" if indice in reveladas else nome
+            for indice, nome in enumerate(nomes)
+        ]
+        rodape = (
+            f"[bold]R[/] Revelar chance ({restantes}) [dim]· em chutes, é a chance de gol[/]" if pode_revelar else None
+        )
+        mostrar_partida(partida, time_id, pergunta=pergunta, opcoes=rotulos, rodape=rodape)
+        escolha = ler_opcao_ou_letra(0, len(nomes), ("r",) if pode_revelar else ())
+        if escolha == "r":
+            revelar_chance(partida, time_id, nomes, chances, reveladas)
+            continue
         if escolha:
             return escolha - 1
         menu_pausa(partida, time_id)
@@ -55,9 +94,9 @@ def humano_ataque(partida, time_id, zona, portador):
     """
     Deixa o jogador escolher a jogada de ataque de quem está com a bola.
 
-    Mostra as ações possíveis na zona em que a bola está, como tocar, driblar, cruzar ou chutar. Quando a
-    partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o
-    controle da IA.
+    Mostra as ações possíveis na zona em que a bola está, como tocar, driblar, cruzar ou chutar, com as
+    chances calculadas pelo motor para as revelações. Quando a partida está sendo simulada, ou o jogador passa
+    a simular durante a pergunta, a decisão fica com o controle da IA.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -72,8 +111,14 @@ def humano_ataque(partida, time_id, zona, portador):
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     acoes = ACOES[zona]
     local = DESCRICAO_ZONAS[zona]
+    chances_da_vez = partida.get("chances")
+    chances = [chances_da_vez[a] for a in acoes] if chances_da_vez else None
     indice = escolher_no_campo(
-        partida, time_id, f"{rotulo(portador)} está com a bola {local}. O que fazer?", [NOMES_ACOES[a] for a in acoes]
+        partida,
+        time_id,
+        f"{rotulo(portador)} está com a bola {local}. O que fazer?",
+        [NOMES_ACOES[a] for a in acoes],
+        chances,
     )
     if indice is None:
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
@@ -116,14 +161,16 @@ def humano_escolha(partida, time_id, pergunta, opcoes):
         partida (dict): Estado da partida em andamento.
         time_id (str): Identificador do clube do jogador.
         pergunta (str): Texto da pergunta.
-        opcoes (list): Tuplas (chave, nome, peso) de cada opção.
+        opcoes (list): Tuplas (chave, nome, peso) de cada opção, ou (chave, nome, peso, chance) quando a
+            chance pode ser revelada.
 
     Returns:
         str: Chave da opção escolhida.
     """
     if partida["modo"] == "simular":
         return CONTROLE_IA["escolha"](partida, time_id, pergunta, opcoes)
-    indice = escolher_no_campo(partida, time_id, pergunta, [nome for _, nome, _ in opcoes])
+    chances = [opcao[3] for opcao in opcoes] if all(len(opcao) > 3 for opcao in opcoes) else None
+    indice = escolher_no_campo(partida, time_id, pergunta, [opcao[1] for opcao in opcoes], chances)
     if indice is None:
         return CONTROLE_IA["escolha"](partida, time_id, pergunta, opcoes)
     return opcoes[indice][0]
