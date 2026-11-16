@@ -34,6 +34,14 @@ python main.py
 4. Em **Próximo jogo**, escolha entre jogar lance a lance, simular assistindo (Enter avança), simular rápido ou ir
    direto para o resultado. Também dá para ver o adversário: posição, últimos jogos, plano e formação prováveis,
    destaques e desfalques. A simulação segue o seu plano e para no intervalo, em lesões, expulsões e pênaltis.
+
+   Uma vez por semana, ainda no pré-jogo, dá para **treinar** o elenco. Você escolhe o foco (finalização, passe,
+   desarme, físico, goleiros ou recuperação), a intensidade (leve, normal ou pesado) e quem treina (titulares,
+   reservas ou o elenco todo). Quem treina ganha +3 no atributo treinado durante o próximo jogo e tem chance de
+   evoluir 1 ponto de vez (maior nos jovens, menor nos veteranos); a cada 2 evoluções a qualidade sobe 1 e o
+   jogador se valoriza no mercado. O custo é a energia: o treino pesado cansa mais e pode lesionar alguém por uma
+   rodada. O treino de recuperação devolve energia e não dá evolução. Treinar os reservas faz o elenco crescer
+   sem cansar quem vai jogar.
 5. Durante a partida, todo lance começa na disputa de meio-campo. A posse pode começar no campo de defesa, no
    meio-campo ou na intermediária, e a jogada avança por seis lugares, cada um com suas ações:
     - Campo de defesa: tocar, conduzir, lançar ou inverter o jogo.
@@ -118,7 +126,7 @@ prancheta/
 ├── partida/           motor dos lances, jogadas especiais, laço da partida, pênaltis, narração e simulação
 ├── liga/              calendário, classificação, copa, temporada, finanças, desafios, eventos e vestiário
 ├── mercado/           valores, compras, vendas, jogadores livres e mercado dos outros clubes
-├── elenco/            geração de jogadores, escalação e substituições
+├── elenco/            geração de jogadores, escalação, substituições e treino
 ├── interface/         campo animado, telas, mercado, controles e leitura de entrada
 ├── persistencia/      save, load, ranking e arquivos
 ├── dados/             times.json, nomes.txt, narracao.txt, eventos.json, ranking.csv e saves
