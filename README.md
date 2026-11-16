@@ -49,7 +49,10 @@ python main.py
    ou bicicleta), escanteio (primeira ou segunda trave, curto, fechado ou ensaiado), falta na entrada da área (inclusive
    rolar para um companheiro) e goleiro adiantado. Nos pênaltis, escolha o canto e a força (colocado, forte ou
    paradinha), ou para onde o goleiro pula. Enter avança cada lance; digite 0 ou P para pausar e fazer substituições ou
-   mudar o plano.
+   mudar o plano. Na simulação rápida, aperte P a qualquer momento para pausar ou N para voltar a assistir (funciona
+   no terminal e no PyCharm com "Emulate terminal in output console" ligado). Na pausa e na tela de substituição, o
+   auxiliar sugere até três trocas com o motivo (cansaço, amarelo, insatisfação, placar ou reserva melhor); digite
+   A, B ou C para aplicar uma delas.
 
    Cerca de 30% dos lances começam numa das 19 jogadas especiais, cada uma com as suas escolhas: tiro de meta,
    lateral no ataque, contra-ataque de três contra dois, falta pelo lado, falta de longe, falta na meia-lua, sobra
