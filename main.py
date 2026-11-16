@@ -41,8 +41,12 @@ def carregar_recursos():
 
 def novo_jogo(recursos):
     telas.titulo("NOVO JOGO")
-    tecnico = ler_texto(" Nome do técnico: ")
+    tecnico = ler_texto(" Nome do técnico (0 para voltar): ")
+    if tecnico is None:
+        return None
     clube_id = telas.escolher_clube(recursos["clubes"])
+    if clube_id is None:
+        return None
     return criar_estado_novo(tecnico, clube_id, recursos["clubes"], recursos["nomes"])
 
 
@@ -141,25 +145,41 @@ def central(estado, recursos):
             return
 
 
+def abrir_save(recursos):
+    caminho = telas.escolher_save(listar_saves())
+    if not caminho:
+        return
+    estado = carregar_jogo(caminho)
+    if estado:
+        central(estado, recursos)
+    else:
+        telas.mostrar_mensagem("Save corrompido ou inválido.", "red")
+
+
+def executar_opcao(escolha, recursos):
+    if escolha == 1:
+        estado = novo_jogo(recursos)
+        if estado:
+            central(estado, recursos)
+    elif escolha == 2:
+        abrir_save(recursos)
+    else:
+        telas.mostrar_ranking(ler_ranking())
+
+
 def main():
     recursos = carregar_recursos()
     while True:
         escolha = telas.mostrar_menu_inicial()
-        if escolha == 1:
-            central(novo_jogo(recursos), recursos)
-        elif escolha == 2:
-            caminho = telas.escolher_save(listar_saves())
-            if caminho:
-                estado = carregar_jogo(caminho)
-                if estado:
-                    central(estado, recursos)
-                else:
-                    telas.mostrar_mensagem("Save corrompido ou inválido.", "red")
-        elif escolha == 3:
-            telas.mostrar_ranking(ler_ranking())
-        else:
+        if escolha == 4:
             console.print("[green]Até a próxima![/]")
             break
+        try:
+            executar_opcao(escolha, recursos)
+        except (KeyboardInterrupt, EOFError):
+            raise
+        except Exception as erro:
+            telas.mostrar_mensagem(f"Algo deu errado ({type(erro).__name__}: {erro}). Voltando ao menu.", "red")
 
 
 if __name__ == "__main__":
