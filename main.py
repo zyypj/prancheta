@@ -339,8 +339,8 @@ def central(estado, recursos):
     """
     Mantém o usuário na central do clube durante a temporada.
 
-    Mostra a central e executa a opção escolhida: próximo jogo, elenco, plano de jogo, classificação, copa,
-    rodadas, mercado, clubes, finanças e objetivos ou salvar. Ao voltar, pergunta se deve salvar. Quando a
+    Mostra a central e executa a opção escolhida: próximo jogo, elenco, plano de jogo, treino, classificação,
+    copa, rodadas, mercado, clubes, finanças e objetivos ou salvar. Ao voltar, pergunta se deve salvar. Quando a
     temporada acaba, encerra e sai.
 
     Args:
@@ -360,18 +360,20 @@ def central(estado, recursos):
         elif escolha == 3:
             telas.editar_plano(clube)
         elif escolha == 4:
-            telas.mostrar_classificacao(estado)
+            tela_treino(estado)
         elif escolha == 5:
-            telas.mostrar_copa(estado)
+            telas.mostrar_classificacao(estado)
         elif escolha == 6:
-            telas.mostrar_rodadas(estado)
+            telas.mostrar_copa(estado)
         elif escolha == 7:
-            tela_mercado(estado)
+            telas.mostrar_rodadas(estado)
         elif escolha == 8:
-            telas.escolher_clube_para_ver(estado)
+            tela_mercado(estado)
         elif escolha == 9:
-            telas.mostrar_financas(estado)
+            telas.escolher_clube_para_ver(estado)
         elif escolha == 10:
+            telas.mostrar_financas(estado)
+        elif escolha == 11:
             mensagem = "Jogo salvo!" if salvar_jogo(estado) else "Não foi possível salvar o jogo."
             telas.mostrar_mensagem(mensagem)
         elif confirmar(" Salvar antes de voltar ao menu?"):

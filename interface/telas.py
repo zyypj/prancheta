@@ -173,6 +173,7 @@ OPCOES_CENTRAL = (
     "Próximo jogo",
     "Elenco",
     "Plano de jogo",
+    "Treino",
     "Classificação",
     "Copa",
     "Rodadas e histórico",
@@ -190,13 +191,14 @@ def mostrar_central(estado):
     Mostra o técnico, a meta, a posição na liga, o caixa, a situação na copa, os últimos jogos, a confiança da
     diretoria e o próximo compromisso. Se o clube não joga na etapa atual da copa, a primeira opção passa a
     ser acompanhar a rodada da copa. Quando há jogo, mostra também o desafio da diretoria para ele. As opções
-    vão de Próximo jogo até Salvar, e 0 volta ao menu.
+    vão de Próximo jogo até Salvar, e 0 volta ao menu; o Treino aparece apagado quando o elenco já treinou na
+    semana.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        int: Opção escolhida, de 0 a 10.
+        int: Opção escolhida, de 0 a 11.
     """
     clube = clube_do_jogador(estado)
     nivel = NIVEIS[clube["nivel"]]
@@ -224,6 +226,8 @@ def mostrar_central(estado):
     console.print()
     for numero, opcao in enumerate(OPCOES_CENTRAL, start=1):
         texto_opcao = opcao if numero != 1 or jogo else "Acompanhar a rodada da copa"
+        if opcao == "Treino" and not pode_treinar(estado):
+            texto_opcao = "[dim]Treino (já treinou esta semana)[/]"
         console.print(f" {numero} - {texto_opcao}")
     console.print(" 0 - Voltar ao menu")
     return ler_opcao(0, len(OPCOES_CENTRAL))
