@@ -172,10 +172,27 @@ def sugerir_substituicoes(time, minuto, diferenca, maximo=3):
     entram = set()
 
     def reserva_para(posicao):
+        """
+        Escolhe o melhor reserva de uma posição que ainda não está em nenhuma sugestão.
+
+        Args:
+            posicao (str): Posição procurada no banco.
+
+        Returns:
+            dict | None: Reserva com maior valor para escalar, ou None se não houver.
+        """
         candidatos = [j for j in time["banco"] if j["id"] not in entram and j["pos"] == posicao]
         return max(candidatos, key=valor_para_escalar, default=None)
 
     def sugerir(sai, entra, motivo):
+        """
+        Guarda uma sugestão se os dois jogadores existem e ainda não aparecem em outra sugestão.
+
+        Args:
+            sai (dict | None): Jogador que sairia.
+            entra (dict | None): Jogador que entraria.
+            motivo (str): Motivo mostrado ao técnico.
+        """
         if sai and entra and sai["id"] not in saem and entra["id"] not in entram:
             sugestoes.append({"sai": sai, "entra": entra, "motivo": motivo})
             saem.add(sai["id"])
