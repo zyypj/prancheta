@@ -4,6 +4,8 @@ from rich.table import Table
 from rich.text import Text
 
 from config import (
+    BONUS_DESAFIO,
+    BONUS_OBJETIVO,
     ESTILOS,
     FORMACOES,
     NIVEIS,
@@ -18,6 +20,8 @@ from elenco.escalacao import disponivel, escalar_automatico, rotulo, valor_de_me
 from interface.campo import barra
 from interface.entrada import console, ler_opcao, limpar, pausar
 from liga.copa import situacao_do_clube
+from liga.desafios import OBJETIVOS, desafio_da_etapa
+from liga.financas import extrato
 from liga.tabela import posicao_do_clube, saldo
 from liga.temporada import (
     adversario_de,
@@ -173,6 +177,7 @@ OPCOES_CENTRAL = (
     "Rodadas e histórico",
     "Mercado da bola",
     "Clubes",
+    "Finanças e objetivos",
     "Salvar",
 )
 
@@ -183,13 +188,14 @@ def mostrar_central(estado):
 
     Mostra o técnico, a meta, a posição na liga, o caixa, a situação na copa, os últimos jogos, a confiança da
     diretoria e o próximo compromisso. Se o clube não joga na etapa atual da copa, a primeira opção passa a
-    ser acompanhar a rodada da copa. As opções vão de Próximo jogo até Salvar, e 0 volta ao menu.
+    ser acompanhar a rodada da copa. Quando há jogo, mostra também o desafio da diretoria para ele. As opções
+    vão de Próximo jogo até Salvar, e 0 volta ao menu.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        int: Opção escolhida, de 0 a 9.
+        int: Opção escolhida, de 0 a 10.
     """
     clube = clube_do_jogador(estado)
     nivel = NIVEIS[clube["nivel"]]
@@ -211,6 +217,7 @@ def mostrar_central(estado):
             f" {texto_jogo(estado, jogo)} ({local_do_jogo(estado, jogo, clube['id'])})"
             f"  [dim]força {adversario['forca']}[/]"
         )
+        console.print(f" {texto_desafio(desafio_da_etapa(estado))}")
     else:
         console.print(" [dim]Seu clube não joga nesta fase da copa.[/]")
     console.print()
@@ -221,12 +228,28 @@ def mostrar_central(estado):
     return ler_opcao(0, len(OPCOES_CENTRAL))
 
 
+def texto_desafio(desafio):
+    """
+    Monta a linha que apresenta o desafio da diretoria para o próximo jogo.
+
+    Args:
+        desafio (dict): Desafio com texto, prêmio e confiança.
+
+    Returns:
+        str: Linha com marcação do rich.
+    """
+    return (
+        f"[bold]Desafio da diretoria:[/] {desafio['texto']} "
+        f"[green](+{dinheiro(desafio['premio'])} e +{desafio['confianca']} de confiança)[/]"
+    )
+
+
 def status_jogador(jogador, titulares):
     """
     Monta o texto de situação de um jogador para a tabela do elenco.
 
-    Indica se o jogador é titular, se está lesionado, suspenso ou em grande fase e quantos cartões amarelos
-    tem.
+    Indica se o jogador é titular, se está lesionado, suspenso, em grande fase ou insatisfeito e quantos
+    cartões amarelos tem.
 
     Args:
         jogador (dict): Dados do jogador.
@@ -244,6 +267,8 @@ def status_jogador(jogador, titulares):
         partes.append("[red]suspenso[/]")
     if jogador["fase"]:
         partes.append("[cyan]grande fase[/]")
+    if jogador.get("insatisfeito", 0):
+        partes.append(f"[magenta]insatisfeito ({jogador['insatisfeito']})[/]")
     if jogador["amarelos"]:
         partes.append(f"[yellow]{jogador['amarelos']} amarelo(s)[/]")
     return " ".join(partes)
@@ -611,8 +636,9 @@ def pre_jogo(estado):
     Exibe a tela de pré-jogo e lê a opção escolhida.
 
     Mostra o confronto, o local, a força dos dois clubes, o aviso de pênaltis em mata-mata, o plano de jogo do
-    usuário e os titulares cansados. As opções são jogar lance a lance, simular assistindo, simular rápido,
-    ver só o resultado, ver o adversário, ajustar o plano ou voltar com 0.
+    usuário, os titulares cansados ou insatisfeitos e o desafio da diretoria. As opções são jogar lance a
+    lance, simular assistindo, simular rápido, ver só o resultado, ver o adversário, ajustar o plano ou voltar
+    com 0.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -637,6 +663,10 @@ def pre_jogo(estado):
     cansados = [rotulo(j) for j in titulares if j["energia"] < 50]
     if cansados:
         console.print(f" [yellow]Titulares cansados: {', '.join(cansados)}[/]")
+    insatisfeitos = [rotulo(j) for j in titulares if j.get("insatisfeito", 0)]
+    if insatisfeitos:
+        console.print(f" [magenta]Titulares insatisfeitos (rendem menos): {', '.join(insatisfeitos)}[/]")
+    console.print(f" {texto_desafio(desafio_da_etapa(estado))}")
     console.print("\n 1 - Jogar lance a lance   2 - Simular assistindo (Enter avança)   3 - Simular rápido")
     console.print(" 4 - Só o resultado   5 - Ver adversário   6 - Ajustar plano   0 - Voltar")
     return ler_opcao(0, 6)
@@ -751,6 +781,26 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
         console.print(f"\n Confiança da diretoria: [{cor}]{sinal}[/] → {barra(estado['confianca'], 20)}")
     if informacao.get("trocados"):
         console.print(f" [yellow]Desfalques substituídos na escalação: {', '.join(informacao['trocados'])}[/]")
+    desafio = informacao.get("desafio")
+    if desafio:
+        if desafio["cumpriu"]:
+            console.print(
+                f" [green]Desafio cumprido: {desafio['texto']} (+{dinheiro(desafio['premio'])},"
+                f" +{desafio['confianca']} de confiança)[/]"
+            )
+        else:
+            console.print(f" [red]Desafio não cumprido: {desafio['texto']}[/]")
+    for texto_objetivo in informacao.get("objetivos", []):
+        console.print(f" [bold green]Objetivo da temporada alcançado: {texto_objetivo}![/]")
+    receitas = {}
+    for categoria, valor in estado.get("extrato_etapa", []):
+        receitas[categoria] = round(receitas.get(categoria, 0) + valor, 1)
+    if receitas:
+        partes = [
+            f"{categoria} {'+' if valor >= 0 else '-'}{dinheiro(abs(valor))}" for categoria, valor in receitas.items()
+        ]
+        console.print(f"\n [bold]Dinheiro da semana:[/] {' · '.join(partes)}")
+        console.print(f" Caixa: [bold]{dinheiro(clube_do_jogador(estado).get('caixa', 0))}[/]")
     if noticias:
         console.print("\n [bold]Mercado da bola:[/]")
         for texto_noticia in noticias:
@@ -758,7 +808,7 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
     pausar("Enter para continuar...")
 
 
-def mostrar_evento(evento):
+def mostrar_evento(evento, titulo_tela="EVENTO DA SEMANA"):
     """
     Exibe o evento da semana e, se houver opções, lê a escolha do usuário.
 
@@ -767,11 +817,12 @@ def mostrar_evento(evento):
 
     Args:
         evento (dict): Evento preparado, com texto, efeito e opções.
+        titulo_tela (str): Título da tela. Padrão "EVENTO DA SEMANA".
 
     Returns:
         str: Efeito do evento ou da opção escolhida.
     """
-    titulo("EVENTO DA SEMANA")
+    titulo(titulo_tela)
     console.print(f" {evento['texto']}\n")
     if not evento["opcoes"]:
         return evento["efeito"]
@@ -809,6 +860,10 @@ def mostrar_final(resumo):
     console.print(f" Posição final: {resumo['posicao']}º   Pontos: {resumo['pontos']}   Saldo: {resumo['saldo']:+d}")
     if resumo.get("copa"):
         console.print(" [bold green]Campeão da copa: bônus de 250 na pontuação.[/]")
+    if resumo.get("desafios"):
+        console.print(f" Desafios da diretoria cumpridos: {resumo['desafios']} (+{resumo['desafios'] * BONUS_DESAFIO})")
+    if resumo.get("objetivos"):
+        console.print(f" Objetivos da temporada: {resumo['objetivos']} (+{resumo['objetivos'] * BONUS_OBJETIVO})")
     console.print(f" Pontuação no ranking: [bold]{resumo['pontuacao']}[/]")
     pausar("Enter para continuar...")
 
@@ -1194,4 +1249,43 @@ def mostrar_copa(estado):
         " [dim]Os 4 clubes de menor força disputam a preliminar."
         " Jogo único, empate vai para os pênaltis e a final é em campo neutro.[/]"
     )
+    pausar()
+
+
+def mostrar_financas(estado):
+    """
+    Exibe as finanças do clube e os objetivos da temporada.
+
+    Mostra o caixa, o extrato da temporada por categoria (receitas em verde, despesas em vermelho), o total de
+    desafios da diretoria cumpridos e a lista de objetivos da temporada, com o que já foi alcançado. Espera o
+    usuário pressionar Enter.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
+    clube = clube_do_jogador(estado)
+    titulo("FINANÇAS E OBJETIVOS")
+    console.print(f" Caixa atual: [bold]{dinheiro(clube.get('caixa', 0))}[/]\n")
+    linhas = extrato(estado)
+    if linhas:
+        tabela = Table(title="Extrato da temporada", title_justify="left", header_style="bold")
+        tabela.add_column("Categoria")
+        tabela.add_column("Valor", justify="right")
+        for categoria, valor in linhas:
+            cor = "green" if valor >= 0 else "red"
+            tabela.add_row(categoria, f"[{cor}]{'+' if valor >= 0 else '-'}{dinheiro(abs(valor))}[/]")
+        console.print(tabela)
+    else:
+        console.print(" [dim]Nenhuma entrada ou saída de dinheiro ainda.[/]")
+    console.print(
+        "\n Receitas de cada jogo: bilheteria nos jogos em casa (maior quando o time vem vencendo), cota de TV"
+        " por rodada da liga e prêmio por resultado."
+    )
+    cumpridos = estado.get("desafios_cumpridos", 0)
+    console.print(f"\n [bold]Desafios da diretoria cumpridos:[/] {cumpridos} (+{BONUS_DESAFIO} pontos cada no ranking)")
+    console.print(f"\n [bold]Objetivos da temporada[/] (+{BONUS_OBJETIVO} pontos e +R$ 2,0 mi cada):")
+    feitos = estado.get("objetivos", [])
+    for chave, texto in OBJETIVOS.items():
+        marca = "[green]✓[/]" if chave in feitos else "[dim]·[/]"
+        console.print(f"  {marca} {texto}")
     pausar()

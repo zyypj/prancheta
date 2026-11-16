@@ -7,7 +7,8 @@ from interface.campo import criar_exibidor
 from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
 from interface.mercado import tela_mercado, tela_proposta
-from liga.eventos import aplicar_efeito, preparar_evento, sortear_evento
+from liga.desafios import atualizar_objetivos, avaliar_desafio
+from liga.eventos import aplicar_efeito, escolher_evento
 from liga.temporada import (
     adversario_de,
     avancar_etapa,
@@ -24,6 +25,7 @@ from liga.temporada import (
     simular_outros_jogos,
     temporada_acabou,
 )
+from liga.vestiario import resolver_discussao, sortear_discussao
 from mercado.transferencias import movimentar_mercado
 from partida.jogo import jogar_partida
 from partida.lances import criar_partida
@@ -135,24 +137,32 @@ def registrar_sumula(estado, resultado, chave, titulo_jogo):
     anexar_txt(PASTA_SUMULAS / f"{nome_do_arquivo(estado['tecnico'])}.txt", "\n".join(texto) + "\n")
 
 
-def evento_da_semana(estado, recursos):
+def evento_da_semana(estado, recursos, resultado=None):
     """
     Executa um evento aleatório após uma rodada.
 
-    Sorteia um acontecimento, apresenta suas opções ao usuário, aplica o efeito escolhido e atualiza a
-    escalação do clube. Quando o evento é uma proposta por um jogador, abre a tela de negociação, e o valor
-    acertado nela é o que entra no caixa.
+    Primeiro vê se algo do último jogo ou do elenco causou uma discussão entre jogadores; se sim, a semana é
+    dela, mostrada na tela do vestiário. Senão, sorteia um acontecimento, apresenta suas opções ao usuário e
+    aplica o efeito escolhido. Quando o evento é uma proposta por um jogador, abre a tela de negociação, e o
+    valor acertado nela é o que entra no caixa. No fim, atualiza a escalação do clube.
 
     Args:
         estado (dict): Estado atual da temporada.
         recursos (dict): Dados dos eventos e jogadores.
+        resultado (dict | None): Resultado do último jogo do técnico, usado nas discussões. Padrão None.
     """
     clube = clube_do_jogador(estado)
-    evento = preparar_evento(sortear_evento(recursos["eventos"]), clube)
-    negociacao = evento["negociacao"]
-    efeito = tela_proposta(estado, evento) if negociacao else telas.mostrar_evento(evento)
-    valor_venda = negociacao["acordo"] if negociacao else None
-    mensagem = aplicar_efeito(estado, efeito, evento["jogador_id"], recursos["nomes"], valor_venda)
+    discussao = sortear_discussao(estado, resultado)
+    if discussao:
+        efeito = telas.mostrar_evento(discussao, "VESTIÁRIO")
+        mensagem = resolver_discussao(estado, discussao, efeito)
+    else:
+        evento = escolher_evento(recursos["eventos"], clube, estado.get("eventos_recentes", []))
+        estado["eventos_recentes"] = (estado.get("eventos_recentes", []) + [evento["id"]])[-4:]
+        negociacao = evento["negociacao"]
+        efeito = tela_proposta(estado, evento) if negociacao else telas.mostrar_evento(evento)
+        valor_venda = negociacao["acordo"] if negociacao else None
+        mensagem = aplicar_efeito(estado, efeito, evento["jogador_id"], recursos["nomes"], valor_venda)
     completar_titulares(clube)
     telas.mostrar_mensagem(mensagem)
 
@@ -218,9 +228,10 @@ def jogar_etapa(estado, recursos):
     """
     Disputa a etapa atual da temporada, seja uma rodada da liga ou uma fase da copa.
 
-    Joga a partida do clube do jogador (se ele estiver na etapa), simula os outros jogos, registra a súmula e
-    fecha a rodada ou a fase. Depois movimenta o mercado dos outros clubes, mostra os resultados, avança para
-    a próxima etapa, sorteia o evento da semana e salva o jogo automaticamente.
+    Joga a partida do clube do jogador (se ele estiver na etapa), avalia o desafio da diretoria, simula os
+    outros jogos, registra a súmula, fecha a rodada ou a fase e confere os objetivos da temporada. Depois
+    movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento
+    da semana e salva o jogo automaticamente.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -233,7 +244,11 @@ def jogar_etapa(estado, recursos):
         escolha = escolher_como_jogar(estado)
         if escolha == 0:
             return
+        estado["extrato_etapa"] = []
         resultado = jogar_partida_do_jogador(estado, recursos, escolha)
+    else:
+        estado["extrato_etapa"] = []
+    desafio = avaliar_desafio(estado, resultado)
     with console.status("Simulando os outros jogos..."):
         resultados = ([resultado] if resultado else []) + simular_outros_jogos(estado, recursos["frases"])
     if competicao == "liga":
@@ -245,11 +260,13 @@ def jogar_etapa(estado, recursos):
             registrar_sumula(estado, resultado, f"copa-{valor}", descricao_etapa(etapa))
         informacao = fechar_fase_copa(estado, resultados)
         titulo_tela = f"RESULTADOS — {descricao_etapa(etapa).upper()}"
+    informacao["desafio"] = desafio
+    informacao["objetivos"] = atualizar_objetivos(estado)
     noticias = movimentar_mercado(estado)
     telas.mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias)
     avancar_etapa(estado)
     if not temporada_acabou(estado):
-        evento_da_semana(estado, recursos)
+        evento_da_semana(estado, recursos, resultado)
     if salvar_jogo(estado):
         console.print(" [dim]Jogo salvo automaticamente.[/]")
 
@@ -258,12 +275,13 @@ def encerrar_temporada(estado):
     """
     Encerra a temporada e mostra o resumo final.
 
-    Calcula a pontuação do técnico e grava no ranking uma única vez, mesmo que o save seja aberto de novo
-    depois do fim.
+    Confere os objetivos que só valem no fim (como o saldo de gols), calcula a pontuação do técnico e grava no
+    ranking uma única vez, mesmo que o save seja aberto de novo depois do fim.
 
     Args:
         estado (dict): Estado da temporada encerrada.
     """
+    atualizar_objetivos(estado)
     resumo = resumo_final(estado)
     if not estado.get("ranking_registrado"):
         estado["ranking_registrado"] = registrar_ranking(resumo)
@@ -276,8 +294,8 @@ def central(estado, recursos):
     Mantém o usuário na central do clube durante a temporada.
 
     Mostra a central e executa a opção escolhida: próximo jogo, elenco, plano de jogo, classificação, copa,
-    rodadas, mercado, clubes ou salvar. Ao voltar, pergunta se deve salvar. Quando a temporada acaba, encerra
-    e sai.
+    rodadas, mercado, clubes, finanças e objetivos ou salvar. Ao voltar, pergunta se deve salvar. Quando a
+    temporada acaba, encerra e sai.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -306,6 +324,8 @@ def central(estado, recursos):
         elif escolha == 8:
             telas.escolher_clube_para_ver(estado)
         elif escolha == 9:
+            telas.mostrar_financas(estado)
+        elif escolha == 10:
             mensagem = "Jogo salvo!" if salvar_jogo(estado) else "Não foi possível salvar o jogo."
             telas.mostrar_mensagem(mensagem)
         elif confirmar(" Salvar antes de voltar ao menu?"):
