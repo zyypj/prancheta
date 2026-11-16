@@ -56,10 +56,19 @@ python main.py
    frango, bola tirada em cima da linha, VAR revisando pênalti, simulação, impedimento duvidoso, reclamação,
    confusão, paralisação e chuva no meio do jogo, com centenas de frases de narração diferentes.
 6. No **Mercado da bola**, compre jogadores de outros clubes fazendo uma proposta, contrate jogadores sem clube
-   pagando luvas ou venda um jogador escolhendo entre as ofertas recebidas. O caixa do clube cresce com vitórias e
-   com as fases da copa, e os outros clubes também contratam ao longo da temporada.
-7. Depois de cada jogo aparecem os resultados, a confiança da diretoria, as notícias do mercado e um evento da semana.
-   O jogo salva sozinho ao fim de cada etapa.
+   pagando luvas ou venda um jogador escolhendo entre as ofertas recebidas. Os outros clubes também contratam ao
+   longo da temporada.
+7. O caixa cresce com bilheteria nos jogos em casa (maior quando o time vem vencendo), cota de TV por rodada, prêmio
+   por vitória e empate, fases da copa, desafios, objetivos e eventos como patrocínio, amistoso, camisa nova e
+   investidor. Em **Finanças e objetivos** fica o extrato da temporada por categoria.
+8. Antes de cada jogo a diretoria lança um **desafio** conforme o favoritismo (vencer, não sofrer gols, golear, ter
+   mais posse, escalar um jovem...). Cumprido, rende dinheiro, confiança e pontos no ranking. Também há cinco
+   **objetivos da temporada**, como vencer 3 jogos seguidos ou chegar à semifinal da copa.
+9. Depois de cada jogo aparecem os resultados, a confiança, o desafio, o dinheiro da semana e as notícias do
+   mercado. Em seguida vem um evento da semana (aumento de salário, folga, treino especial, joia da base pedindo
+   chance, proposta do exterior e outros) ou uma **discussão no vestiário**: pênalti perdido, expulsão, goleada,
+   briga por posição ou vaidade entre artilheiros. Quem você apoia fica motivado; quem é contrariado fica
+   insatisfeito e rende menos por algumas rodadas. O jogo salva sozinho ao fim de cada etapa.
 
 Em todas as narrações, súmulas e mensagens, o nome do jogador aparece depois da posição, por exemplo `ATA Rodrigão`.
 
@@ -67,8 +76,8 @@ Em todas as narrações, súmulas e mensagens, o nome do jogador aparece depois 
 
 - Vitória: cumprir a meta do clube ao fim da temporada.
 - Derrota: ser demitido (a confiança da diretoria chega a 0) ou terminar a temporada sem cumprir a meta.
-- Pontuação: (pontos × 10 + saldo × 2 + bônus) × dificuldade do clube. Ser campeão da copa vale +250 de bônus. Vai
-  para o ranking ao fim da temporada.
+- Pontuação: (pontos × 10 + saldo × 2 + bônus) × dificuldade do clube. Ser campeão da copa vale +250 de bônus, cada
+  desafio cumprido +25 e cada objetivo da temporada +60. Vai para o ranking ao fim da temporada.
 
 ## Estrutura
 
@@ -77,7 +86,7 @@ prancheta/
 ├── main.py            menu, central do clube e fluxo das rodadas
 ├── config.py          constantes e caminhos
 ├── partida/           motor dos lances, jogadas especiais, laço da partida, pênaltis, narração e simulação
-├── liga/              calendário, classificação, copa, temporada e eventos
+├── liga/              calendário, classificação, copa, temporada, finanças, desafios, eventos e vestiário
 ├── mercado/           valores, compras, vendas, jogadores livres e mercado dos outros clubes
 ├── elenco/            geração de jogadores, escalação e substituições
 ├── interface/         campo animado, telas, mercado, controles e leitura de entrada
