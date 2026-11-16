@@ -6,10 +6,6 @@ O design completo está no [GDD](GDD.pdf).
 
 Trabalho Prático 3 de Laboratório de Programação (Engenharia de Software, ULBRA, 2026/2).
 
-## Status
-
-Em desenvolvimento.
-
 ## Como instalar
 
 Requer Python 3.10 ou superior.
@@ -24,26 +20,41 @@ pip install -r requirements.txt
 python main.py
 ```
 
+1. No menu, escolha **Novo jogo**, digite o nome do técnico e escolha o clube. Cada clube tem uma meta: os grandes precisam ser campeões, os médios precisam ficar no G4 e os pequenos não podem cair.
+2. Na **Central do clube** você vê o elenco, ajusta o plano de jogo, consulta a classificação e o histórico das rodadas e salva o jogo.
+3. Em **Próxima partida**, escolha entre jogar lance a lance ou simular (normal ou rápido). A simulação segue o seu plano e para no intervalo, em lesões, expulsões e pênaltis.
+4. Durante a partida, todo lance começa na disputa de meio-campo. Com a bola, escolha tocar, driblar, lançar, cruzar ou chutar. Sem a bola, escolha dar o bote, fechar espaço ou recuar a linha. Nos pênaltis, escolha o canto e a força, ou para onde o goleiro pula. Digite 0 para pausar e fazer substituições ou mudar o plano.
+5. Depois de cada rodada aparecem os resultados, a confiança da diretoria e um evento da semana. O jogo salva sozinho ao fim de cada rodada.
+
 ## Objetivo
 
-- Vitória: cumprir a meta do clube ao fim da temporada (título para os grandes, G4 para os médios, escapar do rebaixamento para os pequenos).
+- Vitória: cumprir a meta do clube ao fim da temporada.
 - Derrota: ser demitido (a confiança da diretoria chega a 0) ou terminar a temporada sem cumprir a meta.
+- Pontuação: (pontos × 10 + saldo × 2 + bônus) × dificuldade do clube. Vai para o ranking ao fim da temporada.
 
 ## Estrutura
 
 ```
 prancheta/
-├── main.py            menu e laço principal
+├── main.py            menu, central do clube e fluxo das rodadas
 ├── config.py          constantes e caminhos
-├── partida/           motor dos lances, narração e simulação
-├── liga/              rodadas e tabela
-├── elenco/            escalação e substituições
-├── interface/         campo, telas e leitura de entrada
+├── partida/           motor dos lances, pênaltis, narração e simulação
+├── liga/              calendário, classificação, temporada e eventos
+├── elenco/            geração de jogadores, escalação e substituições
+├── interface/         campo animado, telas, controles e leitura de entrada
 ├── persistencia/      save, load, ranking e arquivos
-├── dados/             times.json, narracao.txt, ranking.csv e saves
+├── dados/             times.json, nomes.txt, narracao.txt, eventos.json, ranking.csv e saves
 ├── docs/              GDD.docx editável
 └── GDD.pdf            Game Design Document
 ```
+
+## Arquivos gerados
+
+| Arquivo | Formato | Conteúdo |
+|---|---|---|
+| `dados/saves/<técnico>.json` | JSON | estado completo da temporada |
+| `dados/ranking.csv` | CSV | técnico, clube, posição, pontos, pontuação, desfecho e data |
+| `dados/sumulas/<técnico>.txt` | TXT | súmula de cada partida do jogador |
 
 ## Integrantes
 
