@@ -54,10 +54,15 @@ python main.py
    auxiliar sugere até três trocas com o motivo (cansaço, amarelo, insatisfação, placar ou reserva melhor); digite
    A, B ou C para aplicar uma delas.
 
-   Jogando lance a lance, algumas jogadas viram **minijogos**: em parte dos dribles aparece uma sequência de setas
-   para digitar com W, A, S e D antes do tempo acabar (o chapéu é a mais longa); no pênalti contra, quando o
-   goleiro acerta o canto, e em parte das cabeçadas, é preciso apertar Enter assim que aparecer AGORA. Acertar
-   aumenta a chance da jogada e errar diminui.
+   Jogando lance a lance, algumas jogadas viram **minijogos** (umas três por partida), em três formatos:
+    - Sequência de setas para digitar com W, A, S e D antes do tempo acabar: dribles (o chapéu é a mais longa),
+      desarme quando o time dá o bote ou faz pressão alta, efeito na cobrança de falta direta e concentração no
+      pênalti a favor.
+    - Memória: as setas aparecem por um instante, somem e você digita de cabeça, na pontaria dos chutes.
+    - Reflexo: apertar Enter assim que aparecer AGORA, no pênalti contra (quando o goleiro acerta o canto), na
+      saída do goleiro e na batida do cara a cara, e nas cabeçadas.
+
+   Acertar aumenta a chance da jogada (ou de defender) e errar diminui.
 
    Cerca de 30% dos lances começam numa das 19 jogadas especiais, cada uma com as suas escolhas: tiro de meta,
    lateral no ataque, contra-ataque de três contra dois, falta pelo lado, falta de longe, falta na meia-lua, sobra
