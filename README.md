@@ -68,8 +68,11 @@ python main.py
    frango, bola tirada em cima da linha, VAR revisando pênalti, simulação, impedimento duvidoso, reclamação,
    confusão, paralisação e chuva no meio do jogo, com centenas de frases de narração diferentes.
 6. No **Mercado da bola**, compre jogadores de outros clubes fazendo uma proposta, contrate jogadores sem clube
-   pagando luvas ou venda um jogador escolhendo entre as ofertas recebidas. Os outros clubes também contratam ao
-   longo da temporada.
+   pagando luvas ou venda um jogador escolhendo entre as ofertas recebidas. Em **Sugestões do olheiro** aparecem até
+   seis contratações que cabem no caixa, com o motivo (vira titular, posição carente, jovem promissor ou reforço de
+   banco), e dá para contratar direto dali. Cada clube começa com 22 jogadores (máximo de 28), há 30 jogadores sem
+   clube e, a cada semana, chegam 1 ou 2 dispensados do exterior. Os outros clubes também contratam ao longo da
+   temporada.
 7. O caixa cresce com bilheteria nos jogos em casa (maior quando o time vem vencendo), cota de TV por rodada, prêmio
    por vitória e empate, fases da copa, desafios, objetivos e eventos como patrocínio, amistoso, camisa nova e
    investidor. Em **Finanças e objetivos** fica o extrato da temporada por categoria.
