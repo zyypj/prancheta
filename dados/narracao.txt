@@ -1,111 +1,451 @@
 inicio | Rola a bola! Começa {time_casa} contra {time_fora}.
 inicio | Apita o árbitro, está valendo! {time_casa} x {time_fora}.
+inicio | Bola no centro do gramado. {time_casa} e {time_fora} começam a decidir a parada.
+inicio | Estádio cheio e bola rolando: {time_casa} contra {time_fora}.
+inicio | O árbitro confere os relógios e autoriza. Começa {time_casa} x {time_fora}!
 intervalo | Fim do primeiro tempo. {placar}.
 intervalo | O juiz manda todo mundo pro vestiário. {placar}.
+intervalo | Termina a primeira etapa. {placar}.
+intervalo | Apito no meio-campo, intervalo. {placar}.
 segundo_tempo | Bola rolando para o segundo tempo!
 segundo_tempo | Começa a etapa final. {placar}.
+segundo_tempo | Os times voltam do vestiário e a bola volta a rolar. {placar}.
+segundo_tempo | Recomeça o jogo! Mais 45 minutos para mudar a história. {placar}.
 fim | Fim de jogo! {placar}.
 fim | Apita o árbitro, acabou! {placar}.
+fim | Três apitos, encerrada a partida. {placar}.
+fim | Não tem mais tempo! Termina o jogo. {placar}.
 meio_ganhou | {time} ganha a disputa no meio-campo.
 meio_ganhou | {jogador} rouba a bola no meio e o {time} sai jogando.
 meio_ganhou | Dividida no meio, e quem fica com ela é {jogador}.
+meio_ganhou | {jogador} protege bem a bola e o {time} tem a posse.
+meio_ganhou | Segunda bola é do {time}, com {jogador}.
+meio_ganhou | {jogador} se antecipa ao adversário e domina para o {time}.
+meio_ganhou | O {time} troca passes no círculo central, bola com {jogador}.
+meio_ganhou | {jogador} ganha no corpo e o {time} começa a construir.
 meio_nada | Bola dividida no meio-campo, ninguém fica com ela.
 meio_nada | Lateral para o {time}. Jogo truncado no meio.
 meio_nada | Falta no meio-campo. O juiz conversa com os jogadores.
 meio_nada | Muita marcação e pouca criação neste momento.
+meio_nada | Jogo travado: a bola vai e volta sem dono.
+meio_nada | Chutão para frente e a bola sai pela lateral. Reposição do {time}.
+meio_nada | Disputa forte no alto, ninguém ganha e o jogo para.
+meio_nada | Bola espirrada no meio, o árbitro dá a bola ao chão.
 tocar_ok | {jogador} toca com calma e o {time} avança.
 tocar_ok | Troca de passes bonita do {time}, {jogador} participa.
+tocar_ok | {jogador} acha o companheiro de frente e o {time} sobe.
+tocar_ok | Passe de primeira de {jogador}, a bola gira rápido.
+tocar_ok | {jogador} escapa da marcação de {marcador} com um toque curto.
+tocar_ok | O {time} tem paciência: {jogador} roda a bola e procura o espaço.
+tocar_ok | Toque vertical de {jogador}, quebrando uma linha de marcação.
 tocar_erro | {jogador} erra o passe e entrega a bola.
 tocar_erro | Passe interceptado! {marcador} estava atento.
+tocar_erro | {jogador} toca sem olhar e {marcador} rouba.
+tocar_erro | Bola fraca de {jogador}, {marcador} chega antes.
+tocar_erro | {jogador} tenta o passe por dentro, mas {marcador} lê a jogada.
+tocar_erro | Passe torto de {jogador}, a bola sai pela lateral.
 posse_sem_espaco | O {time} roda a bola de um lado para o outro, não acha espaço e o {defesa} recupera.
 posse_sem_espaco | Muita troca de passes do {time} e nenhuma brecha. O {defesa} retoma a posse.
 posse_sem_espaco | O {defesa} se fecha bem e o {time} desiste da jogada.
+posse_sem_espaco | O {time} toca, toca e não chega. A defesa do {defesa} não dá espaço.
+posse_sem_espaco | Ferrolho do {defesa}! O {time} esbarra no bloqueio e perde a bola.
 driblar_erro | {jogador} tenta o drible, mas {marcador} desarma.
 driblar_erro | {marcador} chega firme e tira a bola de {jogador}.
+driblar_erro | {jogador} enfeita demais e {marcador} leva a bola.
+driblar_erro | Drible previsível de {jogador}, {marcador} não cai na finta.
+driblar_erro | {jogador} tenta passar no meio de dois e fica pelo caminho.
+driblar_erro | {marcador} fica de pé, espera o drible e desarma {jogador}.
+drible_corte_ok | {jogador} dá um corte seco em {marcador}!
+drible_corte_ok | {jogador} puxa para dentro e {marcador} passa direto!
+drible_corte_ok | Corte rápido de {jogador}, {marcador} fica no chão!
+drible_corte_ok | {jogador} finge que vai e volta, {marcador} comprou a finta!
+drible_caneta_ok | CANETA! {jogador} passa a bola entre as pernas de {marcador}!
+drible_caneta_ok | {jogador} humilha {marcador} com uma caneta!
+drible_caneta_ok | Por baixo das pernas! {jogador} deixa {marcador} sem reação!
+drible_chapeu_ok | Chapéu! {jogador} encobre {marcador} com classe!
+drible_chapeu_ok | {jogador} levanta a bola por cima de {marcador} e segue!
+drible_chapeu_ok | Que chapéu de {jogador}! A torcida vai ao delírio!
+drible_arrancada_ok | {jogador} arranca em velocidade e deixa {marcador} para trás!
+drible_arrancada_ok | {jogador} toca na frente e ganha de {marcador} na corrida!
+drible_arrancada_ok | Explosão de {jogador}! {marcador} não acompanha!
 lancar_ok | {jogador} lança longo e encontra o companheiro livre!
 lancar_ok | Bola esticada por {jogador}, o {time} chega rápido.
+lancar_ok | Que lançamento de {jogador}! A bola cai no pé do atacante.
+lancar_ok | {jogador} vira o jogo com um passe de 40 metros!
+lancar_ok | Lançamento milimétrico de {jogador} por cima da defesa.
 lancar_erro | {jogador} lança e a bola sai direto pela linha de fundo.
 lancar_erro | Lançamento longo demais de {jogador}, {marcador} afasta.
+lancar_erro | {jogador} tenta a ligação direta, mas {marcador} sobe e tira de cabeça.
+lancar_erro | Bola longa sem direção de {jogador}, fica com a defesa.
+abrir_ok | {jogador} abre o jogo na ponta.
+abrir_ok | {jogador} encontra o lateral livre pelo corredor.
+abrir_ok | Inversão de {jogador}, o {time} ataca pelo outro lado.
+abrir_ok | {jogador} espeta a bola na ponta, a jogada ganha amplitude.
+abrir_erro | {jogador} tenta abrir o jogo, mas {marcador} intercepta.
+abrir_erro | A inversão de {jogador} sai forte demais e vai pela lateral.
+abrir_erro | {marcador} fecha o corredor e corta o passe de {jogador}.
+enfiar_ok | {jogador} dá um passe em profundidade perfeito!
+enfiar_ok | Que enfiada de {jogador}! A defesa ficou parada!
+enfiar_ok | {jogador} acha o passe entre os zagueiros!
+enfiar_ok | Bola enfiada por {jogador} nas costas de {marcador}!
+enfiar_ok | {jogador} vê o movimento e coloca a bola na corrida do companheiro.
+enfiar_erro | {jogador} tenta a enfiada, mas {marcador} corta.
+enfiar_erro | A bola enfiada por {jogador} fica longa e o goleiro sai para pegar.
+enfiar_erro | {marcador} adivinha o passe de {jogador} e intercepta.
+tabelar_ok | Tabela perfeita! {jogador} invade a área!
+tabelar_ok | Uma, duas, e {jogador} recebe dentro da área!
+tabelar_ok | {jogador} faz a parede com o companheiro e entra na área.
+tabelar_ok | Triangulação bonita do {time}, {jogador} aparece livre.
+tabelar_erro | A tabela não sai, {marcador} corta no meio.
+tabelar_erro | {jogador} devolve forte demais e a tabela morre.
+tabelar_erro | {marcador} se posiciona bem e quebra a tabelinha.
 cruzar_ok | {jogador} cruza na área!
 cruzar_ok | Cruzamento perigoso de {jogador}!
+cruzar_ok | {jogador} vai ao fundo e levanta na área!
+cruzar_ok | Bola na área! {jogador} cruza de pé esquerdo.
+cruzar_ok | {jogador} cruza rasteiro, procurando quem chega de trás!
 cruzar_erro | {jogador} cruza e {marcador} tira de cabeça.
 cruzar_erro | Cruzamento fechado demais de {jogador}, o goleiro fica com ela.
+cruzar_erro | {jogador} cruza na primeira trave e {marcador} afasta.
+cruzar_erro | O cruzamento de {jogador} passa por todo mundo e sai pela linha de fundo.
+cruzar_erro | {jogador} cruza no meio do bolo e {marcador} rebate.
 cara | {jogador} fica cara a cara com o goleiro!
+cara | {jogador} está sozinho, só tem o goleiro pela frente!
+cara | Que chance! {jogador} entra livre na área!
+cara | {jogador} escapa da marcação e fica de frente para o gol!
 gol | GOOOOOL! {jogador} marca para o {time}! {placar}.
 gol | É GOL! {jogador} balança a rede! {placar}.
 gol | GOOOL do {time}! {jogador} não perdoa! {placar}.
+gol | Bola no fundo da rede! {jogador} faz para o {time}! {placar}.
+gol | GOLAÇO! {jogador} acerta o ângulo! {placar}.
+gol | É dele! {jogador} comemora com a torcida do {time}. {placar}.
+gol | Explode o estádio! {jogador} marca! {placar}.
+gol | Não tinha o que o goleiro fazer! Gol de {jogador}. {placar}.
 defesa | Que defesa de {goleiro}!
 defesa | {goleiro} voa e espalma!
 defesa | {goleiro} segura firme.
+defesa | {goleiro} cai no canto e faz a defesa.
+defesa | Milagre de {goleiro}! Tira com a ponta dos dedos!
+defesa | {goleiro} encaixa sem dar rebote.
+defesa | {goleiro} fecha o ângulo e a bola bate no corpo dele.
+defesa | {goleiro} espalma por cima do travessão!
 fora | Pra fora! {jogador} isolou.
 fora | Passou raspando a trave!
 fora | Por cima do gol. Tiro de meta.
+fora | {jogador} bate cruzado e a bola sai pela linha de fundo.
+fora | Pela linha de fundo! {jogador} não acertou o alvo.
+fora | {jogador} pega mal na bola, que vai longe do gol.
+fora | Tirou tinta da trave! Por muito pouco não entrou.
 bote_ok | {marcador} dá o bote e recupera a bola!
+bote_ok | Desarme limpo de {marcador}!
+bote_ok | {marcador} entra firme, na bola, e o {time} recupera.
+pressao_ok | Pressão alta! {marcador} rouba a bola no campo de ataque.
+pressao_ok | O {time} sufoca a saída e {marcador} toma a bola.
+pressao_ok | Marcação adiantada funciona: {marcador} recupera lá na frente.
 fechar_ok | O {time} fecha os espaços e recupera a posse.
+fechar_ok | Linha de quatro bem postada, {marcador} intercepta.
+fechar_ok | {marcador} fecha a linha de passe e fica com a bola.
 recuar_ok | Defesa toda atrás, o {time} afasta o perigo.
+recuar_ok | O {time} se defende no próprio campo e {marcador} afasta.
+recuar_ok | Bloco baixo do {time}: {marcador} tira de qualquer jeito.
 contra_ataque | Contra-ataque do {time}! {jogador} sai em velocidade!
+contra_ataque | Puxa o contra-golpe o {time}! {jogador} conduz!
+contra_ataque | {jogador} recebe no espaço e o {time} sai rápido!
+contra_ataque | Transição rápida do {time}, {jogador} acelera!
 falta | Falta de {marcador} em {jogador}.
+falta | {marcador} chega atrasado e derruba {jogador}.
+falta | {jogador} é puxado pela camisa por {marcador}. Falta.
+falta | Entrada dura de {marcador} em {jogador}, o árbitro marca.
+falta | {marcador} trava {jogador} com o corpo. Falta marcada.
 falta_perigosa | Falta perigosa na entrada da área para o {time}!
+falta_perigosa | Falta em ótima posição para o {time}!
+falta_perigosa | O {time} ganha uma falta na meia-lua!
 escanteio | Escanteio para o {time}.
+escanteio | A bola desvia e sai. Escanteio para o {time}.
+escanteio | O {time} vai cobrar o escanteio, a área está cheia.
 amarelo | Cartão amarelo para {jogador}.
+amarelo | {jogador} recebe o amarelo.
+amarelo | O árbitro mostra o amarelo para {jogador}.
 vermelho | Cartão vermelho! {jogador} está expulso!
+vermelho | Vermelho direto para {jogador}! Entrada violenta!
 segundo_amarelo | Segundo amarelo para {jogador}, que está expulso!
+segundo_amarelo | {jogador} leva o segundo amarelo e vai mais cedo para o chuveiro!
 lesao | {jogador} sente a coxa e pede atendimento. Vai ter que sair.
+lesao | {jogador} cai no gramado e faz sinal para o banco. Não tem condições.
+lesao | Dividida forte, {jogador} sente o tornozelo e precisa ser substituído.
 var | O VAR chama o árbitro... gol anulado! Impedimento.
+var | Revisão do VAR... o gol é anulado por falta no início da jogada.
+var | Após checagem no vídeo, o árbitro anula o gol. Mão na bola.
 chuva | Começa uma chuva forte, o gramado fica pesado.
+chuva | Chove muito, a bola corre rápida no gramado molhado.
 torcida | A torcida do {time} canta alto e empurra o time!
+torcida | O estádio pulsa! A torcida do {time} faz a festa.
+torcida | Pressão das arquibancadas, o {time} cresce no jogo.
 penalti | PÊNALTI para o {time}! {jogador} vai para a cobrança.
+penalti | O árbitro aponta a marca da cal! {jogador} pega a bola.
+penalti | Pênalti! {jogador} ajeita a bola para bater.
 penalti_gol | {jogador} bate e converte! {placar}.
+penalti_gol | Deslocou o goleiro! Gol de {jogador}. {placar}.
+penalti_gol | {jogador} bate com categoria e marca. {placar}.
 penalti_defesa | DEFENDEU! {goleiro} pega o pênalti!
+penalti_defesa | {goleiro} adivinha o canto e salva!
+penalti_defesa | Que defesa de {goleiro}! Pênalti defendido!
 penalti_fora | {jogador} bate pra fora! Desperdiçou!
+penalti_fora | {jogador} isola a cobrança! Que desperdício!
+penalti_fora | Na trave! {jogador} perde o pênalti!
 substituicao | Substituição no {time}: sai {sai}, entra {entra}.
+substituicao | Mexe o {time}: {entra} entra no lugar de {sai}.
 chute_longe | {jogador} arrisca {tipo} de fora da área!
 chute_longe | {jogador} solta a bomba de longe, {tipo}!
 chute_longe | {jogador} tenta da intermediária, {tipo}!
+chute_longe | {jogador} ajeita e bate {tipo} da entrada da área!
+chute_longe | Tentativa de longe! {jogador} chuta {tipo}!
 chute_area | {jogador} bate {tipo} dentro da área!
 chute_area | {jogador} finaliza {tipo} da marca do pênalti!
 chute_area | {jogador} gira e bate {tipo} na pequena área!
+chute_area | {jogador} domina na área e finaliza {tipo}!
+chute_area | {jogador} chega batendo {tipo}!
 chute_cara | {jogador} bate {tipo} na saída do goleiro!
 chute_cara | {jogador} finaliza {tipo}, só ele e o goleiro!
+chute_cara | {jogador} escolhe o canto e bate {tipo}!
 chute_cabeceio | {jogador} sobe mais alto que todo mundo e cabeceia!
 chute_cabeceio | {jogador} testa firme para o gol!
+chute_cabeceio | {jogador} se antecipa ao zagueiro e cabeceia!
+chute_cabeceio | Cabeçada de {jogador}, no canto!
 chute_voleio | {jogador} pega de voleio!
 chute_voleio | Que tentativa! {jogador} emenda de primeira, no ar!
+chute_voleio | {jogador} bate de sem-pulo!
 chute_rebote | {jogador} bate de primeira no rebote!
+chute_rebote | {jogador} chega antes de todo mundo e chuta a sobra!
 chute_meio_campo | {jogador} arrisca do meio-campo!
+chute_meio_campo | Ousadia! {jogador} chuta do círculo central!
 chute_falta | {jogador} cobra a falta {tipo}!
+chute_falta | {jogador} bate a falta {tipo}, a bola vai na direção do gol!
 chute_escanteio | {jogador} cabeceia após o escanteio!
+chute_escanteio | {jogador} ganha da marcação e testa a bola do escanteio!
+chute_primeira | {jogador} pega de primeira, {tipo}, de fora da área!
+chute_primeira | {jogador} nem deixa a bola cair e bate {tipo}!
+chute_primeira | Batida de primeira de {jogador}, {tipo}!
+chute_bicicleta | BICICLETA! {jogador} tenta de costas para o gol!
+chute_bicicleta | {jogador} se joga no ar e arrisca a bicicleta!
+chute_bicicleta | Que ousadia! {jogador} tenta um voleio de costas!
 trave | NA TRAVE! A bola explode no poste!
 trave | Uhhh! {jogador} acerta o travessão!
+trave | A bola carimba a trave! {jogador} quase marca!
+trave | No travessão! A bola quica em cima da linha e volta!
 rebote | A bola sobra para {jogador} na área!
 rebote | Rebote! {jogador} estava esperto e pega a sobra!
+rebote | O goleiro solta e {jogador} chega primeiro!
 rebote_bloqueado | {jogador} demora para ajeitar e a zaga bloqueia.
-enfiar_ok | {jogador} dá um passe em profundidade perfeito!
-enfiar_ok | Que enfiada de {jogador}! A defesa ficou parada!
-enfiar_erro | {jogador} tenta a enfiada, mas {marcador} corta.
+rebote_bloqueado | {jogador} tenta ajeitar, mas a defesa chega junto.
 impedimento | Impedimento! O bandeira levanta.
-abrir_ok | {jogador} abre o jogo na ponta.
-abrir_erro | {jogador} tenta abrir o jogo, mas {marcador} intercepta.
-tabelar_ok | Tabela perfeita! {jogador} invade a área!
-tabelar_erro | A tabela não sai, {marcador} corta no meio.
-drible_corte_ok | {jogador} dá um corte seco em {marcador}!
-drible_caneta_ok | CANETA! {jogador} passa a bola entre as pernas de {marcador}!
-drible_chapeu_ok | Chapéu! {jogador} encobre {marcador} com classe!
-drible_arrancada_ok | {jogador} arranca em velocidade e deixa {marcador} para trás!
-pressao_ok | Pressão alta! {marcador} rouba a bola no campo de ataque.
+impedimento | Posição irregular, o assistente marca o impedimento.
+impedimento | O atacante saiu antes do passe. Impedimento.
 falta_tatica | {marcador} para a jogada de {jogador} com uma falta tática.
+falta_tatica | {marcador} segura {jogador} pela camisa e mata o contra-ataque.
+falta_tatica | Falta para parar a jogada: {marcador} derruba {jogador} no meio.
 goleiro_adiantado | {goleiro} está adiantado, quase na intermediária!
+goleiro_adiantado | {goleiro} saiu demais do gol, está fora da área!
 gol_contra | GOL CONTRA! {jogador} desvia para a própria rede! {placar}.
+gol_contra | Que azar! {jogador} tenta cortar e marca contra. {placar}.
 caimbra | {jogador} sente câimbra e não tem condições de continuar.
+caimbra | {jogador} está esgotado, sente câimbra e pede para sair.
 escanteio_afastado | A zaga afasta o escanteio.
+escanteio_afastado | O goleiro sai do gol e soca para longe.
+escanteio_afastado | O zagueiro sobe e tira de cabeça.
+escanteio_afastado | A bola passa por todo mundo e sai do outro lado.
 escanteio_curto | Cobrança curta, a bola chega para {jogador}.
+escanteio_curto | Escanteio curto, {jogador} recebe na entrada da área.
 gol_olimpico | O escanteio vai fechado... direto para o gol! {jogador} marca um GOL OLÍMPICO!
 driblou_goleiro | {jogador} dribla o goleiro e entra com bola e tudo!
+driblou_goleiro | {jogador} tira o goleiro da jogada e só empurra!
 goleiro_salva | {goleiro} sai bem e fica com a bola nos pés de {jogador}.
+goleiro_salva | {goleiro} se joga nos pés de {jogador} e salva!
 dominar_erro | {jogador} demora para dominar e a zaga tira.
+dominar_erro | A bola quica na frente de {jogador} e foge do controle.
+dominar_erro | {jogador} domina mal e perde a bola.
 barreira | A bola explode na barreira!
+barreira | Bateu na barreira! A defesa afasta.
 disputa_inicio | Vai para os pênaltis! Os jogadores se reúnem no meio-campo.
+disputa_inicio | Empate no tempo normal. A vaga vai ser decidida nos pênaltis!
 disputa_gol | {jogador} bate e marca. {placar}.
 disputa_gol | {jogador} desloca o goleiro e converte. {placar}.
+disputa_gol | {jogador} bate no ângulo, sem chance. {placar}.
 disputa_defesa | {goleiro} defende a cobrança de {jogador}! {placar}.
+disputa_defesa | {goleiro} pega! {jogador} parou no goleiro. {placar}.
 disputa_fora | {jogador} manda pra fora! {placar}.
+disputa_fora | {jogador} bate por cima do gol! {placar}.
+tiro_de_meta | Tiro de meta para o {time}. {goleiro} vai repor.
+tiro_de_meta | {goleiro} fica com a bola e olha as opções.
+tiro_de_meta | Bola com {goleiro}, o {time} recomeça do zero.
+saida_curta | O {time} sai jogando com toques curtos desde a defesa.
+saida_curta | Saída de bola trabalhada do {time}, os zagueiros abrem.
+saida_curta | O goleiro rola curto e o {time} começa a construir.
+lancamento_longo_ok | {goleiro} lança e {jogador} ganha de {marcador} pelo alto!
+lancamento_longo_ok | Ligação direta! {jogador} segura a bola na frente.
+lancamento_longo_ok | {jogador} briga com {marcador} e fica com a bola longa.
+lancamento_ponta_ok | {goleiro} lança na ponta e {jogador} domina no corredor.
+lancamento_ponta_ok | Bola longa no lado do campo, {jogador} ganha na corrida.
+lancamento_perdido | {marcador} sobe mais que {jogador} e devolve a bola.
+lancamento_perdido | O chutão de {goleiro} fica com a defesa adversária.
+lancamento_perdido | {jogador} não alcança o lançamento, {marcador} domina.
+lateral | Lateral para o {time} no campo de ataque. {jogador} vai cobrar.
+lateral | {jogador} pega a bola para o lateral perto da área.
+lateral | Reposição lateral do {time}, quase na linha da grande área.
+lateral_longo | {jogador} arremessa o lateral direto na área!
+lateral_longo | Lateral longo de {jogador}, a bola viaja até a pequena área!
+lateral_afastado | O lateral chega na área, mas a zaga afasta de cabeça.
+lateral_afastado | A defesa corta o arremesso lateral.
+lateral_recuado | O {time} recua a bola e recomeça a jogada.
+lateral_recuado | Sem espaço, o {time} prefere voltar a bola para o meio.
+superioridade | Contra-ataque em superioridade! O {time} sai com três contra dois, {jogador} conduz!
+superioridade | {jogador} puxa o contra-ataque e o {time} tem vantagem numérica!
+superioridade | Três atacantes contra dois zagueiros! {jogador} vem com a bola!
+passe_cortado | {jogador} tenta o passe e a zaga corta.
+passe_cortado | O passe de {jogador} é interceptado no último momento.
+passe_cortado | {jogador} demora a soltar e a defesa recompõe.
+abriu_ponta | A bola chega aberta para {jogador}, que tem espaço para cruzar.
+abriu_ponta | {jogador} recebe na ponta, livre!
+falta_lateral | Falta de {marcador} em {jogador} pelo lado do campo. Bola alçada à vista para o {time}.
+falta_lateral | {marcador} derruba {jogador} perto da linha lateral. Falta para o {time}.
+falta_lateral | Falta pelo lado para o {time}. Os altos vão para a área.
+cruzamento_direto_gol | A bola vem fechada, ninguém toca... e vai em direção ao gol!
+cruzamento_direto_gol | {jogador} cruza com efeito, a bola engana todo mundo!
+goleiro_corta | O goleiro sai firme e corta o cruzamento de {jogador}.
+goleiro_corta | O cruzamento de {jogador} vem fechado demais e o goleiro encaixa.
+ensaiada_ok | Jogada ensaiada! A bola chega rasteira e {jogador} aparece livre!
+ensaiada_ok | A barreira cai na finta: {jogador} recebe sozinho na área!
+ensaiada_ok | Toque curto, a defesa sobe e {jogador} fica livre para bater!
+ensaiada_erro | A jogada ensaiada não sai: {jogador} rola e a zaga lê a intenção.
+ensaiada_erro | Confusão na cobrança, ninguém entende a ensaiada e a defesa fica com a bola.
+falta_longe | Falta de {marcador} em {jogador}, a uns 30 metros do gol.
+falta_longe | {marcador} para {jogador} com falta. Distância boa para um chute do {time}.
+falta_longe | O {time} ganha uma falta de longe. Vale arriscar?
+falta_rolada | {jogador} rola a bola para {companheiro} soltar o pé!
+falta_rolada | Toque curto de {jogador} e {companheiro} vem batendo!
+sobra | A defesa afasta mal e a bola sobra para {jogador} na entrada da área!
+sobra | Rebatida da zaga, {jogador} está ali na meia-lua!
+sobra | A bola espirra e cai no pé de {jogador}!
+lencol_ok | LENÇOL! {jogador} encobre {marcador} e entra na área!
+lencol_ok | {jogador} dá um chapéu em {marcador} e fica de frente para o gol!
+lencol_erro | {jogador} tenta o lençol, mas {marcador} não pula e fica com a bola.
+lencol_erro | O chapéu de {jogador} sai alto demais e {marcador} recupera.
+erro_saida | {marcador} erra o passe na saída de bola e {jogador} rouba!
+erro_saida | Falha na saída! {jogador} intercepta o passe de {marcador} perto da área!
+erro_saida | {marcador} vacila com a bola nos pés e {jogador} toma dele!
+carrinho_salvador | {marcador} se joga no carrinho e tira a bola no último instante!
+carrinho_salvador | Que carrinho de {marcador}! Salvou o time!
+tocou_livre | {jogador} levanta a cabeça e rola para {companheiro}, livre!
+tocou_livre | Generoso! {jogador} serve {companheiro} na cara do gol!
+arrancada | {jogador} domina no meio e parte para cima!
+arrancada | {jogador} recebe de frente e acelera em direção à área!
+arrancada | O {time} procura {jogador}, que arranca com a bola colada no pé!
+arrancada_ok | {jogador} deixa {marcador} para trás na velocidade e entra na área!
+arrancada_ok | Ninguém segura {jogador}! Passou por {marcador} como um raio!
+arrancada_parada | {marcador} acompanha {jogador} na corrida e toma a bola.
+arrancada_parada | {jogador} perde a corrida para {marcador}.
+driblou_dois | {jogador} passa por {marcador} e por mais um! Que jogada!
+driblou_dois | Fintou um, fintou dois! {jogador} está dentro da área!
+ponto_futuro | {jogador} levanta a cabeça e coloca a bola na corrida de {companheiro}.
+ponto_futuro | Passe no espaço de {jogador} para {companheiro}.
+pressao_saida | O {time} tenta sair jogando de trás com {goleiro}.
+pressao_saida | Bola com {goleiro}, o {time} quer sair com toques curtos.
+roubou_na_saida | {jogador} pressiona {goleiro} e rouba a bola dentro da área!
+roubou_na_saida | Pressão sufocante! {jogador} toma a bola na saída!
+chutao | Sob pressão, {goleiro} dá um chutão para frente.
+chutao | {goleiro} se livra da bola com um bico para a lateral.
+pressao_furada | O {time} sai da pressão com um passe vertical e encontra espaço!
+pressao_furada | A pressão é furada! O {time} vira o jogo e escapa.
+recuperou_alto | {jogador} fecha a linha de passe e recupera para o {time} no campo de ataque!
+recuperou_alto | Marcação bem armada: {jogador} intercepta e o {time} ataca.
+adversario_escapa | O {time} acha uma saída pelo lado e foge da marcação.
+adversario_escapa | Mesmo com as linhas fechadas, o {time} consegue sair.
+time_espera | O {time} recua as linhas e espera o adversário no meio.
+time_espera | Sem pressa, o {time} se fecha e deixa o adversário com a bola.
+escanteio_conquistado | {jogador} vai ao fundo e força o escanteio para o {time}.
+escanteio_conquistado | Chute de {jogador} desvia na zaga. Escanteio para o {time}.
+escanteio_conquistado | O {time} pressiona e conquista mais um escanteio.
+bola_alta | A bola vem pelo alto para {jogador}, com {marcador} na marcação.
+bola_alta | Bola longa e disputada entre {jogador} e {marcador}.
+escorou_alto | {jogador} ganha de cabeça e escora para o companheiro!
+escorou_alto | {jogador} sobe mais que {marcador} e ajeita de cabeça.
+perdeu_alto | {marcador} ganha a disputa pelo alto de {jogador}.
+perdeu_alto | {jogador} não alcança e {marcador} fica com a bola.
+dominou_alto | {jogador} mata no peito com categoria.
+dominou_alto | Domínio perfeito de {jogador}, a bola gruda no pé.
+quicou_bem | A bola quica e sobe certinho para {jogador}.
+quicou_bem | {jogador} deixa quicar e fica com a sobra.
+quicou_mal | A bola quica alto e {marcador} chega antes de {jogador}.
+quicou_mal | O gramado atrapalha, a bola foge de {jogador}.
+reclamacao | {jogador} reclama demais com o árbitro e leva o amarelo.
+reclamacao | {jogador} bate palmas para o juiz e é advertido.
+reclamacao | {jogador} cerca o árbitro pedindo falta e vê o cartão.
+confusao | Empurra-empurra entre jogadores do {time_casa} e do {time_fora}! O árbitro corre para separar.
+confusao | O clima esquenta! Bate-boca entre {time_casa} e {time_fora}.
+confusao | Confusão generalizada no gramado! Os bancos entram para separar.
+paralisacao | Jogo parado: atendimento médico no gramado.
+paralisacao | Um torcedor invade o campo e a partida é interrompida por alguns minutos.
+paralisacao | Objeto arremessado da arquibancada, o árbitro paralisa o jogo.
+paralisacao | Problema na iluminação do estádio, o jogo fica parado um tempo.
+paralisacao | Um cachorro entra no gramado! Os gandulas tentam pegar o bicho.
+chuva_comeca | Começa a chover forte! O gramado fica escorregadio.
+chuva_comeca | Cai um temporal sobre o estádio, a bola começa a correr mais.
+beira_do_campo | O técnico do {time} gesticula muito na beira do campo.
+beira_do_campo | Reservas do {time} começam o aquecimento.
+beira_do_campo | O auxiliar do {time} passa instruções aos gritos.
+beira_do_campo | O técnico do {time} reclama com o quarto árbitro.
+beira_do_campo | A torcida do {time} pede mais raça ao time.
+bloqueio | {marcador} se joga na frente do chute de {jogador} e bloqueia!
+bloqueio | O chute de {jogador} explode em {marcador}!
+bloqueio_carrinho | CARRINHO! {marcador} desliza e bloqueia o chute de {jogador}!
+bloqueio_carrinho | {marcador} chega no carrinho e trava a finalização de {jogador}!
+carrinho_falhou | {marcador} se joga no carrinho, mas {jogador} corta e fica livre para bater!
+carrinho_falhou | {jogador} tira {marcador} do lance com um toque e prepara o chute!
+carrinho_penalti | {marcador} vai no carrinho e acerta {jogador} na área! O árbitro marca pênalti!
+carrinho_penalti | Carrinho imprudente de {marcador} em {jogador}! Pênalti!
+desvio | O chute de {jogador} desvia no zagueiro e engana o goleiro!
+desvio | A bola resvala na defesa e muda de direção!
+desvio_escanteio | O chute de {jogador} desvia na zaga e sai pela linha de fundo.
+desvio_escanteio | Desvio no meio do caminho, a bola vai para escanteio.
+salva_na_linha | Em cima da linha! {marcador} tira a bola que ia entrar!
+salva_na_linha | Inacreditável! {marcador} salva com o gol vazio!
+frango | Que falha! {goleiro} deixa a bola escapar entre as mãos!
+frango | FRANGO! {goleiro} vai encaixar e a bola passa por baixo!
+escanteio_direto | A cobrança de {jogador} vai fechada no goleiro... e entra!
+escanteio_direto | {jogador} bate com efeito e o goleiro se enrosca na bola!
+goleiro_soca | O goleiro sai socando a bola, ela fica viva na área!
+goleiro_soca | O goleiro soca de qualquer jeito e a bola sobra!
+goleiro_segura_escanteio | O goleiro sai e encaixa o escanteio no alto.
+goleiro_segura_escanteio | Segurança do goleiro, que fica com a cobrança.
+escanteio_ensaiado | Jogada ensaiada no escanteio! {jogador} aparece livre na área!
+escanteio_ensaiado | Escanteio curto, troca de passes e {jogador} entra sozinho!
+escanteio_ensaiado_erro | A jogada ensaiada no escanteio não funciona.
+escanteio_ensaiado_erro | O time complica a cobrança e perde a bola.
+escora | {jogador} escora de cabeça para {companheiro}!
+escora | {jogador} ajeita de cabeça e {companheiro} vem chegando!
+escora_erro | {jogador} tenta escorar, mas a bola fica com a defesa.
+escora_erro | A escorada de {jogador} não acha ninguém.
+goleiro_sair | {goleiro} sai do gol para abafar!
+goleiro_sair | {goleiro} vem na corrida para cima do atacante!
+goleiro_esperar | {goleiro} fica no gol esperando a definição.
+goleiro_esperar | {goleiro} não se mexe, aguarda o chute.
+goleiro_angulo | {goleiro} dá dois passos à frente e fecha o ângulo.
+goleiro_angulo | {goleiro} se posiciona bem, cobrindo o canto.
+var_penalti | O VAR chama o árbitro para revisar o pênalti...
+var_penalti | Revisão no monitor! O árbitro vai conferir o lance.
+var_penalti_anulado | O árbitro volta atrás: não foi pênalti!
+var_penalti_anulado | Depois do vídeo, o pênalti é cancelado. Jogo segue.
+var_penalti_confirmado | O árbitro confirma: é pênalti mesmo!
+var_penalti_confirmado | Depois da revisão, o pênalti está mantido!
+simulacao | {jogador} cai na área depois da dividida com {marcador}!
+simulacao | {jogador} vai ao chão e pede pênalti!
+simulacao_amarelo | O árbitro viu simulação e dá amarelo para {jogador}!
+simulacao_amarelo | Não foi nada! {jogador} leva amarelo por se jogar.
+simulacao_penalti | O árbitro compra a queda de {jogador} e marca pênalti!
+simulacao_penalti | Pênalti marcado! Mas {marcador} jura que não tocou em {jogador}.
+impedimento_duvidoso | O bandeira segura a bandeira! {jogador} parece adiantado, mas o lance segue!
+impedimento_duvidoso | Lance no limite! {jogador} estava na mesma linha e o jogo continua!
+paradinha | {jogador} faz a paradinha e {goleiro} cai para um lado!
+paradinha | Paradinha de {jogador}! {goleiro} se adianta no pulo.
+paradinha_esperou | {jogador} faz a paradinha, mas {goleiro} não cai na finta e espera!
+paradinha_esperou | {goleiro} lê a paradinha de {jogador} e fica parado no meio!
