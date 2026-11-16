@@ -1,6 +1,13 @@
 import random
 
-from config import BONUS_GRANDE_FASE, COMPOSICAO_ELENCO, ENERGIA_SEM_PERDA, FORMACOES, PENALIDADE_INSATISFEITO
+from config import (
+    BONUS_GRANDE_FASE,
+    BONUS_TREINO,
+    COMPOSICAO_ELENCO,
+    ENERGIA_SEM_PERDA,
+    FORMACOES,
+    PENALIDADE_INSATISFEITO,
+)
 
 ATRIBUTOS = ("fin", "pas", "des", "fis", "ref")
 AJUSTES = {
@@ -245,16 +252,21 @@ def fator_energia(energia):
 
 def atributo_efetivo(jogador, atributo):
     """
-    Calcula o valor de um atributo considerando grande fase e cansaço.
+    Calcula o valor de um atributo considerando grande fase, insatisfação, o treino da semana e cansaço.
+
+    Quem treinou o atributo antes da partida ganha BONUS_TREINO (3) nele até o fim do jogo.
 
     Args:
         jogador (dict): Jogador avaliado.
         atributo (str): Atributo desejado ("fin", "pas", "des", "fis" ou "ref").
 
     Returns:
-        float: Atributo somado ao bônus de grande fase, quando houver, e multiplicado pelo fator de energia.
+        float: Atributo somado aos bônus de moral e de treino, quando houver, e multiplicado pelo fator de
+            energia.
     """
     bonus = ajuste_de_moral(jogador)
+    if jogador.get("treino_foco") == atributo:
+        bonus += BONUS_TREINO
     return (jogador[atributo] + bonus) * fator_energia(jogador["energia"])
 
 

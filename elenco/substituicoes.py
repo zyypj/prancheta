@@ -124,8 +124,8 @@ def preparar_proxima_rodada(elenco):
     Atualiza o elenco para a rodada seguinte.
 
     Jogadores marcados como desfalque cumprem uma rodada de suspensão e de lesão, e a marca de desfalque é
-    retirada de todos. A grande fase e a insatisfação diminuem em uma rodada e a energia de cada jogador
-    recupera um valor fixo, sem passar de 100.
+    retirada de todos. O foco do treino da semana é apagado, a grande fase e a insatisfação diminuem em uma
+    rodada e a energia de cada jogador recupera um valor fixo, sem passar de 100.
 
     Args:
         elenco (list[dict]): Jogadores do clube.
@@ -141,6 +141,7 @@ def preparar_proxima_rodada(elenco):
             jogador["fase"] -= 1
         if jogador.get("insatisfeito", 0) > 0:
             jogador["insatisfeito"] -= 1
+        jogador.pop("treino_foco", None)
         jogador["energia"] = min(100, round(jogador["energia"] + RECUPERACAO_ENERGIA, 1))
 
 

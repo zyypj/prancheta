@@ -136,6 +136,21 @@ ACRESCIMOS = (1, 5)
 
 PAUSA_RAPIDA = 0.15
 REVELACOES_POR_PARTIDA = 3
+FOCOS_DE_TREINO = {
+    "finalizacao": {"nome": "Finalização", "atributo": "fin"},
+    "passe": {"nome": "Passe", "atributo": "pas"},
+    "desarme": {"nome": "Desarme", "atributo": "des"},
+    "fisico": {"nome": "Físico", "atributo": "fis"},
+    "goleiros": {"nome": "Goleiros (reflexo)", "atributo": "ref"},
+    "recuperacao": {"nome": "Recuperação", "atributo": None},
+}
+INTENSIDADES_DE_TREINO = {
+    "leve": {"nome": "Leve", "energia": 6, "evolucao": 0.12, "lesao": 0.0},
+    "normal": {"nome": "Normal", "energia": 12, "evolucao": 0.25, "lesao": 0.0},
+    "pesado": {"nome": "Pesado", "energia": 22, "evolucao": 0.4, "lesao": 0.04},
+}
+BONUS_TREINO = 3
+EVOLUCOES_PARA_QUALIDADE = 2
 CHANCE_MINIJOGO = {
     "drible": 0.4,
     "goleiro": 1.0,
