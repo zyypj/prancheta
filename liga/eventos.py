@@ -86,8 +86,8 @@ def criar_negociacao(jogador):
 
     O clube interessado é sorteado em CLUBES_DO_EXTERIOR. A primeira oferta fica entre 110% e 140% do valor de
     mercado (FAIXA_OFERTA_EXTERIOR), e o teto, o máximo que o clube aceita pagar, fica entre 100% e 130% da
-    primeira oferta (FAIXA_TETO_EXTERIOR). O teto não aparece na tela: o técnico só descobre pedindo mais, e às
-    vezes a primeira oferta já é a última.
+    primeira oferta (FAIXA_TETO_EXTERIOR). O teto não aparece na tela: o técnico só descobre pedindo mais, e
+    às vezes a primeira oferta já é a última.
 
     Args:
         jogador (dict): Jogador que recebeu a proposta.
@@ -216,8 +216,8 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
     o alvo por pelo menos 1 rodada e soma 5 de confiança; "vender" tira o alvo do elenco, credita no caixa o
     valor negociado (ou 1,2 vez o valor de mercado, se não houve negociação), sobe da base um garoto da mesma
     posição com 12 de qualidade a menos (entre 40 e 92) e soma 6 de confiança; "segurar" dá ao alvo pelo menos
-    1 rodada de bônus e tira 3 de confiança; "negociacao_fracassou" mantém o alvo e tira 2 de confiança; "base"
-    troca o jogador de linha com menor valor para escalar por um garoto da mesma posição, com qualidade
+    1 rodada de bônus e tira 3 de confiança; "negociacao_fracassou" mantém o alvo e tira 2 de confiança;
+    "base" troca o jogador de linha com menor valor para escalar por um garoto da mesma posição, com qualidade
     sorteada entre 6 abaixo e 4 acima da força do clube (entre 40 e 92); "protesto" tira 5 de confiança;
     "descanso" recupera 15 de energia de todo o elenco, até 100. Os efeitos que dependem de alvo não fazem
     nada se ele não existir.

@@ -272,8 +272,9 @@ def tela_proposta(estado, evento):
 
     Exibe a ficha do jogador, o valor de mercado, a oferta atual com a porcentagem sobre o valor, como o caixa
     fica se vender, quem assume a vaga, a qualidade do garoto que sobe da base e o efeito de cada decisão na
-    confiança da diretoria. O técnico pode aceitar, recusar ou pedir mais: cada contraproposta é respondida por
-    responder_contraproposta, e o histórico aparece embaixo da oferta enquanto o clube continua negociando.
+    confiança da diretoria. O técnico pode aceitar, recusar ou pedir mais: cada contraproposta é respondida
+    por responder_contraproposta, e o histórico aparece embaixo da oferta enquanto o clube continua
+    negociando.
 
     Args:
         estado (dict): Estado atual da temporada.
