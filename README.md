@@ -25,8 +25,8 @@ python main.py
 
 1. No menu, escolha **Novo jogo**, digite o nome do técnico e escolha o clube. Cada clube tem uma meta: os grandes
    precisam ser campeões, os médios precisam ficar no G4 e os pequenos não podem cair.
-2. Na **Central do clube** você vê o elenco (com idade e valor de mercado), ajusta o plano de jogo, consulta a
-   classificação, a chave da copa e o histórico das rodadas, entra no mercado da bola, vê a página de qualquer clube e
+2. Na **Central do clube** você vê o elenco (com idade e valor de mercado), ajusta o plano de jogo, treina o
+   elenco, consulta a classificação, a chave da copa e o histórico das rodadas, entra no mercado da bola, vê a página de qualquer clube e
    salva o jogo.
 3. A temporada alterna liga e copa. A liga tem 9 rodadas em turno único. A copa tem fase preliminar (os 4 clubes de
    menor força), quartas, semifinal e final em campo neutro, sempre em jogo único: empate vai para a disputa de
@@ -35,7 +35,7 @@ python main.py
    direto para o resultado. Também dá para ver o adversário: posição, últimos jogos, plano e formação prováveis,
    destaques e desfalques. A simulação segue o seu plano e para no intervalo, em lesões, expulsões e pênaltis.
 
-   Uma vez por semana, ainda no pré-jogo, dá para **treinar** o elenco. Você escolhe o foco (finalização, passe,
+   Uma vez por semana, pela central do clube ou no pré-jogo, dá para **treinar** o elenco. Você escolhe o foco (finalização, passe,
    desarme, físico, goleiros ou recuperação), a intensidade (leve, normal ou pesado) e quem treina (titulares,
    reservas ou o elenco todo). Quem treina ganha +3 no atributo treinado durante o próximo jogo e tem chance de
    evoluir 1 ponto de vez (maior nos jovens, menor nos veteranos); a cada 2 evoluções a qualidade sobe 1 e o
