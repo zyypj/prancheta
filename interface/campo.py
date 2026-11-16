@@ -162,6 +162,8 @@ def destaque_do_evento(partida, evento):
 
 def criar_exibidor(clube_jogador, ao_pausar=None):
     def exibir(partida, evento):
+        if partida.get("em_pausa"):
+            return
         destaque = destaque_do_evento(partida, evento)
         if TERMINAL_REAL:
             mostrar_partida(partida, clube_jogador, animar=True, destaque=destaque)

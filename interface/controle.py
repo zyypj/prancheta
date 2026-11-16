@@ -100,28 +100,37 @@ def escolher_entrada(time, mensagem):
 
 def humano_lesao(partida, time_id, lesionado):
     time = partida["times"][time_id]
-    mostrar_partida(partida, time_id, pergunta=f"{lesionado['nome']} se machucou e saiu de campo.")
+    mostrar_partida(partida, time_id, pergunta=f"{lesionado['nome']} saiu de campo e não pode voltar.")
+    pausado = partida.get("em_pausa", False)
+    partida["em_pausa"] = True
     entra = escolher_entrada(time, f"Quem entra no lugar de {lesionado['nome']}?")
     if entra:
         fazer_substituicao(partida, time_id, None, entra["id"], lesionado["nome"])
+    partida["em_pausa"] = pausado
 
 
 def menu_substituicao(partida, time_id):
     time = partida["times"][time_id]
-    if time["subs"] >= MAX_SUBSTITUICOES or not time["banco"]:
-        console.print(" [red]Sem substituições disponíveis.[/]")
-        pausar("Enter para continuar...")
-        return
-    limpar()
-    console.print(tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)"))
-    console.print(" [bold]0[/] Cancelar")
-    escolha = ler_opcao(0, len(time["em_campo"]), " Quem sai? > ")
-    if not escolha:
-        return
-    sai = time["em_campo"][escolha - 1]
-    entra = escolher_entrada(time, f"Quem entra no lugar de {sai['nome']}?")
-    if entra:
-        fazer_substituicao(partida, time_id, sai["id"], entra["id"])
+    mensagem = ""
+    while True:
+        limpar()
+        if mensagem:
+            console.print(f" [green]{mensagem}[/]\n")
+        if time["subs"] >= MAX_SUBSTITUICOES or not time["banco"]:
+            console.print(" [red]Sem substituições disponíveis.[/]")
+            pausar("Enter para voltar à pausa...")
+            return
+        console.print(tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)"))
+        console.print(" [bold]0[/] Voltar à pausa")
+        escolha = ler_opcao(0, len(time["em_campo"]), " Quem sai? > ")
+        if not escolha:
+            return
+        sai = time["em_campo"][escolha - 1]
+        entra = escolher_entrada(time, f"Quem entra no lugar de {sai['nome']}?")
+        if entra and fazer_substituicao(partida, time_id, sai["id"], entra["id"]):
+            mensagem = f"Saiu {sai['nome']}, entrou {entra['nome']} ({time['subs']}/{MAX_SUBSTITUICOES})."
+        else:
+            mensagem = ""
 
 
 def menu_plano_partida(partida, time_id):
@@ -155,6 +164,14 @@ def mostrar_estatisticas(partida):
 
 
 def menu_pausa(partida, time_id, motivo="pausa"):
+    partida["em_pausa"] = True
+    try:
+        opcoes_da_pausa(partida, time_id, motivo)
+    finally:
+        partida["em_pausa"] = False
+
+
+def opcoes_da_pausa(partida, time_id, motivo):
     titulos = {"intervalo": "INTERVALO", "expulsao": "EXPULSÃO! Jogo parado.", "pausa": "JOGO PAUSADO"}
     while True:
         mostrar_partida(partida, time_id, pergunta=titulos.get(motivo, "JOGO PAUSADO"))
