@@ -85,7 +85,7 @@ def novo_garoto(estado, clube, banco, qualidade, posicao):
     """
     Cria um jogador vindo das categorias de base.
 
-    O identificador usa o maior número entre os jogadores do elenco mais um, e o nome é sorteado entre os que ainda não estão em uso. O jogador é criado, mas não é adicionado ao elenco.
+    O identificador usa o prefixo do clube e o maior número já usado com esse prefixo mais um, olhando todos os elencos, os jogadores sem clube e o contador do clube. Assim um garoto nunca herda o identificador de um jogador vendido ou transferido. O contador fica guardado no clube, e o nome é sorteado entre os que ainda não estão em uso. O jogador é criado, mas não é adicionado ao elenco.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -97,7 +97,11 @@ def novo_garoto(estado, clube, banco, qualidade, posicao):
     Returns:
         dict: Jogador criado.
     """
-    numero = max(int(jogador["id"].split("-")[1]) for jogador in clube["elenco"]) + 1
+    prefixo = f"{clube['id']}-"
+    todos = [jogador for outro in estado["clubes"].values() for jogador in outro["elenco"]] + estado.get("livres", [])
+    usados = [int(jogador["id"][len(prefixo):]) for jogador in todos if jogador["id"].startswith(prefixo)]
+    numero = max(usados + [clube.get("ultimo_id", 0)]) + 1
+    clube["ultimo_id"] = numero
     nome = sortear_nome(banco, nomes_em_uso(estado))
     return criar_jogador(f"{clube['id']}-{numero:02d}", nome, posicao, qualidade)
 
