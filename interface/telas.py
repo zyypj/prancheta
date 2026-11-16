@@ -1,5 +1,6 @@
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from config import ESTILOS, FORMACOES, NIVEIS, NOME_JOGO, NOMES_ESTILOS, TOTAL_RODADAS, VERSAO, ZONA_G4, ZONA_REBAIXAMENTO
 from elenco.escalacao import disponivel, escalar_automatico
@@ -126,6 +127,37 @@ def trocar_titular(clube):
     return f"{reserva['nome']} entra no time titular."
 
 
+def nome_curto(nome):
+    partes = nome.split()
+    return nome if len(partes) == 1 else f"{partes[0][0]}. {partes[-1]}"
+
+
+def estilo_do_titular(jogador):
+    if not disponivel(jogador):
+        return "bold red"
+    if jogador["energia"] < 50:
+        return "bold yellow"
+    return "bold bright_white"
+
+
+def desenho_formacao(clube, largura=88):
+    titulares = [j for j in clube["elenco"] if j["id"] in clube["titulares"]]
+    desenho = Text()
+    for indice, posicao in enumerate(("ATA", "MEI", "DEF", "GOL")):
+        do_setor = [j for j in titulares if j["pos"] == posicao]
+        etiquetas = [(f"{nome_curto(j['nome'])} {j['qualidade']}", estilo_do_titular(j)) for j in do_setor]
+        tamanho = sum(len(texto) for texto, _ in etiquetas) + 3 * max(0, len(etiquetas) - 1)
+        if indice:
+            desenho.append("\n\n")
+        desenho.append(f"{posicao}  ", style="dim")
+        desenho.append(" " * max(0, (largura - 5 - tamanho) // 2))
+        for numero, (texto, estilo) in enumerate(etiquetas):
+            if numero:
+                desenho.append("   ")
+            desenho.append(texto, style=estilo)
+    return Panel(desenho, title=f"[bold]{clube['plano']['formacao']}[/]", width=largura + 4, border_style="green", subtitle="[dim]amarelo: cansado (energia < 50)[/]")
+
+
 def editar_plano(clube):
     mensagem = ""
     while True:
@@ -133,8 +165,7 @@ def editar_plano(clube):
         plano = clube["plano"]
         console.print(f" Formação: [bold]{plano['formacao']}[/]   Estilo: [bold]{NOMES_ESTILOS[plano['estilo']]}[/]")
         console.print(f" Ofensividade: [bold]{plano['ofensividade']}[/]/5   Intensidade: [bold]{plano['intensidade']}[/]/5")
-        titulares = [j for j in clube["elenco"] if j["id"] in clube["titulares"]]
-        console.print(" Titulares: " + ", ".join(f"{j['nome']} ({j['pos']})" for j in titulares))
+        console.print(desenho_formacao(clube))
         if mensagem:
             console.print(f" [yellow]{mensagem}[/]")
         console.print("\n 1 - Formação  2 - Estilo  3 - Ofensividade  4 - Intensidade  5 - Escalação automática  6 - Trocar titular  0 - Voltar")
