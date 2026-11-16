@@ -140,22 +140,38 @@ def estilo_do_titular(jogador):
     return "bold bright_white"
 
 
+def linha_do_setor(desenho, rotulo, celulas, larguras, largura):
+    tamanho = sum(larguras) + 5 * max(0, len(larguras) - 1)
+    desenho.append(f"{rotulo:<5}", style="dim")
+    desenho.append(" " * max(0, (largura - 5 - tamanho) // 2))
+    for numero, ((texto, estilo), tamanho_celula) in enumerate(zip(celulas, larguras)):
+        if numero:
+            desenho.append("     ")
+        desenho.append(texto.center(tamanho_celula), style=estilo)
+    desenho.append("\n")
+
+
 def desenho_formacao(clube, largura=88):
     titulares = [j for j in clube["elenco"] if j["id"] in clube["titulares"]]
     desenho = Text()
     for indice, posicao in enumerate(("ATA", "MEI", "DEF", "GOL")):
         do_setor = [j for j in titulares if j["pos"] == posicao]
-        etiquetas = [(f"{nome_curto(j['nome'])} {j['qualidade']}", estilo_do_titular(j)) for j in do_setor]
-        tamanho = sum(len(texto) for texto, _ in etiquetas) + 3 * max(0, len(etiquetas) - 1)
+        nomes = [(nome_curto(j["nome"]), estilo_do_titular(j)) for j in do_setor]
+        detalhes = [(f"{j['qualidade']} · {round(j['energia'])}%", "dim") for j in do_setor]
+        larguras = [max(len(nome), len(detalhe)) for (nome, _), (detalhe, _) in zip(nomes, detalhes)]
         if indice:
             desenho.append("\n\n")
-        desenho.append(f"{posicao}  ", style="dim")
-        desenho.append(" " * max(0, (largura - 5 - tamanho) // 2))
-        for numero, (texto, estilo) in enumerate(etiquetas):
-            if numero:
-                desenho.append("   ")
-            desenho.append(texto, style=estilo)
-    return Panel(desenho, title=f"[bold]{clube['plano']['formacao']}[/]", width=largura + 4, border_style="green", subtitle="[dim]amarelo: cansado (energia < 50)[/]")
+        linha_do_setor(desenho, posicao, nomes, larguras, largura)
+        linha_do_setor(desenho, "", detalhes, larguras, largura)
+    desenho.rstrip()
+    return Panel(
+        desenho,
+        title=f"[bold]{clube['plano']['formacao']}[/]",
+        subtitle="[dim]qualidade · energia   amarelo: cansado[/]",
+        width=largura + 6,
+        padding=(1, 2),
+        border_style="green",
+    )
 
 
 def editar_plano(clube):
