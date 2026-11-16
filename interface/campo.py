@@ -2,9 +2,9 @@ import time
 
 from rich.text import Text
 
-from config import NOMES_ESTILOS, VELOCIDADES
+from config import NOMES_ESTILOS, PAUSA_RAPIDA
 from elenco.escalacao import limitar
-from interface.entrada import console, limpar
+from interface.entrada import TERMINAL_REAL, console, desenhar_no_lugar, limpar
 from partida.lances import minuto_texto
 
 LARGURA_ZONA = 15
@@ -69,30 +69,17 @@ def cabecalho(partida, clube_jogador):
     )
     meu = partida["times"][clube_jogador]
     plano = meu["plano"]
-    modo = "jogando lance a lance" if partida["modo"] == "jogar" else f"simulando ({partida['velocidade']})"
+    ritmo = "rápido" if partida["velocidade"] == "rapida" else "assistindo"
+    modo = "jogando lance a lance" if partida["modo"] == "jogar" else f"simulando ({ritmo})"
     console.print(
         f" [dim]{plano['formacao']} · {NOMES_ESTILOS[plano['estilo']]} · Ofensividade {plano['ofensividade']}"
         f" · Intensidade {plano['intensidade']} · Substituições {meu['subs']}/5 · {modo}[/]"
     )
 
 
-def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False):
-    alvo = posicao_alvo(partida, clube_jogador)
-    atual = partida.setdefault("tela", {"coluna": alvo[0], "linha": alvo[1]})
-    passos = []
-    if animar and partida["velocidade"] == "normal":
-        coluna = atual["coluna"]
-        while abs(alvo[0] - coluna) > 3:
-            coluna += 3 if alvo[0] > coluna else -3
-            passos.append((coluna, alvo[1]))
-    passos.append(alvo)
-    for coluna, linha in passos:
-        limpar()
-        cabecalho(partida, clube_jogador)
-        console.print(desenhar_campo(coluna, linha))
-        if len(passos) > 1 and (coluna, linha) != alvo:
-            time.sleep(0.03)
-    atual["coluna"], atual["linha"] = alvo
+def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, destaque):
+    cabecalho(partida, clube_jogador)
+    console.print(desenhar_campo(coluna, linha))
     linhas = partida["narracao"]
     for indice, texto in enumerate(linhas):
         estilo = "bold" if indice == len(linhas) - 1 else "dim"
@@ -104,23 +91,61 @@ def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=F
             f"\n Bola com: [bold {dono['cor']}]{portador['nome']}[/] ({portador['pos']} {portador['qualidade']})"
             f"   Energia {barra(portador['energia'])}"
         )
+    if destaque:
+        console.print(f"\n {destaque}")
     if pergunta:
         console.print(f"\n [bold yellow]{pergunta}[/]")
     if opcoes:
         console.print(" " + "   ".join(f"[bold]{numero}[/] {texto}" for numero, texto in enumerate(opcoes, start=1)) + "   [bold]0[/] Pausar")
 
 
-def criar_exibidor(clube_jogador):
+def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None):
+    alvo = posicao_alvo(partida, clube_jogador)
+    if "tela" not in partida:
+        limpar()
+        partida["tela"] = {"coluna": alvo[0], "linha": alvo[1]}
+    atual = partida["tela"]
+    passos = []
+    if animar and TERMINAL_REAL and partida["velocidade"] == "normal":
+        coluna = atual["coluna"]
+        while abs(alvo[0] - coluna) > 3:
+            coluna += 3 if alvo[0] > coluna else -3
+            passos.append((coluna, alvo[1]))
+    passos.append(alvo)
+    for coluna, linha in passos:
+        intermediario = (coluna, linha) != alvo
+        desenhar_no_lugar(lambda c=coluna, l=linha, i=intermediario: desenhar_quadro(
+            partida, clube_jogador, c, l, None if i else pergunta, None if i else opcoes, None if i else destaque
+        ))
+        if intermediario:
+            time.sleep(0.03)
+    atual["coluna"], atual["linha"] = alvo
+
+
+def destaque_do_evento(partida, evento):
+    if evento["tipo"] == "gol":
+        cor = partida["times"][evento["time"]]["cor"]
+        return f"[bold {cor} reverse]   G O O O O O L !   [/]"
+    return None
+
+
+def criar_exibidor(clube_jogador, ao_pausar=None):
     def exibir(partida, evento):
-        mostrar_partida(partida, clube_jogador, animar=True)
-        if evento["tipo"] == "gol":
-            cor = partida["times"][evento["time"]]["cor"]
-            console.print(f"\n [bold {cor} reverse]   G O O O O O L !   [/]")
-        espera = VELOCIDADES[partida["velocidade"]]
-        if partida["modo"] == "jogar":
-            espera = min(espera, 0.7)
-        if evento["tipo"] in PAUSAS_LONGAS:
-            espera *= 2
-        time.sleep(espera)
+        destaque = destaque_do_evento(partida, evento)
+        if TERMINAL_REAL:
+            mostrar_partida(partida, clube_jogador, animar=True, destaque=destaque)
+        else:
+            console.print(f" {partida['narracao'][-1]}")
+            if destaque:
+                console.print(f" {destaque}")
+        if partida["velocidade"] == "rapida":
+            time.sleep(PAUSA_RAPIDA * (3 if evento["tipo"] in PAUSAS_LONGAS else 1))
+            return
+        resposta = console.input(" [dim]Enter avança · P pausa · R simula rápido[/] ").strip().lower()
+        if resposta == "p" and ao_pausar:
+            ao_pausar(partida, clube_jogador)
+        elif resposta == "r":
+            partida["modo"] = "simular"
+            partida["velocidade"] = "rapida"
 
     return exibir

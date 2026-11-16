@@ -237,7 +237,7 @@ def pre_jogo(estado):
     cansados = [j["nome"] for j in titulares if j["energia"] < 50]
     if cansados:
         console.print(f" [yellow]Titulares cansados: {', '.join(cansados)}[/]")
-    console.print("\n 1 - Jogar lance a lance  2 - Simular (normal)  3 - Simular (rápido)  4 - Ajustar plano  0 - Voltar")
+    console.print("\n 1 - Jogar lance a lance  2 - Simular assistindo (Enter avança)  3 - Simular rápido  4 - Ajustar plano  0 - Voltar")
     return ler_opcao(0, 4)
 
 

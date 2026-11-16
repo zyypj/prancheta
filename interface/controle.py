@@ -160,10 +160,10 @@ def menu_pausa(partida, time_id, motivo="pausa"):
         if motivo == "intervalo":
             mostrar_estatisticas(partida)
         outro_modo = "Simular o resto" if partida["modo"] == "jogar" else "Assumir o controle (lance a lance)"
-        velocidade = "rápida" if partida["velocidade"] == "normal" else "normal"
+        velocidade = "automático rápido" if partida["velocidade"] == "normal" else "manual (Enter)"
         console.print(
             f" [bold]1[/] Continuar   [bold]2[/] Substituição   [bold]3[/] Mudar plano   "
-            f"[bold]4[/] {outro_modo}   [bold]5[/] Velocidade {velocidade}"
+            f"[bold]4[/] {outro_modo}   [bold]5[/] Avanço {velocidade}"
         )
         escolha = ler_opcao(1, 5)
         if escolha == 1:

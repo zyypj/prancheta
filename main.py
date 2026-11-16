@@ -3,7 +3,7 @@ import sys
 from config import ARQUIVO_EVENTOS, ARQUIVO_NARRACAO, ARQUIVO_NOMES, ARQUIVO_TIMES, PASTA_SUMULAS
 from elenco.escalacao import completar_titulares, ler_banco_de_nomes
 from interface.campo import criar_exibidor
-from interface.controle import CONTROLE_HUMANO
+from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
 from interface import telas
 from liga.eventos import aplicar_efeito, preparar_evento, sortear_evento
@@ -96,7 +96,7 @@ def jogar_rodada(estado, recursos):
     partida = montar_partida(estado, recursos, modo, velocidade)
     adversario = adversario_de(jogo_do_jogador(estado), estado["clube_id"])
     controles = {estado["clube_id"]: CONTROLE_HUMANO, adversario: CONTROLE_IA}
-    resultado = jogar_partida(partida, controles, criar_exibidor(estado["clube_id"]))
+    resultado = jogar_partida(partida, controles, criar_exibidor(estado["clube_id"], menu_pausa))
     telas.mostrar_fim_de_jogo(estado, resultado)
     with console.status("Simulando os outros jogos da rodada..."):
         resultados = [resultado] + simular_outros_jogos(estado, recursos["frases"])

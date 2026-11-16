@@ -4,14 +4,28 @@ import sys
 from rich.console import Console
 
 EM_IDE = "PYCHARM_HOSTED" in os.environ
+TERMINAL_REAL = sys.stdout.isatty()
 console = Console(highlight=False, force_terminal=True if EM_IDE else None, legacy_windows=False if EM_IDE else None)
 
 
 def limpar():
-    if sys.stdout.isatty():
+    if TERMINAL_REAL:
         console.clear()
     else:
-        console.print("\n" * max(console.height, 40))
+        console.rule(style="dim")
+
+
+def desenhar_no_lugar(desenhar):
+    if not TERMINAL_REAL:
+        desenhar()
+        return
+    with console.capture() as captura:
+        desenhar()
+    linhas = captura.get().split("\n")
+    if linhas and not linhas[-1]:
+        linhas.pop()
+    console.file.write("\x1b[H" + "".join(f"{linha}\x1b[K\n" for linha in linhas) + "\x1b[J")
+    console.file.flush()
 
 
 def ler_opcao(minimo, maximo, rotulo=" > "):
