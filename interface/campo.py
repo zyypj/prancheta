@@ -7,11 +7,21 @@ from elenco.escalacao import limitar
 from interface.entrada import TERMINAL_REAL, console, desenhar_no_lugar, limpar
 from partida.lances import minuto_texto
 
-LARGURA_ZONA = 15
+LARGURA_ZONA = 17
 LARGURA_CAMPO = LARGURA_ZONA * 3 + 4
 SEPARADORES = (0, LARGURA_ZONA + 1, 2 * LARGURA_ZONA + 2, LARGURA_CAMPO - 1)
+ALTURA_CAMPO = 7
+LARGURA_AREA = 7
+LINHAS_FAIXA = {0: 1, 1: 3, 2: 5}
+LINHAS_FAIXA_AREA = {0: 2, 1: 3, 2: 4}
+COLUNAS_ZONA = {
+    "meio": LARGURA_CAMPO // 2,
+    "ataque": (SEPARADORES[2] + LARGURA_CAMPO - 2 - LARGURA_AREA) // 2,
+    "area": LARGURA_CAMPO - 2 - LARGURA_AREA // 2,
+    "gol": LARGURA_CAMPO - 2,
+}
 GRAMADO = "on dark_green"
-PAUSAS_LONGAS = ("gol", "penalti_fim", "vermelho", "intervalo", "fim", "var", "lesao")
+PAUSAS_LONGAS = ("gol", "penalti_fim", "vermelho", "intervalo", "fim", "var", "lesao", "trave", "oportunidade")
 
 
 def barra(valor, tamanho=10):
@@ -23,15 +33,42 @@ def barra(valor, tamanho=10):
 def posicao_alvo(partida, clube_jogador):
     bola = partida["bola"]
     faixa = bola.get("faixa", 1)
-    if bola["zona"] == "gol":
-        coluna = LARGURA_CAMPO - 2 if bola["time"] == clube_jogador else 1
-        return coluna, 1
-    if bola["time"] is None or bola["zona"] == "meio":
-        indice = 1
+    zona = bola["zona"] if bola["time"] is not None else "meio"
+    if zona == "gol":
+        linha = 3
+    elif zona == "area":
+        linha = LINHAS_FAIXA_AREA[faixa]
     else:
-        indice = 2 if bola["time"] == clube_jogador else 0
-    coluna = SEPARADORES[indice] + 1 + LARGURA_ZONA // 2 + (faixa - 1) * 4
-    return coluna, faixa
+        linha = LINHAS_FAIXA[faixa]
+    coluna = COLUNAS_ZONA[zona]
+    if bola["time"] is not None and bola["time"] != clube_jogador:
+        coluna = LARGURA_CAMPO - 1 - coluna
+    return coluna, linha
+
+
+def gramado_vazio():
+    grade = [[" "] * LARGURA_CAMPO for _ in range(ALTURA_CAMPO)]
+    for linha in grade:
+        for separador in SEPARADORES:
+            linha[separador] = "│"
+    for linha in (2, 3, 4):
+        grade[linha][0] = "▌"
+        grade[linha][-1] = "▐"
+    esquerda = LARGURA_AREA + 1
+    direita = LARGURA_CAMPO - 2 - LARGURA_AREA
+    for coluna in range(1, esquerda):
+        grade[1][coluna] = grade[5][coluna] = "─"
+    for coluna in range(direita + 1, LARGURA_CAMPO - 1):
+        grade[1][coluna] = grade[5][coluna] = "─"
+    grade[1][esquerda], grade[5][esquerda] = "┐", "┘"
+    grade[1][direita], grade[5][direita] = "┌", "└"
+    for linha in (2, 3, 4):
+        grade[linha][esquerda] = "│"
+        grade[linha][direita] = "│"
+    grade[3][LARGURA_AREA // 2 + 1] = "·"
+    grade[3][LARGURA_CAMPO - 2 - LARGURA_AREA // 2] = "·"
+    grade[3][LARGURA_CAMPO // 2] = "·"
+    return grade
 
 
 def desenhar_campo(coluna, linha):
@@ -39,15 +76,9 @@ def desenhar_campo(coluna, linha):
     base = "└" + "┴".join("─" * LARGURA_ZONA for _ in range(3)) + "┘"
     campo = Text()
     campo.append(topo + "\n", style=f"white {GRAMADO}")
-    for faixa in range(3):
-        caracteres = [" "] * LARGURA_CAMPO
-        for separador in SEPARADORES:
-            caracteres[separador] = "│"
-        if faixa == 1:
-            caracteres[0] = "▌"
-            caracteres[-1] = "▐"
+    for indice_linha, caracteres in enumerate(gramado_vazio()):
         for indice, caractere in enumerate(caracteres):
-            if faixa == linha and indice == coluna:
+            if indice_linha == linha and indice == coluna:
                 campo.append("●", style=f"bold bright_white {GRAMADO}")
             else:
                 campo.append(caractere, style=f"white {GRAMADO}")
