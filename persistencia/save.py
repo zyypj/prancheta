@@ -53,7 +53,7 @@ def listar_saves():
     """
     Lista os jogos salvos disponíveis para carregar.
 
-    Percorre os arquivos JSON de PASTA_SAVES, do modificado mais recentemente para o mais antigo, e ignora os que não são um dicionário ou que têm versão diferente de VERSAO_SAVE. Se a pasta não puder ser lida, o erro é capturado por try/except e a função devolve uma lista vazia.
+    Percorre os arquivos JSON de PASTA_SAVES, do modificado mais recentemente para o mais antigo, e ignora os que não são um dicionário, que têm versão diferente de VERSAO_SAVE ou que estão sem algum dado do resumo (técnico, clube ou rodada), sem derrubar a lista. Se a pasta não puder ser lida, o erro é capturado por try/except e a função devolve uma lista vazia.
 
     Returns:
         list: Dicionários com caminho, técnico, nome do clube, rodada e data do salvamento de cada save válido.
@@ -65,7 +65,9 @@ def listar_saves():
     saves = []
     for caminho in arquivos:
         estado = ler_json(caminho)
-        if isinstance(estado, dict) and estado.get("versao") == VERSAO_SAVE:
+        if not isinstance(estado, dict) or estado.get("versao") != VERSAO_SAVE:
+            continue
+        try:
             saves.append({
                 "caminho": caminho,
                 "tecnico": estado["tecnico"],
@@ -73,6 +75,8 @@ def listar_saves():
                 "rodada": estado["rodada"],
                 "salvo_em": estado.get("salvo_em", "-"),
             })
+        except (KeyError, TypeError):
+            continue
     return saves
 
 
