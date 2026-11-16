@@ -12,6 +12,8 @@ ARQUIVO_TIMES = PASTA_DADOS / "times.json"
 ARQUIVO_NOMES = PASTA_DADOS / "nomes.txt"
 ARQUIVO_NARRACAO = PASTA_DADOS / "narracao.txt"
 ARQUIVO_EVENTOS = PASTA_DADOS / "eventos.json"
+ARQUIVO_BASTIDORES = PASTA_DADOS / "bastidores.json"
+ARQUIVO_ENTREVISTAS = PASTA_DADOS / "entrevistas.json"
 ARQUIVO_RANKING = PASTA_DADOS / "ranking.csv"
 
 CAMPOS_RANKING = ("tecnico", "clube", "posicao", "pontos", "pontuacao", "desfecho", "data")
@@ -116,6 +118,11 @@ CHANCE_DISCUSSAO = 0.55
 CHANCE_DISCUSSAO_ELENCO = 0.2
 PENALIDADE_INSATISFEITO = 4
 MULTA_DISCUSSAO = 0.5
+CHANCE_EVENTO_PRE = 0.3
+CHANCE_EVENTO_POS = 0.35
+CHANCE_ENTREVISTA = {"grande": 0.4, "medio": 0.25, "pequeno": 0.12}
+PESO_TORCIDA = {"grande": 2.0, "medio": 1.0, "pequeno": 0.5}
+TORCIDA_NA_FESTA = 6
 
 MAX_SUBSTITUICOES = 5
 RECUPERACAO_ENERGIA = 30
@@ -129,3 +136,4 @@ ACRESCIMOS = (1, 5)
 
 PAUSA_RAPIDA = 0.15
 REVELACOES_POR_PARTIDA = 3
+CHANCE_MINIJOGO = {"drible": 0.4, "goleiro": 1.0, "cabeceio": 0.3}

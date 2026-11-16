@@ -1388,7 +1388,7 @@ def cobrar_falta(partida, atacante_id, defesa):
     finalizar(partida, atacante_id, batedor, "falta", tipo, bonus, defesa)
 
 
-def resolver_cobranca(partida, atacante_id, batedor, goleiro):
+def resolver_cobranca(partida, atacante_id, batedor, goleiro, minijogo=True):
     """
     Decide o desfecho de uma cobrança de pênalti.
 
@@ -1404,6 +1404,8 @@ def resolver_cobranca(partida, atacante_id, batedor, goleiro):
         atacante_id (str): Time que cobra.
         batedor (dict): Jogador que bate o pênalti.
         goleiro (dict | None): Goleiro adversário, ou None se não houver goleiro em campo.
+        minijogo (bool): Se o goleiro humano faz o minijogo de reflexo, que soma 0,15 à chance de defesa
+            quando ele acerta o canto. Padrão True; a disputa de pênaltis passa False.
 
     Returns:
         str: Desfecho da cobrança: "fora", "defesa" ou "gol".
@@ -1424,6 +1426,8 @@ def resolver_cobranca(partida, atacante_id, batedor, goleiro):
         defende = 0.80 if canto == "meio" else {"colocado": 0.55, "forte": 0.30, "paradinha": 0.50}.get(forca, 0.55)
         reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
         defende += (reflexo - finalizacao) * 0.004
+        if minijogo:
+            defende += partida["controles"][defensor_id]["minijogo"](partida, defensor_id, "goleiro", None)
         if random.random() < limitar(defende, 0.1, 0.9):
             return "defesa"
     return "gol"
@@ -1710,7 +1714,8 @@ def cruzamento(partida, atacante_id, cruzador, bonus, defesa):
         ],
     )
     if escolha == "cabecear":
-        finalizar(partida, atacante_id, receptor, "cabeceio", bonus=bonus, defesa=defesa)
+        ajuste = partida["controles"][atacante_id]["minijogo"](partida, atacante_id, "cabeceio", None)
+        finalizar(partida, atacante_id, receptor, "cabeceio", bonus=bonus + ajuste, defesa=defesa)
     elif escolha == "voleio":
         finalizar(partida, atacante_id, receptor, "voleio", "forte", bonus, defesa)
     elif escolha == "bicicleta":
@@ -1922,8 +1927,9 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
                 ],
             )
         dados = {"jogador": rotulo(portador), "marcador": rotulo(marcador), "time": atacante["nome"]}
+        ajuste = controles[atacante_id]["minijogo"](partida, atacante_id, "drible", drible) if drible else 0.0
         if random.random() < chance_da_acao(
-            partida, atacante_id, zona, faixa, acao, portador, marcador, defesa, bonus, drible
+            partida, atacante_id, zona, faixa, acao, portador, marcador, defesa, bonus + ajuste, drible
         ):
             if defesa == "pressao" and zona in ("defesa", "meio"):
                 bonus += 0.06
@@ -2099,7 +2105,7 @@ def disputa_de_penaltis(partida):
             cobrancas[time_id] += 1
             goleiro = goleiro_de(partida["times"][outro(partida, time_id)])
             entregar_bola(partida, time_id, "area", 1, batedor)
-            desfecho = resolver_cobranca(partida, time_id, batedor, goleiro)
+            desfecho = resolver_cobranca(partida, time_id, batedor, goleiro, minijogo=False)
             if desfecho == "gol":
                 partida["penaltis"][time_id] += 1
             dados = {

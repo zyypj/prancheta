@@ -282,6 +282,22 @@ def ia_ajuste(partida, time_id):
         ajustar_ofensividade(partida, time_id)
 
 
+def ia_minijogo(partida, time_id, tipo, detalhe):
+    """
+    Responde pela inteligência artificial ao convite de minijogo, que só existe para o jogador humano.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do time.
+        tipo (str): Tipo de minijogo.
+        detalhe (str | None): Detalhe da jogada.
+
+    Returns:
+        float: Sempre 0.0, sem efeito na jogada.
+    """
+    return 0.0
+
+
 CONTROLE_IA = {
     "ataque": ia_ataque,
     "defesa": ia_defesa,
@@ -291,6 +307,7 @@ CONTROLE_IA = {
     "lesao": ia_lesao,
     "pausa": ia_pausa,
     "ajuste": ia_ajuste,
+    "minijogo": ia_minijogo,
 }
 
 

@@ -1,10 +1,13 @@
+import random
+
 from rich.table import Table
 
-from config import ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
+from config import CHANCE_MINIJOGO, ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
 from elenco.escalacao import rotulo
 from elenco.substituicoes import sugerir_substituicoes
 from interface.campo import barra, mostrar_partida
 from interface.entrada import console, ler_opcao, ler_opcao_ou_letra, limpar, pausar
+from interface.minijogos import jogar_minijogo
 from partida.lances import (
     ACOES,
     CANTOS,
@@ -530,6 +533,32 @@ def humano_ajuste(partida, time_id):
     return None
 
 
+EFEITO_MINIJOGO = {"drible": (0.18, -0.12), "goleiro": (0.15, 0.0), "cabeceio": (0.1, -0.05)}
+
+
+def humano_minijogo(partida, time_id, tipo, detalhe):
+    """
+    Às vezes transforma a jogada do jogador humano num minijogo.
+
+    Só acontece quando a partida é jogada lance a lance, e com a chance de CHANCE_MINIJOGO para cada tipo
+    (drible 40%, goleiro no pênalti contra sempre, cabeçada 30%). Acertar ou errar muda a chance da jogada
+    conforme EFEITO_MINIJOGO.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        tipo (str): "drible", "goleiro" ou "cabeceio".
+        detalhe (str | None): Tipo de drible, quando o minijogo é de drible.
+
+    Returns:
+        float: Ajuste na chance da jogada: positivo se acertou, negativo ou zero se errou, zero sem minijogo.
+    """
+    if partida["modo"] != "jogar" or random.random() >= CHANCE_MINIJOGO[tipo]:
+        return 0.0
+    ganho, perda = EFEITO_MINIJOGO[tipo]
+    return ganho if jogar_minijogo(tipo, detalhe) else perda
+
+
 CONTROLE_HUMANO = {
     "ataque": humano_ataque,
     "defesa": humano_defesa,
@@ -539,4 +568,5 @@ CONTROLE_HUMANO = {
     "lesao": humano_lesao,
     "pausa": humano_pausa,
     "ajuste": humano_ajuste,
+    "minijogo": humano_minijogo,
 }
