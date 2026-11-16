@@ -24,8 +24,17 @@ from persistencia.arquivos import anexar_txt, ler_json, ler_linhas_txt
 from persistencia.ranking import ler_ranking, registrar_ranking
 from persistencia.save import carregar_jogo, listar_saves, nome_do_arquivo, salvar_jogo
 
-
 def carregar_recursos():
+    """
+    Carrega os arquivos de dados necessários para o funcionamento do jogo.
+
+    Realiza a leitura das informações dos clubes, eventos, nomes de jogadores e frases utilizadas na narração das partidas.
+
+    Verifica se os dados obrigatórios foram carregados corretamente, encerrando a execução caso algum recurso esteja ausente ou inválido.
+
+    Returns:
+        dict: Dicionário contendo clubes, eventos, nomes e frases de narração.
+    """
     recursos = {
         "clubes": ler_json(ARQUIVO_TIMES, []),
         "eventos": ler_json(ARQUIVO_EVENTOS, []),
@@ -34,12 +43,24 @@ def carregar_recursos():
     }
     faltando = [nome for nome, valor in recursos.items() if not valor]
     if faltando or not all(recursos["nomes"].values()):
-        console.print(f"[red]Arquivos de dados ausentes ou inválidos na pasta dados/: {', '.join(faltando) or 'nomes'}[/]")
+        console.print(
+            f"[red]Arquivos de dados ausentes ou inválidos na pasta dados/: {', '.join(faltando) or 'nomes'}[/]")
         sys.exit(1)
     return recursos
 
 
 def novo_jogo(recursos):
+    """
+    Inicia a criação de uma nova temporada.
+
+    Solicita o nome do técnico e permite selecionar um clube, utilizando os recursos previamente carregados.
+
+    Args:
+        recursos (dict): Dados necessários para criar o jogo.
+
+    Returns:
+        dict | None: Estado inicial da temporada ou None caso o usuário cancele a operação.
+    """
     telas.titulo("NOVO JOGO")
     tecnico = ler_texto(" Nome do técnico (0 para voltar): ")
     if tecnico is None:
@@ -51,6 +72,20 @@ def novo_jogo(recursos):
 
 
 def montar_partida(estado, recursos, modo, velocidade):
+    """
+    Prepara uma partida a partir do estado atual da temporada.
+
+    Identifica os clubes participantes, define os planos táticos, configura a inteligência artificial e estabelece o modo e a velocidade de execução da partida.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Recursos utilizados pela partida.
+        modo (str): Modo de jogo escolhido.
+        velocidade (str): Velocidade de execução.
+
+    Returns:
+        dict: Estrutura com os dados da partida preparada.
+    """
     casa_id, fora_id = jogo_do_jogador(estado)
     casa = estado["clubes"][casa_id]
     fora = estado["clubes"][fora_id]
@@ -65,14 +100,34 @@ def montar_partida(estado, recursos, modo, velocidade):
 
 
 def registrar_sumula(estado, resultado, numero):
+    """
+    Registra a súmula de uma partida disputada.
+
+    Armazena os acontecimentos no histórico da temporada e adiciona o resultado e os lances ao arquivo de texto correspondente ao técnico.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        resultado (dict): Resultado e súmula da partida.
+        numero (int): Número da rodada disputada.
+    """
     estado["sumulas"][str(numero)] = resultado["sumula"]
     casa = estado["clubes"][resultado["mandante"]]["nome"]
     fora = estado["clubes"][resultado["visitante"]]["nome"]
-    texto = [f"Rodada {numero}: {casa} {resultado['gm']} x {resultado['gv']} {fora}"] + [f"  {linha}" for linha in resultado["sumula"]]
+    cabecalho = f"Rodada {numero}: {casa} {resultado['gm']} x {resultado['gv']} {fora}"
+    texto = [cabecalho] + [f"  {linha}" for linha in resultado["sumula"]]
     anexar_txt(PASTA_SUMULAS / f"{nome_do_arquivo(estado['tecnico'])}.txt", "\n".join(texto) + "\n")
 
 
 def evento_da_semana(estado, recursos):
+    """
+    Executa um evento aleatório após uma rodada.
+
+    Sorteia um acontecimento, apresenta suas opções ao usuário, aplica o efeito escolhido e atualiza a escalação do clube.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Dados dos eventos e jogadores.
+    """
     clube = clube_do_jogador(estado)
     evento = preparar_evento(sortear_evento(recursos["eventos"]), clube)
     efeito = telas.mostrar_evento(evento)
