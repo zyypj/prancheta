@@ -42,9 +42,19 @@ python main.py
 
    Ao driblar, escolha o drible (corte seco, caneta, chapéu ou arrancada). Ao chutar, escolha o tipo (colocado, forte ou
    cavadinha). Sem a bola, escolha dar o bote, pressão alta, fechar espaço, recuar a linha ou falta tática. Também
-   aparecem oportunidades especiais: cara a cara com o goleiro, rebote, cruzamento (cabecear, voleio ou dominar),
-   escanteio, falta na entrada da área e goleiro adiantado. Nos pênaltis, escolha o canto e a força, ou para onde o
-   goleiro pula. Enter avança cada lance; digite 0 ou P para pausar e fazer substituições ou mudar o plano.
+   aparecem oportunidades especiais: cara a cara com o goleiro, rebote, cruzamento (cabecear, voleio, dominar, escorar
+   ou bicicleta), escanteio (primeira ou segunda trave, curto, fechado ou ensaiado), falta na entrada da área (inclusive
+   rolar para um companheiro) e goleiro adiantado. Nos pênaltis, escolha o canto e a força (colocado, forte ou
+   paradinha), ou para onde o goleiro pula. Enter avança cada lance; digite 0 ou P para pausar e fazer substituições ou
+   mudar o plano.
+
+   Cerca de um quarto dos lances começa numa jogada especial, cada uma com as suas escolhas: tiro de meta, lateral no
+   ataque, contra-ataque de três contra dois, falta pelo lado, falta de longe, sobra na entrada da área, erro do
+   adversário na saída de bola, arrancada de um craque, pressão na saída do goleiro, escanteio conquistado e bola
+   pelo alto. Na defesa, você escolhe o que o goleiro faz no cara a cara (sair abafando, esperar ou fechar o ângulo) e
+   às vezes como bloquear um chute (carrinho, fechar o ângulo ou deixar para o goleiro). Ainda podem acontecer desvio,
+   frango, bola tirada em cima da linha, VAR revisando pênalti, simulação, impedimento duvidoso, reclamação,
+   confusão, paralisação e chuva no meio do jogo, com centenas de frases de narração diferentes.
 6. No **Mercado da bola**, compre jogadores de outros clubes fazendo uma proposta, contrate jogadores sem clube
    pagando luvas ou venda um jogador escolhendo entre as ofertas recebidas. O caixa do clube cresce com vitórias e
    com as fases da copa, e os outros clubes também contratam ao longo da temporada.
@@ -66,7 +76,7 @@ Em todas as narrações, súmulas e mensagens, o nome do jogador aparece depois 
 prancheta/
 ├── main.py            menu, central do clube e fluxo das rodadas
 ├── config.py          constantes e caminhos
-├── partida/           motor dos lances, pênaltis, narração e simulação
+├── partida/           motor dos lances, jogadas especiais, laço da partida, pênaltis, narração e simulação
 ├── liga/              calendário, classificação, copa, temporada e eventos
 ├── mercado/           valores, compras, vendas, jogadores livres e mercado dos outros clubes
 ├── elenco/            geração de jogadores, escalação e substituições
