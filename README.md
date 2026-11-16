@@ -54,6 +54,11 @@ python main.py
    auxiliar sugere até três trocas com o motivo (cansaço, amarelo, insatisfação, placar ou reserva melhor); digite
    A, B ou C para aplicar uma delas.
 
+   Jogando lance a lance, algumas jogadas viram **minijogos**: em parte dos dribles aparece uma sequência de setas
+   para digitar com W, A, S e D antes do tempo acabar (o chapéu é a mais longa); no pênalti contra, quando o
+   goleiro acerta o canto, e em parte das cabeçadas, é preciso apertar Enter assim que aparecer AGORA. Acertar
+   aumenta a chance da jogada e errar diminui.
+
    Cerca de 30% dos lances começam numa das 19 jogadas especiais, cada uma com as suas escolhas: tiro de meta,
    lateral no ataque, contra-ataque de três contra dois, falta pelo lado, falta de longe, falta na meia-lua, sobra
    na entrada da área, erro do adversário na saída de bola, arrancada de um craque, pressão na saída do goleiro,
@@ -84,6 +89,11 @@ python main.py
    chance, proposta do exterior e outros) ou uma **discussão no vestiário**: pênalti perdido, expulsão, goleada,
    briga por posição ou vaidade entre artilheiros. Quem você apoia fica motivado; quem é contrariado fica
    insatisfeito e rende menos por algumas rodadas. O jogo salva sozinho ao fim de cada etapa.
+10. De vez em quando, antes ou depois do jogo, acontece um **bastidor** (jogador gripado, provocação do
+    adversário, ônibus atrasado, festa depois da vitória, bicho extra, revolta com a arbitragem) ou um evento da
+    **torcida organizada** (mosaico que empurra o time no jogo em casa, protesto no aeroporto, cobrança no CT,
+    festa no desembarque, briga punida). A imprensa também chama para **entrevistas**, muito mais nos clubes
+    grandes; prometer vitória agrada a torcida, mas a diretoria cobra se o time perder o jogo seguinte.
 
 Em todas as narrações, súmulas e mensagens, o nome do jogador aparece depois da posição, por exemplo `ATA Rodrigão`.
 
