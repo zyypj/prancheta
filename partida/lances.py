@@ -391,7 +391,12 @@ def cometer_falta(partida, atacante_id, zona, acao, portador, marcador, defesa):
     return "meio"
 
 
-def jogar_posse(partida, atacante_id, contra_ataque=False):
+def entregar_bola(partida, atacante_id, zona, portador):
+    partida["portador"] = portador
+    mover_bola(partida, atacante_id, zona)
+
+
+def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
     defensor_id = outro(partida, atacante_id)
     atacante = partida["times"][atacante_id]
     defensor = partida["times"][defensor_id]
@@ -405,13 +410,18 @@ def jogar_posse(partida, atacante_id, contra_ataque=False):
     elif atacante["plano"]["estilo"] == "jogo direto" and random.random() < 0.40:
         zona = "ataque"
         bonus = -0.03
+    if portador not in atacante["em_campo"]:
+        portador = escolher_jogador(atacante, PESOS_PORTADOR[zona])
+    entregar_bola(partida, atacante_id, zona, portador)
     defesa = controles[defensor_id]["defesa"](partida, defensor_id)
     if defesa not in DEFESAS:
         defesa = "fechar"
+    trocar_portador = False
     for passo in range(5):
-        portador = escolher_jogador(atacante, PESOS_PORTADOR[zona])
-        partida["portador"] = portador
-        mover_bola(partida, atacante_id, zona)
+        if trocar_portador:
+            portador = escolher_jogador(atacante, PESOS_PORTADOR[zona], excluir=portador)
+        entregar_bola(partida, atacante_id, zona, portador)
+        trocar_portador = False
         if contra_ataque and passo == 0:
             registrar(partida, "contra_ataque", {"time": atacante["nome"], "jogador": portador["nome"]}, time_id=atacante_id)
         if zona == "ataque" and passo == 4:
@@ -444,6 +454,7 @@ def jogar_posse(partida, atacante_id, contra_ataque=False):
                 finalizar(partida, atacante_id, portador, "cara", bonus, defesa)
                 return None
             registrar(partida, f"{acao}_ok", dados, time_id=atacante_id)
+            trocar_portador = acao != "driblar"
             if zona == "meio":
                 if acao == "tocar" and random.random() < 0.45:
                     bonus += 0.02
@@ -464,9 +475,9 @@ def jogar_posse(partida, atacante_id, contra_ataque=False):
         if random.random() < 0.5:
             registrar(partida, f"{defesa}_ok", {"marcador": marcador["nome"], "time": defensor["nome"]}, tipo="recuperacao", time_id=defensor_id)
         if defensor["plano"]["estilo"] == "contra-ataque" and atacante["plano"]["ofensividade"] >= 4 and random.random() < 0.5:
-            return defensor_id
+            return defensor_id, marcador
         if random.random() < 0.10:
-            return defensor_id
+            return defensor_id, marcador
         return None
     registrar(partida, "tocar_erro", {"jogador": partida["portador"]["nome"], "marcador": "a defesa"}, tipo="perda", time_id=atacante_id)
     return None
@@ -488,9 +499,9 @@ def jogar_lance(partida):
     partida["portador"] = portador
     mover_bola(partida, vencedor, "meio")
     registrar(partida, "meio_ganhou", {"time": partida["times"][vencedor]["nome"], "jogador": portador["nome"]}, tipo="meio", time_id=vencedor)
-    proximo = jogar_posse(partida, vencedor)
+    proximo = jogar_posse(partida, vencedor, portador=portador)
     if proximo:
-        jogar_posse(partida, proximo, contra_ataque=True)
+        jogar_posse(partida, proximo[0], contra_ataque=True, portador=proximo[1])
 
 
 def resultado_da_partida(partida):
