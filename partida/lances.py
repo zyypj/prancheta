@@ -82,6 +82,19 @@ PESOS_REBOTE = {"ATA": 5, "MEI": 3, "DEF": 1}
 
 
 def montar_time(clube, plano, em_casa):
+    """
+    Monta a estrutura de um time para a partida a partir do clube.
+
+    Marca os desfalques do elenco, separa os titulares disponíveis dos reservas disponíveis e zera os contadores da partida (gols, cartões, chutes, posse, faltas e substituições).
+
+    Args:
+        clube (dict): Clube com elenco, titulares e dados de identificação.
+        plano (dict): Plano tático usado na partida; é copiado para o time.
+        em_casa (bool): Se o time joga com mando de campo.
+
+    Returns:
+        dict: Estrutura do time com jogadores em campo, banco e estatísticas zeradas.
+    """
     marcar_desfalques(clube["elenco"])
     titulares = [jogador for jogador in clube["elenco"] if jogador["id"] in clube["titulares"] and disponivel(jogador)]
     banco = [jogador for jogador in clube["elenco"] if jogador["id"] not in clube["titulares"] and disponivel(jogador)]
@@ -109,6 +122,22 @@ def montar_time(clube, plano, em_casa):
 
 
 def criar_partida(clube_casa, clube_fora, frases, plano_casa=None, plano_fora=None, neutro=False):
+    """
+    Cria o estado inicial de uma partida entre dois clubes.
+
+    Monta os dois times, define relógio, posição da bola e narração vazias, e sorteia chuva com 12% de chance. O mandante só recebe mando de campo se o jogo não for em campo neutro.
+
+    Args:
+        clube_casa (dict): Clube mandante.
+        clube_fora (dict): Clube visitante.
+        frases (dict): Frases usadas na narração.
+        plano_casa (dict): Plano tático do mandante. Padrão None, que usa o plano do próprio clube.
+        plano_fora (dict): Plano tático do visitante. Padrão None, que usa o plano do próprio clube.
+        neutro (bool): Se a partida é em campo neutro. Padrão False.
+
+    Returns:
+        dict: Estado completo da partida, pronto para ser jogado.
+    """
     return {
         "casa": clube_casa["id"],
         "fora": clube_fora["id"],
@@ -139,16 +168,46 @@ def criar_partida(clube_casa, clube_fora, frases, plano_casa=None, plano_fora=No
 
 
 def outro(partida, time_id):
+    """
+    Retorna o identificador do adversário de um time na partida.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Identificador de um dos times.
+
+    Returns:
+        str: Identificador do outro time.
+    """
     return partida["fora"] if time_id == partida["casa"] else partida["casa"]
 
 
 def placar(partida):
+    """
+    Monta o texto do placar atual com as siglas dos times.
+
+    Args:
+        partida (dict): Estado da partida.
+
+    Returns:
+        str: Placar no formato "SIG 1 x 0 SIG".
+    """
     casa = partida["times"][partida["casa"]]
     fora = partida["times"][partida["fora"]]
     return f"{casa['sigla']} {casa['gols']} x {fora['gols']} {fora['sigla']}"
 
 
 def minuto_texto(partida):
+    """
+    Formata o minuto atual da partida, indicando os acréscimos.
+
+    Usa 45 como base no primeiro tempo e 90 no segundo; passando da base, mostra o tempo extra no formato "45+2'".
+
+    Args:
+        partida (dict): Estado da partida.
+
+    Returns:
+        str: Minuto formatado, como "30'" ou "90+3'".
+    """
     base = 45 if partida["tempo"] == 1 else 90
     if partida["minuto"] > base:
         return f"{base}+{partida['minuto'] - base}'"
@@ -156,15 +215,49 @@ def minuto_texto(partida):
 
 
 def mover_bola(partida, time_id, zona, faixa=None):
+    """
+    Atualiza a posição da bola na partida.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str | None): Time com a posse, ou None quando a bola está disputada.
+        zona (str): Zona do campo ("meio", "ataque", "area" ou "gol").
+        faixa (int | None): Faixa lateral (0, 1 ou 2). Padrão None, que sorteia uma faixa.
+    """
     partida["bola"] = {"time": time_id, "zona": zona, "faixa": random.randint(0, 2) if faixa is None else faixa}
 
 
 def entregar_bola(partida, time_id, zona, faixa, portador):
+    """
+    Define o jogador com a bola e move a bola para a zona indicada.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time com a posse.
+        zona (str): Zona do campo onde a bola fica.
+        faixa (int | None): Faixa lateral; None sorteia uma faixa.
+        portador (dict): Jogador que passa a conduzir a bola.
+    """
     partida["portador"] = portador
     mover_bola(partida, time_id, zona, faixa)
 
 
 def registrar(partida, chave, dados=None, tipo="lance", time_id=None):
+    """
+    Narra um lance e o envia para a exibição da partida.
+
+    Gera o texto da narração a partir da chave, guarda apenas as cinco últimas linhas narradas com o minuto e, se houver uma função de exibição configurada, repassa o lance para ela.
+
+    Args:
+        partida (dict): Estado da partida.
+        chave (str): Chave da frase de narração.
+        dados (dict | None): Valores usados para preencher a frase. Padrão None.
+        tipo (str): Tipo do lance, usado pela exibição. Padrão "lance".
+        time_id (str | None): Time relacionado ao lance. Padrão None.
+
+    Returns:
+        str: Texto narrado.
+    """
     texto = narrar(partida["frases"], chave, dados)
     partida["narracao"] = (partida["narracao"] + [f"{minuto_texto(partida)} {texto}"])[-5:]
     if partida["exibir"]:
@@ -173,14 +266,43 @@ def registrar(partida, chave, dados=None, tipo="lance", time_id=None):
 
 
 def anotar_sumula(partida, texto):
+    """
+    Adiciona uma linha à súmula da partida, precedida do minuto atual.
+
+    Args:
+        partida (dict): Estado da partida.
+        texto (str): Texto do acontecimento.
+    """
     partida["sumula"].append(f"{minuto_texto(partida)} {texto}")
 
 
 def goleiro_de(time):
+    """
+    Busca o goleiro que está em campo pelo time.
+
+    Args:
+        time (dict): Time da partida.
+
+    Returns:
+        dict | None: Jogador da posição GOL em campo, ou None se não houver.
+    """
     return next((jogador for jogador in time["em_campo"] if jogador["pos"] == "GOL"), None)
 
 
 def escolher_jogador(time, pesos, excluir=None):
+    """
+    Sorteia um jogador em campo, com probabilidade proporcional ao peso da sua posição.
+
+    Considera apenas posições com peso positivo, sem o jogador excluído. Se ninguém se encaixar, usa qualquer jogador em campo exceto o excluído (ou o próprio excluído, se for o único), com peso mínimo de 0.5.
+
+    Args:
+        time (dict): Time da partida.
+        pesos (dict): Peso de cada posição ("GOL", "DEF", "MEI", "ATA") no sorteio.
+        excluir (dict | None): Jogador que não deve ser escolhido. Padrão None.
+
+    Returns:
+        dict: Jogador sorteado.
+    """
     candidatos = [jogador for jogador in time["em_campo"] if
                   jogador is not excluir and pesos.get(jogador["pos"], 0) > 0]
     if not candidatos:
@@ -189,21 +311,64 @@ def escolher_jogador(time, pesos, excluir=None):
 
 
 def melhor_batedor(time):
+    """
+    Escolhe o jogador de linha em campo com a maior finalização efetiva.
+
+    Se só restar o goleiro em campo, ele é considerado.
+
+    Args:
+        time (dict): Time da partida.
+
+    Returns:
+        dict: Jogador escolhido para a cobrança.
+    """
     linha = [jogador for jogador in time["em_campo"] if jogador["pos"] != "GOL"] or time["em_campo"]
     return max(linha, key=lambda jogador: atributo_efetivo(jogador, "fin"))
 
 
 def perguntar(partida, time_id, pergunta, opcoes):
+    """
+    Pede ao controle do time que escolha uma das opções de um lance.
+
+    Repassa a pergunta para a função "escolha" do controle do time (jogador humano ou IA). Se a resposta não for uma das chaves oferecidas, usa a primeira opção.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time que decide.
+        pergunta (str): Texto da pergunta.
+        opcoes (list): Lista de tuplas (chave, rótulo, peso).
+
+    Returns:
+        str: Chave da opção escolhida.
+    """
     escolha = partida["controles"][time_id]["escolha"](partida, time_id, pergunta, opcoes)
     chaves = [chave for chave, _, _ in opcoes]
     return escolha if escolha in chaves else chaves[0]
 
 
 def invalidar_setores(partida):
+    """
+    Limpa o cache de força dos setores dos times.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
     partida["cache_setores"] = {}
 
 
 def setores(partida, time_id):
+    """
+    Calcula a força de cada setor do time em campo, usando cache.
+
+    Parte da força dos setores dos jogadores em campo e soma o bônus de mando de campo para o time da casa, com mais 3 pontos enquanto a torcida estiver empurrando. O resultado fica guardado até o cache ser invalidado.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time a ser avaliado.
+
+    Returns:
+        dict: Força de cada setor ("defesa", "meio", "ataque" e "goleiro") já com os bônus.
+    """
     if time_id in partida["cache_setores"]:
         return partida["cache_setores"][time_id]
     time = partida["times"][time_id]
@@ -218,6 +383,21 @@ def setores(partida, time_id):
 
 
 def fazer_substituicao(partida, time_id, sai_id, entra_id, nome_saida=None):
+    """
+    Realiza uma substituição durante a partida.
+
+    Sem jogador de saída (por exemplo, após uma lesão), apenas coloca o reserva em campo se ainda houver substituições disponíveis. Com jogador de saída, faz a troca normal. Em caso de sucesso, recalcula os setores, narra e anota a substituição na súmula.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time que faz a substituição.
+        sai_id (str | None): Identificador do jogador que sai, ou None quando ninguém sai de campo.
+        entra_id (str): Identificador do reserva que entra.
+        nome_saida (str | None): Nome exibido para quem saiu quando sai_id é None. Padrão None, que mostra "-".
+
+    Returns:
+        bool: True se a substituição foi feita, False caso contrário.
+    """
     time = partida["times"][time_id]
     if sai_id is None:
         entra = next((jogador for jogador in time["banco"] if jogador["id"] == entra_id), None)
@@ -240,11 +420,29 @@ def fazer_substituicao(partida, time_id, sai_id, entra_id, nome_saida=None):
 
 
 def pausar_todos(partida, motivo):
+    """
+    Avisa os controles dos dois times de uma pausa na partida.
+
+    Args:
+        partida (dict): Estado da partida.
+        motivo (str): Motivo da pausa, como "intervalo" ou "expulsao".
+    """
     for time_id in (partida["casa"], partida["fora"]):
         partida["controles"][time_id]["pausa"](partida, time_id, motivo)
 
 
 def expulsar(partida, time_id, jogador, chave):
+    """
+    Expulsa um jogador da partida.
+
+    Tira o jogador de campo, soma um vermelho ao time, suspende o jogador por pelo menos uma rodada, recalcula os setores, narra e anota na súmula, e pausa a partida para os dois times.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time do jogador expulso.
+        jogador (dict): Jogador expulso.
+        chave (str): Chave da narração ("vermelho" ou "segundo_amarelo").
+    """
     time = partida["times"][time_id]
     if jogador in time["em_campo"]:
         time["em_campo"].remove(jogador)
@@ -258,6 +456,16 @@ def expulsar(partida, time_id, jogador, chave):
 
 
 def amarelar(partida, time_id, jogador):
+    """
+    Aplica um cartão amarelo a um jogador.
+
+    Se o jogador já tem amarelo nesta partida, é expulso pelo segundo amarelo. Caso contrário, o cartão é contado para a suspensão por acúmulo, narrado e anotado na súmula, com aviso quando for o terceiro amarelo.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time do jogador.
+        jogador (dict): Jogador advertido.
+    """
     time = partida["times"][time_id]
     if jogador["id"] in time["amarelados"]:
         expulsar(partida, time_id, jogador, "segundo_amarelo")
@@ -270,6 +478,18 @@ def amarelar(partida, time_id, jogador):
 
 
 def tirar_de_campo(partida, time_id, jogador, chave, rodadas):
+    """
+    Retira de campo um jogador lesionado ou com câimbra.
+
+    Define as rodadas de lesão, tira o jogador de campo, recalcula os setores, narra e anota na súmula como lesão (quando rodadas > 0) ou câimbra, e avisa o controle do time para que possa repor o jogador.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time do jogador.
+        jogador (dict): Jogador que deixa o campo.
+        chave (str): Chave da narração ("lesao" ou "caimbra").
+        rodadas (int): Rodadas de afastamento; 0 indica câimbra.
+    """
     time = partida["times"][time_id]
     jogador["lesao"] = rodadas
     time["em_campo"].remove(jogador)
@@ -284,6 +504,14 @@ def tirar_de_campo(partida, time_id, jogador, chave, rodadas):
 
 
 def sortear_eventos_do_lance(partida):
+    """
+    Sorteia os eventos aleatórios que podem acontecer antes de um lance.
+
+    Se a torcida já está empurrando, reduz a duração em um lance; senão, com 3% de chance ela passa a empurrar o mandante por 3 lances. Para cada time, há 1,2% de chance de um jogador de linha se lesionar (1 a 3 rodadas) e, se não houver lesão, 8% de chance de um jogador com energia abaixo de 15 sair com câimbra.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
     if partida["torcida"] > 0:
         partida["torcida"] -= 1
     elif random.random() < 0.03:
@@ -304,6 +532,17 @@ def sortear_eventos_do_lance(partida):
 
 
 def disputar_meio(partida):
+    """
+    Sorteia qual time ganha a disputa de bola no meio-campo.
+
+    A força do meio de cada time é ajustada pela intensidade do plano e recebe 4 pontos extras no estilo posse. A diferença entre os times desloca a chance base de 40% de cada lado, limitada entre 12% e 68%; o restante é a chance de ninguém ficar com a bola.
+
+    Args:
+        partida (dict): Estado da partida.
+
+    Returns:
+        str | None: Identificador do time que venceu a disputa, ou None se a bola saiu sem dono.
+    """
     valores = {}
     for time_id in (partida["casa"], partida["fora"]):
         plano = partida["times"][time_id]["plano"]
@@ -323,6 +562,19 @@ def disputar_meio(partida):
 
 
 def valor_da_acao(portador, acao, drible):
+    """
+    Calcula o atributo do portador que pesa na ação escolhida.
+
+    Na arrancada vale o físico; nos demais dribles, a média de finalização, passe e físico; nas outras ações, o passe.
+
+    Args:
+        portador (dict): Jogador com a bola.
+        acao (str): Ação tentada.
+        drible (str | None): Tipo de drible, quando a ação é "driblar".
+
+    Returns:
+        float: Valor efetivo do atributo usado na ação.
+    """
     if acao == "driblar":
         if drible == "arrancada":
             return atributo_efetivo(portador, "fis")
@@ -332,6 +584,26 @@ def valor_da_acao(portador, acao, drible):
 
 
 def chance_da_acao(partida, atacante_id, zona, faixa, acao, portador, marcador, defesa, bonus, drible=None):
+    """
+    Calcula a chance de sucesso de uma ação ofensiva.
+
+    Parte da chance base da ação na zona (ou do drible), com penalidade de 0,12 para cruzamento pelo meio. Soma a diferença entre o atributo do portador e o desarme do marcador (peso 0,4) e entre o setor de ataque e o de defesa (peso 0,6), o bônus acumulado, os efeitos da ofensividade dos dois times, da intensidade do defensor e da defesa escolhida. Com chuva, passes, lançamentos e cruzamentos perdem 0,06. O resultado fica entre 5% e 95%.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time com a posse.
+        zona (str): Zona do campo onde está a bola.
+        faixa (int): Faixa lateral da bola; 1 é o centro.
+        acao (str): Ação tentada pelo portador.
+        portador (dict): Jogador com a bola.
+        marcador (dict): Jogador que marca o portador.
+        defesa (str): Postura defensiva escolhida pelo adversário.
+        bonus (float): Bônus acumulado na jogada.
+        drible (str | None): Tipo de drible, quando a ação é "driblar". Padrão None.
+
+    Returns:
+        float: Probabilidade de sucesso da ação, entre 0.05 e 0.95.
+    """
     defensor_id = outro(partida, atacante_id)
     atacante = partida["times"][atacante_id]
     defensor = partida["times"][defensor_id]
@@ -355,6 +627,20 @@ def chance_da_acao(partida, atacante_id, zona, faixa, acao, portador, marcador, 
 
 
 def chance_de_falta(plano_defensor, defesa, acao, zona):
+    """
+    Calcula a chance de o defensor cometer falta no lance.
+
+    Parte de 5%, ajustada pela intensidade do plano defensivo; dar o bote soma 5%, pressão alta soma 3% e enfrentar um drible soma 3%. Dentro da área a chance cai pela metade.
+
+    Args:
+        plano_defensor (dict): Plano tático do time que defende.
+        defesa (str): Postura defensiva escolhida.
+        acao (str): Ação tentada pelo atacante.
+        zona (str): Zona do campo onde está a bola.
+
+    Returns:
+        float: Probabilidade de falta.
+    """
     chance = 0.05 + (plano_defensor["intensidade"] - 3) * 0.015
     if defesa == "bote":
         chance += 0.05
@@ -368,6 +654,20 @@ def chance_de_falta(plano_defensor, defesa, acao, zona):
 
 
 def marcar_gol(partida, atacante_id, autor, contra=False):
+    """
+    Registra um gol para o time atacante.
+
+    Soma o gol, leva a bola para o gol e narra o lance. Gols normais têm 4% de chance de serem anulados pelo VAR, desfazendo o placar. Se o gol vale, é anotado na súmula e, quando não é contra, conta para o artilheiro.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que recebe o gol.
+        autor (dict): Jogador que fez o gol (do adversário, se for gol contra).
+        contra (bool): Se é gol contra. Padrão False.
+
+    Returns:
+        bool: True se o gol foi validado, False se foi anulado pelo VAR.
+    """
     time = partida["times"][atacante_id]
     time["gols"] += 1
     mover_bola(partida, atacante_id, "gol", 1)
@@ -388,6 +688,20 @@ def marcar_gol(partida, atacante_id, autor, contra=False):
 
 
 def escolher_chute(partida, atacante_id, finalizador, local):
+    """
+    Pergunta ao time como o finalizador vai bater na bola.
+
+    Oferece os tipos de chute com seus pesos; o chute forte ganha peso extra de longe ou do meio-campo e a cavadinha ganha peso extra cara a cara.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que finaliza.
+        finalizador (dict): Jogador que vai chutar.
+        local (str): Local da finalização.
+
+    Returns:
+        str: Tipo de chute escolhido: "colocado", "forte" ou "cavadinha".
+    """
     opcoes = []
     for chave, chute in CHUTES.items():
         peso = chute["peso"]
@@ -401,6 +715,22 @@ def escolher_chute(partida, atacante_id, finalizador, local):
 
 def finalizar(partida, atacante_id, finalizador, local, tipo="colocado", bonus=0.0, defesa="fechar", rebote=True,
               escanteio=True):
+    """
+    Resolve uma finalização ao gol.
+
+    Primeiro sorteia se o chute vai no alvo, com base no tipo de chute, no local, na finalização do jogador (no cabeceio, média com o físico), no bônus e na linha recuada do adversário. Fora do alvo, há 12% de chance de bater na trave, com 40% de chance de rebote. No alvo, a chance de gol compara finalização e reflexo do goleiro, ajustada pelo tipo de chute, e cai 0,03 no estilo jogo direto. Se o goleiro defende, pode haver rebote (22%) ou escanteio (35%). Atualiza chutes, chutes no alvo e o último local de finalização.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que finaliza.
+        finalizador (dict): Jogador que chuta.
+        local (str): Local da finalização, uma das chaves de LOCAIS.
+        tipo (str): Tipo de chute. Padrão "colocado".
+        bonus (float): Bônus acumulado na jogada. Padrão 0.0.
+        defesa (str): Postura defensiva do adversário. Padrão "fechar".
+        rebote (bool): Se o lance pode gerar rebote. Padrão True.
+        escanteio (bool): Se a defesa do goleiro pode gerar escanteio. Padrão True.
+    """
     atacante = partida["times"][atacante_id]
     defensor = partida["times"][outro(partida, atacante_id)]
     goleiro = goleiro_de(defensor)
@@ -443,6 +773,16 @@ def finalizar(partida, atacante_id, finalizador, local, tipo="colocado", bonus=0
 
 
 def pegar_rebote(partida, atacante_id, defesa):
+    """
+    Resolve a sobra de bola após uma finalização.
+
+    Sorteia quem pega o rebote e pergunta se ele chuta de primeira (chute forte do local de rebote) ou ajeita antes; ao ajeitar, há 45% de chance de a bola ser bloqueada, senão sai um chute colocado da área. Nenhum dos chutes pode gerar novo rebote.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que pega o rebote.
+        defesa (str): Postura defensiva do adversário.
+    """
     time = partida["times"][atacante_id]
     jogador = escolher_jogador(time, PESOS_REBOTE)
     entregar_bola(partida, atacante_id, "area", 1, jogador)
@@ -460,6 +800,16 @@ def pegar_rebote(partida, atacante_id, defesa):
 
 
 def cobrar_escanteio(partida, atacante_id, defesa):
+    """
+    Resolve a cobrança de um escanteio.
+
+    O melhor batedor cobra; há 0,4% de chance de gol olímpico. Na cobrança curta, há 60% de chance de um companheiro chutar de longe. Na primeira trave (45%) ou na segunda (38%, com bônus de 0,05), um jogador cabeceia. Nos demais casos a defesa afasta. Nenhuma finalização daqui gera novo escanteio.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que cobra o escanteio.
+        defesa (str): Postura defensiva do adversário.
+    """
     time = partida["times"][atacante_id]
     batedor = melhor_batedor(time)
     mover_bola(partida, atacante_id, "area", random.choice((0, 2)))
@@ -490,6 +840,16 @@ def cobrar_escanteio(partida, atacante_id, defesa):
 
 
 def cobrar_falta(partida, atacante_id, defesa):
+    """
+    Resolve a cobrança de uma falta perigosa na entrada da área.
+
+    O melhor batedor pode bater por cima da barreira (chute colocado), rasteiro (20% de chance de parar na barreira, senão chute colocado com bônus de 0,03), forte no canto ou cruzar na área.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que cobra a falta.
+        defesa (str): Postura defensiva do adversário.
+    """
     time = partida["times"][atacante_id]
     batedor = melhor_batedor(time)
     mover_bola(partida, atacante_id, "ataque", 1)
@@ -512,6 +872,20 @@ def cobrar_falta(partida, atacante_id, defesa):
 
 
 def resolver_cobranca(partida, atacante_id, batedor, goleiro):
+    """
+    Decide o desfecho de uma cobrança de pênalti.
+
+    O controle do atacante escolhe canto e força, e o do defensor escolhe o canto do pulo; a escolha fica salva em "ultimo_penalti". O chute vai para fora com 4% (colocado) ou 14% (forte) de chance, mais um acréscimo se a finalização for menor que 70. Se o goleiro acerta o canto, defende com 80% no meio, 55% no colocado ou 30% no forte, ajustado pela diferença entre reflexo e finalização e limitado entre 10% e 90%.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que cobra.
+        batedor (dict): Jogador que bate o pênalti.
+        goleiro (dict | None): Goleiro adversário, ou None se não houver goleiro em campo.
+
+    Returns:
+        str: Desfecho da cobrança: "fora", "defesa" ou "gol".
+    """
     defensor_id = outro(partida, atacante_id)
     canto, forca = partida["controles"][atacante_id]["bater_penalti"](partida, atacante_id, batedor, goleiro)
     pulo = partida["controles"][defensor_id]["defender_penalti"](partida, defensor_id, batedor, goleiro)
@@ -530,6 +904,15 @@ def resolver_cobranca(partida, atacante_id, batedor, goleiro):
 
 
 def cobrar_penalti(partida, atacante_id):
+    """
+    Executa um pênalti marcado durante o jogo.
+
+    O melhor batedor cobra contra o goleiro adversário. Conta o chute e, conforme o desfecho, registra o pênalti perdido, defendido ou convertido, atualizando gols do time e do batedor, narração e súmula.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que cobra o pênalti.
+    """
     defensor_id = outro(partida, atacante_id)
     atacante = partida["times"][atacante_id]
     goleiro = goleiro_de(partida["times"][defensor_id])
@@ -559,6 +942,17 @@ def cobrar_penalti(partida, atacante_id):
 
 
 def cartao_na_falta(partida, defensor_id, marcador, chance_amarelo):
+    """
+    Sorteia o cartão aplicado ao autor de uma falta.
+
+    Com 2,5% de chance o jogador recebe vermelho direto; se o sorteio ficar abaixo de chance_amarelo, recebe amarelo. Como o mesmo sorteio é usado, a chance real de amarelo é chance_amarelo menos 2,5%.
+
+    Args:
+        partida (dict): Estado da partida.
+        defensor_id (str): Time que cometeu a falta.
+        marcador (dict): Jogador que cometeu a falta.
+        chance_amarelo (float): Limite do sorteio para o amarelo.
+    """
     sorteio = random.random()
     if sorteio < 0.025:
         expulsar(partida, defensor_id, marcador, "vermelho")
@@ -567,6 +961,22 @@ def cartao_na_falta(partida, defensor_id, marcador, chance_amarelo):
 
 
 def cometer_falta(partida, atacante_id, zona, portador, marcador, defesa):
+    """
+    Registra uma falta do marcador sobre o portador da bola.
+
+    Soma a falta ao time defensor, narra o lance e sorteia o cartão, com chance de amarelo de 22% (30% se a defesa deu o bote). O tipo de falta depende da zona onde ocorreu.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que sofreu a falta.
+        zona (str): Zona do campo onde ocorreu a falta.
+        portador (dict): Jogador que sofreu a falta.
+        marcador (dict): Jogador que cometeu a falta.
+        defesa (str): Postura defensiva do adversário.
+
+    Returns:
+        str: "penalti" se foi na área, "perigosa" se foi na entrada da área ou "meio" se foi no meio-campo.
+    """
     defensor_id = outro(partida, atacante_id)
     partida["times"][defensor_id]["faltas"] += 1
     registrar(partida, "falta", {"marcador": rotulo(marcador), "jogador": rotulo(portador)}, tipo="falta",
@@ -580,6 +990,18 @@ def cometer_falta(partida, atacante_id, zona, portador, marcador, defesa):
 
 
 def falta_tatica(partida, atacante_id, zona, portador, defesa):
+    """
+    Executa a falta tática escolhida pela defesa para parar a jogada.
+
+    Sorteia o marcador que faz a falta, soma a falta ao time defensor, narra o lance e sorteia o cartão com chance de amarelo de 45%. Se a falta foi na entrada da área, o atacante cobra uma falta perigosa.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que sofreu a falta.
+        zona (str): Zona do campo onde ocorreu a falta.
+        portador (dict): Jogador que sofreu a falta.
+        defesa (str): Postura defensiva do adversário.
+    """
     defensor_id = outro(partida, atacante_id)
     marcador = escolher_jogador(partida["times"][defensor_id], PESOS_MARCADOR[zona])
     partida["times"][defensor_id]["faltas"] += 1
@@ -591,6 +1013,18 @@ def falta_tatica(partida, atacante_id, zona, portador, defesa):
 
 
 def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
+    """
+    Resolve um lance em que o atacante fica cara a cara com o goleiro.
+
+    O time escolhe tocar no canto, encher o pé, cavadinha ou driblar o goleiro. Os três primeiros viram uma finalização do local "cara". No drible, a chance parte de 50%, ajustada pela diferença entre a técnica do jogador (média de finalização e físico) e o reflexo do goleiro, mais o bônus, entre 15% e 85%; se der certo, o gol é marcado com o gol vazio, senão o goleiro salva.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que ataca.
+        jogador (dict): Jogador cara a cara com o goleiro.
+        bonus (float): Bônus acumulado na jogada.
+        defesa (str): Postura defensiva do adversário.
+    """
     defensor = partida["times"][outro(partida, atacante_id)]
     goleiro = goleiro_de(defensor)
     entregar_bola(partida, atacante_id, "area", 1, jogador)
@@ -619,6 +1053,18 @@ def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
 
 
 def cruzamento(partida, atacante_id, cruzador, bonus, defesa):
+    """
+    Resolve a chegada de um cruzamento na área.
+
+    Sorteia o receptor, dando preferência aos atacantes, e pergunta se ele cabeceia, bate de voleio (chute forte) ou domina e chuta. Ao dominar, há 40% de chance de perder a bola; senão o time escolhe o tipo de chute da área.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que cruzou.
+        cruzador (dict): Jogador que fez o cruzamento; não pode ser o receptor.
+        bonus (float): Bônus acumulado na jogada.
+        defesa (str): Postura defensiva do adversário.
+    """
     time = partida["times"][atacante_id]
     receptor = escolher_jogador(time, PESOS_CABECEIO, excluir=cruzador)
     entregar_bola(partida, atacante_id, "area", 1, receptor)
@@ -639,6 +1085,20 @@ def cruzamento(partida, atacante_id, cruzador, bonus, defesa):
 
 
 def oportunidade_do_meio(partida, atacante_id, portador, defesa):
+    """
+    Oferece ao portador a chance de chutar do meio-campo com o goleiro adiantado.
+
+    Narra o goleiro adiantado e pergunta se o portador arrisca o chute forte do meio-campo, sem possibilidade de rebote, ou segue a jogada.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time com a posse.
+        portador (dict): Jogador com a bola.
+        defesa (str): Postura defensiva do adversário.
+
+    Returns:
+        bool: True se o portador chutou do meio-campo, False se seguiu a jogada.
+    """
     goleiro = goleiro_de(partida["times"][outro(partida, atacante_id)])
     nome_goleiro = rotulo(goleiro) if goleiro else "O goleiro"
     registrar(partida, "goleiro_adiantado", {"goleiro": nome_goleiro}, tipo="oportunidade", time_id=atacante_id)
@@ -654,6 +1114,20 @@ def oportunidade_do_meio(partida, atacante_id, portador, defesa):
 
 
 def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
+    """
+    Simula uma posse de bola completa do time atacante.
+
+    A posse começa no meio-campo, ou já no ataque em contra-ataque (bônus de 0,08) e, no estilo jogo direto, com 40% de chance (bônus de -0,03). O adversário escolhe a postura defensiva; a falta tática fora da área encerra a posse na hora. Em até seis passos, o time escolhe uma ação por zona (no último passo, toca no meio ou chuta nas outras zonas), que pode virar falta, finalização, avanço de zona, troca de portador ou perda da bola. Na perda, pode haver escanteio, gol contra no cruzamento ou recuperação do adversário, que puxa um contra-ataque se jogar nesse estilo contra um time ofensivo (50%), com 10% de chance geral ou com 25% de chance quando a pressão alta rouba no meio-campo.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time com a posse.
+        contra_ataque (bool): Se a posse nasce de um contra-ataque. Padrão False.
+        portador (dict | None): Jogador que começa com a bola; se não estiver em campo, outro é sorteado. Padrão None.
+
+    Returns:
+        tuple | None: (defensor_id, marcador) quando a posse termina em contra-ataque do adversário, senão None.
+    """
     defensor_id = outro(partida, atacante_id)
     atacante = partida["times"][atacante_id]
     defensor = partida["times"][defensor_id]
@@ -784,6 +1258,14 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
 
 
 def jogar_lance(partida):
+    """
+    Simula um lance da partida, da disputa no meio-campo até o fim da jogada.
+
+    Aplica o desgaste e os ajustes dos controles nos dois times, sorteia os eventos do lance e disputa a bola no meio. Se ninguém ganha, narra a bola saindo; senão o vencedor joga a posse e, se ela terminar em contra-ataque, o adversário joga uma posse de contra-ataque.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
     for time_id in (partida["casa"], partida["fora"]):
         aplicar_desgaste(partida["times"][time_id])
         partida["controles"][time_id]["ajuste"](partida, time_id)
@@ -805,6 +1287,15 @@ def jogar_lance(partida):
 
 
 def texto_penaltis(partida):
+    """
+    Monta o texto do placar da disputa de pênaltis.
+
+    Args:
+        partida (dict): Estado da partida, com o placar de pênaltis preenchido.
+
+    Returns:
+        str: Placar no formato "Pênaltis: SIG 4 x 3 SIG".
+    """
     casa = partida["times"][partida["casa"]]
     fora = partida["times"][partida["fora"]]
     placar_penaltis = partida["penaltis"]
@@ -812,6 +1303,20 @@ def texto_penaltis(partida):
 
 
 def disputa_decidida(placar_penaltis, cobrancas, primeiro, segundo):
+    """
+    Verifica se a disputa de pênaltis já tem vencedor.
+
+    Nas cinco primeiras cobranças de cada lado, a disputa acaba quando um time não consegue mais alcançar o outro mesmo convertendo as cobranças restantes. Nas alternadas, acaba quando os dois bateram o mesmo número de vezes e o placar está diferente.
+
+    Args:
+        placar_penaltis (dict): Gols de pênalti de cada time.
+        cobrancas (dict): Número de cobranças já feitas por cada time.
+        primeiro (str): Time que bate primeiro.
+        segundo (str): Time que bate em segundo.
+
+    Returns:
+        bool: True se a disputa está decidida, False caso contrário.
+    """
     if cobrancas[primeiro] <= 5 and cobrancas[segundo] <= 5:
         restam_primeiro = 5 - cobrancas[primeiro]
         restam_segundo = 5 - cobrancas[segundo]
@@ -821,6 +1326,14 @@ def disputa_decidida(placar_penaltis, cobrancas, primeiro, segundo):
 
 
 def disputa_de_penaltis(partida):
+    """
+    Executa a disputa de pênaltis ao fim de um jogo empatado.
+
+    Ordena os jogadores de linha em campo pela finalização, do melhor para o pior, e os times se alternam nas cobranças, com o mandante batendo primeiro e a fila de batedores recomeçando quando acaba. Cada cobrança é narrada e, quando a disputa é decidida (ou após 40 rodadas), o placar final é anotado na súmula.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
     ordem = (partida["casa"], partida["fora"])
     partida["penaltis"] = {time_id: 0 for time_id in ordem}
     cobrancas = {time_id: 0 for time_id in ordem}
@@ -852,6 +1365,15 @@ def disputa_de_penaltis(partida):
 
 
 def vencedor_da_partida(partida):
+    """
+    Define o vencedor da partida pelo placar ou, em caso de empate, pelos pênaltis.
+
+    Args:
+        partida (dict): Estado da partida.
+
+    Returns:
+        str | None: Identificador do time vencedor, ou None em caso de empate sem disputa de pênaltis.
+    """
     casa = partida["times"][partida["casa"]]
     fora = partida["times"][partida["fora"]]
     if casa["gols"] != fora["gols"]:
@@ -862,6 +1384,17 @@ def vencedor_da_partida(partida):
 
 
 def resultado_da_partida(partida):
+    """
+    Monta o resumo final da partida.
+
+    Reúne mandante, visitante, placar, pênaltis, vencedor, expulsões, súmula e as estatísticas de cada time, com a posse convertida em porcentagem dos lances de posse.
+
+    Args:
+        partida (dict): Estado da partida.
+
+    Returns:
+        dict: Resultado com placar ("gm", "gv"), vermelhos ("vm", "vv"), pênaltis, vencedor, súmula e estatísticas por time.
+    """
     casa = partida["times"][partida["casa"]]
     fora = partida["times"][partida["fora"]]
     total_posse = max(1, casa["posse"] + fora["posse"])
@@ -888,6 +1421,20 @@ def resultado_da_partida(partida):
 
 
 def jogar_partida(partida, controles, exibir=None, mata_mata=False):
+    """
+    Joga a partida inteira, do apito inicial ao resultado.
+
+    Configura os controles e a exibição, narra o início e a chuva, e joga os dois tempos lance a lance, avançando o relógio a cada lance até o limite de 45 minutos mais os acréscimos sorteados. No intervalo, pausa os dois times. Em jogos de mata-mata que terminam empatados, decide nos pênaltis.
+
+    Args:
+        partida (dict): Estado da partida criado por criar_partida.
+        controles (dict): Funções de decisão de cada time, indexadas pelo identificador do time.
+        exibir (callable | None): Função chamada a cada lance narrado. Padrão None.
+        mata_mata (bool): Se o empate deve ser decidido nos pênaltis. Padrão False.
+
+    Returns:
+        dict: Resultado final da partida, como em resultado_da_partida.
+    """
     partida["controles"] = controles
     partida["exibir"] = exibir
     casa = partida["times"][partida["casa"]]
