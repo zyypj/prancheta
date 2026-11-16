@@ -174,6 +174,7 @@ def criar_partida(clube_casa, clube_fora, frases, plano_casa=None, plano_fora=No
         "frases": frases,
         "narracao": [],
         "sumula": [],
+        "ocorrencias": [],
         "chuva": random.random() < 0.12,
         "torcida": 0,
         "bola": {"time": None, "zona": "meio", "faixa": 1},
@@ -486,6 +487,7 @@ def expulsar(partida, time_id, jogador, chave):
         time["saiu"].append(jogador)
     time["vermelhos"] += 1
     jogador["suspenso"] = max(jogador["suspenso"], 1)
+    partida["ocorrencias"].append({"tipo": "vermelho", "time": time_id, "jogador": jogador["id"]})
     invalidar_setores(partida)
     registrar(partida, chave, {"jogador": rotulo(jogador)}, tipo="vermelho", time_id=time_id)
     anotar_sumula(partida, f"Vermelho — {rotulo(jogador)} ({time['sigla']})")
@@ -747,6 +749,7 @@ def marcar_gol(partida, atacante_id, autor, contra=False):
         anotar_sumula(partida, f"GOL CONTRA — {rotulo(autor)} (a favor do {time['sigla']})")
     else:
         autor["gols"] += 1
+        partida["ocorrencias"].append({"tipo": "gol", "time": atacante_id, "jogador": autor["id"]})
         anotar_sumula(partida, f"GOL — {rotulo(autor)} ({time['sigla']})")
     return True
 
@@ -1196,6 +1199,8 @@ def cobrar_penalti(partida, atacante_id):
         chave = "paradinha_esperou" if cobranca["esperou"] else "paradinha"
         nome = rotulo(goleiro) if goleiro else "o goleiro"
         registrar(partida, chave, {"jogador": rotulo(batedor), "goleiro": nome}, tipo="lance", time_id=atacante_id)
+    if desfecho != "gol":
+        partida["ocorrencias"].append({"tipo": "penalti_perdido", "time": atacante_id, "jogador": batedor["id"]})
     if desfecho == "fora":
         registrar(partida, "penalti_fora", {"jogador": rotulo(batedor)}, tipo="penalti_fim", time_id=atacante_id)
         anotar_sumula(partida, f"Pênalti perdido — {rotulo(batedor)} ({atacante['sigla']})")
@@ -1208,6 +1213,7 @@ def cobrar_penalti(partida, atacante_id):
         return
     atacante["gols"] += 1
     batedor["gols"] += 1
+    partida["ocorrencias"].append({"tipo": "gol", "time": atacante_id, "jogador": batedor["id"]})
     mover_bola(partida, atacante_id, "gol", 1)
     registrar(
         partida, "penalti_gol", {"jogador": rotulo(batedor), "placar": placar(partida)}, tipo="gol", time_id=atacante_id
@@ -1785,8 +1791,9 @@ def resultado_da_partida(partida):
     """
     Monta o resumo final da partida.
 
-    Reúne mandante, visitante, placar, pênaltis, vencedor, expulsões, súmula e as estatísticas de cada time,
-    com a posse convertida em porcentagem dos lances de posse.
+    Reúne mandante, visitante, placar, pênaltis, vencedor, expulsões, súmula, ocorrências (gols, expulsões e
+    pênaltis perdidos, com o jogador de cada uma) e as estatísticas de cada time, com a posse convertida em
+    porcentagem dos lances de posse.
 
     Args:
         partida (dict): Estado da partida.
@@ -1808,6 +1815,7 @@ def resultado_da_partida(partida):
         "vm": casa["vermelhos"],
         "vv": fora["vermelhos"],
         "sumula": list(partida["sumula"]),
+        "ocorrencias": list(partida["ocorrencias"]),
         "estatisticas": {
             time["id"]: {
                 "posse": round(100 * time["posse"] / total_posse),

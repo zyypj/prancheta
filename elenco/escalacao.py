@@ -1,6 +1,6 @@
 import random
 
-from config import BONUS_GRANDE_FASE, COMPOSICAO_ELENCO, ENERGIA_SEM_PERDA, FORMACOES
+from config import BONUS_GRANDE_FASE, COMPOSICAO_ELENCO, ENERGIA_SEM_PERDA, FORMACOES, PENALIDADE_INSATISFEITO
 
 ATRIBUTOS = ("fin", "pas", "des", "fis", "ref")
 AJUSTES = {
@@ -254,8 +254,27 @@ def atributo_efetivo(jogador, atributo):
     Returns:
         float: Atributo somado ao bônus de grande fase, quando houver, e multiplicado pelo fator de energia.
     """
-    bonus = BONUS_GRANDE_FASE if jogador["fase"] > 0 else 0
+    bonus = ajuste_de_moral(jogador)
     return (jogador[atributo] + bonus) * fator_energia(jogador["energia"])
+
+
+def ajuste_de_moral(jogador):
+    """
+    Calcula quanto a moral do jogador soma ou tira dos atributos.
+
+    Jogador em grande fase ganha BONUS_GRANDE_FASE (5); jogador insatisfeito perde PENALIDADE_INSATISFEITO
+    (4). Os dois efeitos podem se somar.
+
+    Args:
+        jogador (dict): Jogador avaliado.
+
+    Returns:
+        int: Ajuste a somar nos atributos e na qualidade.
+    """
+    ajuste = BONUS_GRANDE_FASE if jogador["fase"] > 0 else 0
+    if jogador.get("insatisfeito", 0) > 0:
+        ajuste -= PENALIDADE_INSATISFEITO
+    return ajuste
 
 
 def valor_para_escalar(jogador):
@@ -268,7 +287,7 @@ def valor_para_escalar(jogador):
     Returns:
         float: Qualidade somada ao bônus de grande fase, quando houver, e multiplicada pelo fator de energia.
     """
-    bonus = BONUS_GRANDE_FASE if jogador["fase"] > 0 else 0
+    bonus = ajuste_de_moral(jogador)
     return (jogador["qualidade"] + bonus) * fator_energia(jogador["energia"])
 
 

@@ -65,5 +65,184 @@
     "alvo": "nenhum",
     "texto": "Semana tranquila no CT. O elenco treinou e descansou bem.",
     "efeito": "descanso"
+  },
+  {
+    "id": "patrocinio",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "Uma empresa quer fazer uma ação de marketing com o elenco durante a semana.",
+    "opcoes": [
+      {
+        "texto": "Aceitar: R$ 3,0 mi agora, mas o elenco perde 10 de energia",
+        "efeito": "patrocinio"
+      },
+      {
+        "texto": "Recusar e focar nos treinos",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "amistoso",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Um clube do exterior convida o time para um amistoso no meio da semana.",
+    "opcoes": [
+      {
+        "texto": "Aceitar: R$ 4,0 mi, mas o elenco perde 20 de energia",
+        "efeito": "amistoso"
+      },
+      {
+        "texto": "Recusar e poupar o elenco",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "camisas",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "A nova camisa do clube chega às lojas. Quanto melhor a fase, mais ela vende.",
+    "efeito": "camisas"
+  },
+  {
+    "id": "investidor",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Um investidor oferece dinheiro em troca de uma cadeira no conselho do clube.",
+    "opcoes": [
+      {
+        "texto": "Aceitar R$ 6,0 mi (a diretoria perde 4 de confiança)",
+        "efeito": "investidor"
+      },
+      {
+        "texto": "Recusar",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "aumento",
+    "peso": 2,
+    "alvo": "titular",
+    "texto": "{jogador} pede aumento de salário e diz que merece mais.",
+    "opcoes": [
+      {
+        "texto": "Pagar R$ 1,0 mi: ele fica motivado por 2 rodadas",
+        "efeito": "pagar_aumento"
+      },
+      {
+        "texto": "Negar: ele fica insatisfeito por 2 rodadas",
+        "efeito": "negar_aumento"
+      }
+    ]
+  },
+  {
+    "id": "renovacao",
+    "peso": 1,
+    "alvo": "melhor",
+    "texto": "O empresário de {jogador} quer renovar o contrato com aumento.",
+    "opcoes": [
+      {
+        "texto": "Renovar por R$ 2,0 mi: ele fica motivado por 2 rodadas",
+        "efeito": "renovar"
+      },
+      {
+        "texto": "Deixar para depois: ele fica insatisfeito por 2 rodadas",
+        "efeito": "negar_aumento"
+      }
+    ]
+  },
+  {
+    "id": "treino_finalizacao",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "O preparador propõe uma semana de treino especial de finalização.",
+    "opcoes": [
+      {
+        "texto": "Investir R$ 1,0 mi: meias e atacantes ganham +2 de finalização",
+        "efeito": "treino_finalizacao"
+      },
+      {
+        "texto": "Manter a rotina",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "treino_defesa",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "O auxiliar sugere um treino intensivo de marcação.",
+    "opcoes": [
+      {
+        "texto": "Investir R$ 1,0 mi: defensores ganham +2 de desarme",
+        "efeito": "treino_defesa"
+      },
+      {
+        "texto": "Manter a rotina",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "folga",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "Os jogadores pedem uma folga depois da sequência de jogos.",
+    "opcoes": [
+      {
+        "texto": "Dar folga: +20 de energia, mas a diretoria perde 1 de confiança",
+        "efeito": "dar_folga"
+      },
+      {
+        "texto": "Negar e treinar: a diretoria gosta (+1), mas o elenco perde 5 de energia",
+        "efeito": "negar_folga"
+      }
+    ]
+  },
+  {
+    "id": "loja",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A loja do clube bate recorde de vendas na semana.",
+    "efeito": "loja"
+  },
+  {
+    "id": "multa",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A federação multa o clube por atraso na entrada em campo.",
+    "efeito": "multa"
+  },
+  {
+    "id": "joia_da_base",
+    "peso": 2,
+    "alvo": "jovem",
+    "texto": "{jogador}, joia da base, pede uma chance no time titular.",
+    "opcoes": [
+      {
+        "texto": "Dar a chance: ele vira titular e entra motivado",
+        "efeito": "dar_chance"
+      },
+      {
+        "texto": "Pedir paciência: ele fica insatisfeito por 1 rodada",
+        "efeito": "esperar_chance"
+      }
+    ]
+  },
+  {
+    "id": "festa_torcida",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A torcida faz uma festa no treino e lota o CT.",
+    "efeito": "festa_torcida"
+  },
+  {
+    "id": "palestra",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Um ídolo do clube faz uma palestra para o elenco antes do jogo.",
+    "efeito": "palestra"
   }
 ]

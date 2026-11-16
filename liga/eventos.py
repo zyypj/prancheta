@@ -10,6 +10,7 @@ from config import (
     QUEDA_QUALIDADE_GAROTO,
 )
 from elenco.escalacao import criar_jogador, limitar, rotulo, sortear_nome, valor_de_mercado, valor_para_escalar
+from liga.financas import lancar, vitorias_recentes
 from liga.temporada import ajustar_confianca, clube_do_jogador
 from mercado.transferencias import dinheiro
 
@@ -32,11 +33,12 @@ def escolher_alvo(clube, alvo):
     Escolhe o jogador envolvido em um evento.
 
     Com o alvo "titular", sorteia um dos titulares que ainda estão no elenco; com o alvo "melhor", pega o
-    jogador de linha (sem goleiros) de maior qualidade. Qualquer outro alvo não envolve jogador.
+    jogador de linha (sem goleiros) de maior qualidade; com o alvo "jovem", pega o reserva de linha de até 21
+    anos de maior qualidade. Qualquer outro alvo não envolve jogador.
 
     Args:
         clube (dict): Clube do jogador.
-        alvo (str): Tipo de alvo do evento ("titular", "melhor" ou outro valor).
+        alvo (str): Tipo de alvo do evento ("titular", "melhor", "jovem" ou outro valor).
 
     Returns:
         dict | None: Jogador escolhido ou None se não houver alvo ou candidato.
@@ -48,7 +50,41 @@ def escolher_alvo(clube, alvo):
     if alvo == "melhor":
         linha = [jogador for jogador in clube["elenco"] if jogador["pos"] != "GOL"]
         return max(linha, key=lambda jogador: jogador["qualidade"]) if linha else None
+    if alvo == "jovem":
+        jovens = [
+            jogador
+            for jogador in clube["elenco"]
+            if jogador.get("idade", 30) <= 21 and jogador["id"] not in clube["titulares"] and jogador["pos"] != "GOL"
+        ]
+        return max(jovens, key=lambda jogador: jogador["qualidade"]) if jovens else None
     return None
+
+
+def escolher_evento(eventos, clube, recentes=()):
+    """
+    Sorteia e prepara o evento da semana, garantindo que o jogador alvo exista.
+
+    Eventos que aconteceram nas últimas semanas (recentes) e eventos que precisam de um jogador (alvo
+    diferente de "nenhum") quando o clube não tem ninguém que sirva são sorteados de novo, até 10 tentativas;
+    depois disso, a semana fica tranquila.
+
+    Args:
+        eventos (list[dict]): Eventos lidos de eventos.json.
+        clube (dict): Clube do técnico.
+        recentes (Iterable[str]): Identificadores dos eventos das últimas semanas. Padrão vazio.
+
+    Returns:
+        dict: Evento preparado, como em preparar_evento.
+    """
+    for _ in range(10):
+        evento = sortear_evento(eventos)
+        if evento["id"] in recentes:
+            continue
+        preparado = preparar_evento(evento, clube)
+        if evento.get("alvo", "nenhum") == "nenhum" or preparado["jogador_id"]:
+            return preparado
+    tranquila = next(evento for evento in eventos if evento["id"] == "tranquila")
+    return preparar_evento(tranquila, clube)
 
 
 def preparar_evento(evento, clube):
@@ -219,8 +255,10 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
     1 rodada de bônus e tira 3 de confiança; "negociacao_fracassou" mantém o alvo e tira 2 de confiança;
     "base" troca o jogador de linha com menor valor para escalar por um garoto da mesma posição, com qualidade
     sorteada entre 6 abaixo e 4 acima da força do clube (entre 40 e 92); "protesto" tira 5 de confiança;
-    "descanso" recupera 15 de energia de todo o elenco, até 100. Os efeitos que dependem de alvo não fazem
-    nada se ele não existir.
+    "descanso" recupera 15 de energia de todo o elenco, até 100. Os demais efeitos (patrocínio, amistoso,
+    camisas, investidor, aumento, treinos, folga, loja, multa, chance para a base, festa e palestra) ficam em
+    EFEITOS_DA_SEMANA, uma função para cada. Os efeitos que dependem de alvo não fazem nada se ele não
+    existir.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -254,7 +292,7 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
         garoto = novo_garoto(estado, clube, banco, qualidade_do_garoto(jogador), jogador["pos"])
         clube["elenco"].append(garoto)
         valor = valor_venda if valor_venda else round(valor_de_mercado(jogador) * 1.2, 1)
-        clube["caixa"] = round(clube.get("caixa", 0) + valor, 1)
+        lancar(estado, clube["id"], "Venda ao exterior", valor)
         ajustar_confianca(estado, CONFIANCA_VENDA)
         return (
             f"{rotulo(jogador)} foi vendido por {dinheiro(valor)}. "
@@ -290,4 +328,365 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
         for j in clube["elenco"]:
             j["energia"] = min(100, j["energia"] + 15)
         return "Todo o elenco recupera +15 de energia."
+    funcao = EFEITOS_DA_SEMANA.get(efeito)
+    if funcao:
+        return funcao(estado, clube, jogador)
     return "Nada mudou."
+
+
+def mudar_energia(clube, quantidade):
+    """
+    Soma ou tira energia de todo o elenco, mantendo cada jogador entre 0 e 100.
+
+    Args:
+        clube (dict): Clube do técnico.
+        quantidade (int): Energia a somar; negativa para cansar o elenco.
+    """
+    for jogador in clube["elenco"]:
+        jogador["energia"] = max(0, min(100, jogador["energia"] + quantidade))
+
+
+def pagar(estado, clube, categoria, custo):
+    """
+    Tira dinheiro do caixa do clube se ele tiver o suficiente.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        categoria (str): Nome da despesa no extrato.
+        custo (float): Valor em milhões.
+
+    Returns:
+        bool: True se o pagamento foi feito, False se faltou dinheiro.
+    """
+    if clube.get("caixa", 0) < custo:
+        return False
+    lancar(estado, clube["id"], categoria, -custo)
+    return True
+
+
+def efeito_patrocinio(estado, clube, jogador):
+    """
+    Recebe R$ 3 mi de patrocínio e cansa o elenco em 10 de energia.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    lancar(estado, clube["id"], "Patrocínio", 3.0)
+    mudar_energia(clube, -10)
+    return f"Ação de marketing feita: {dinheiro(3.0)} no caixa, mas o elenco perde 10 de energia."
+
+
+def efeito_amistoso(estado, clube, jogador):
+    """
+    Recebe R$ 4 mi pelo amistoso e cansa o elenco em 20 de energia.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    lancar(estado, clube["id"], "Amistosos", 4.0)
+    mudar_energia(clube, -20)
+    return f"O time joga o amistoso: {dinheiro(4.0)} no caixa e o elenco perde 20 de energia."
+
+
+def efeito_camisas(estado, clube, jogador):
+    """
+    Recebe a venda de camisas: R$ 1 mi mais R$ 0,4 mi por vitória nos últimos 5 jogos da liga.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    valor = lancar(estado, clube["id"], "Venda de camisas", 1.0 + 0.4 * vitorias_recentes(estado, clube["id"]))
+    return f"A camisa nova rendeu {dinheiro(valor)} para o clube."
+
+
+def efeito_investidor(estado, clube, jogador):
+    """
+    Recebe R$ 6 mi do investidor, e a diretoria perde 4 de confiança.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    lancar(estado, clube["id"], "Investidor", 6.0)
+    ajustar_confianca(estado, -4)
+    return f"O investidor aporta {dinheiro(6.0)}. A diretoria não gostou de dividir o poder: confiança -4."
+
+
+def efeito_pagar_aumento(estado, clube, jogador):
+    """
+    Paga R$ 1 mi de aumento e deixa o jogador motivado por 2 rodadas.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador que pediu aumento.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador or not pagar(estado, clube, "Salários extras", 1.0):
+        return "O clube não tem caixa para o aumento. Nada mudou."
+    jogador["fase"] = max(jogador["fase"], 2)
+    return f"{rotulo(jogador)} recebe o aumento e fica motivado nas próximas 2 rodadas."
+
+
+def efeito_renovar(estado, clube, jogador):
+    """
+    Paga R$ 2 mi pela renovação e deixa o jogador motivado por 2 rodadas.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador que renova.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador or not pagar(estado, clube, "Salários extras", 2.0):
+        return "O clube não tem caixa para a renovação. Nada mudou."
+    jogador["fase"] = max(jogador["fase"], 2)
+    return f"{rotulo(jogador)} renova o contrato e fica motivado nas próximas 2 rodadas."
+
+
+def efeito_negar_aumento(estado, clube, jogador):
+    """
+    Nega o pedido e deixa o jogador insatisfeito por 2 rodadas.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador que teve o pedido negado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    jogador["insatisfeito"] = max(jogador.get("insatisfeito", 0), 2)
+    return f"{rotulo(jogador)} não gostou da resposta e fica insatisfeito por 2 rodadas."
+
+
+def efeito_treino_finalizacao(estado, clube, jogador):
+    """
+    Paga R$ 1 mi e dá +2 de finalização a meias e atacantes, até 99.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not pagar(estado, clube, "Treinos especiais", 1.0):
+        return "O clube não tem caixa para o treino especial. Nada mudou."
+    for atleta in clube["elenco"]:
+        if atleta["pos"] in ("MEI", "ATA"):
+            atleta["fin"] = min(99, atleta["fin"] + 2)
+    return "Semana de finalização: meias e atacantes ganham +2 de finalização."
+
+
+def efeito_treino_defesa(estado, clube, jogador):
+    """
+    Paga R$ 1 mi e dá +2 de desarme aos defensores, até 99.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not pagar(estado, clube, "Treinos especiais", 1.0):
+        return "O clube não tem caixa para o treino especial. Nada mudou."
+    for atleta in clube["elenco"]:
+        if atleta["pos"] == "DEF":
+            atleta["des"] = min(99, atleta["des"] + 2)
+    return "Semana de marcação: os defensores ganham +2 de desarme."
+
+
+def efeito_dar_folga(estado, clube, jogador):
+    """
+    Dá folga: o elenco recupera 20 de energia e a diretoria perde 1 de confiança.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    mudar_energia(clube, 20)
+    ajustar_confianca(estado, -1)
+    return "Folga dada: o elenco recupera 20 de energia, mas a diretoria torceu o nariz (confiança -1)."
+
+
+def efeito_negar_folga(estado, clube, jogador):
+    """
+    Nega a folga: a diretoria ganha 1 de confiança e o elenco perde 5 de energia.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    mudar_energia(clube, -5)
+    ajustar_confianca(estado, 1)
+    return "Sem folga: a diretoria aprova (confiança +1), mas o elenco perde 5 de energia."
+
+
+def efeito_loja(estado, clube, jogador):
+    """
+    Recebe R$ 1,5 mi da loja do clube.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    lancar(estado, clube["id"], "Loja do clube", 1.5)
+    return f"A loja rendeu {dinheiro(1.5)} na semana."
+
+
+def efeito_multa(estado, clube, jogador):
+    """
+    Paga R$ 1 mi de multa à federação, mesmo que o caixa fique negativo.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    lancar(estado, clube["id"], "Multas", -1.0)
+    return f"O clube paga {dinheiro(1.0)} de multa."
+
+
+def efeito_dar_chance(estado, clube, jogador):
+    """
+    Coloca o jovem no time titular, no lugar do titular mais fraco da mesma posição, e o deixa motivado.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jovem que pediu a chance.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    por_id = {atleta["id"]: atleta for atleta in clube["elenco"]}
+    mesma_posicao = [por_id[i] for i in clube["titulares"] if i in por_id and por_id[i]["pos"] == jogador["pos"]]
+    jogador["fase"] = max(jogador["fase"], 2)
+    if not mesma_posicao:
+        return f"{rotulo(jogador)} fica motivado, mas não há vaga na posição dele."
+    sai = min(mesma_posicao, key=valor_para_escalar)
+    clube["titulares"][clube["titulares"].index(sai["id"])] = jogador["id"]
+    return f"{rotulo(jogador)} entra no time titular no lugar de {rotulo(sai)} e chega motivado."
+
+
+def efeito_esperar_chance(estado, clube, jogador):
+    """
+    Pede paciência ao jovem, que fica insatisfeito por 1 rodada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jovem que pediu a chance.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    jogador["insatisfeito"] = max(jogador.get("insatisfeito", 0), 1)
+    return f"{rotulo(jogador)} aceita esperar, mas fica insatisfeito na próxima rodada."
+
+
+def efeito_festa_torcida(estado, clube, jogador):
+    """
+    A festa da torcida anima a diretoria: confiança +2.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    ajustar_confianca(estado, 2)
+    return "Clima de festa no clube. Confiança da diretoria +2."
+
+
+def efeito_palestra(estado, clube, jogador):
+    """
+    Dois titulares sorteados saem motivados da palestra, em grande fase por 1 rodada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    por_id = {atleta["id"]: atleta for atleta in clube["elenco"]}
+    titulares = [por_id[i] for i in clube["titulares"] if i in por_id]
+    escolhidos = random.sample(titulares, min(2, len(titulares)))
+    for atleta in escolhidos:
+        atleta["fase"] = max(atleta["fase"], 1)
+    nomes = " e ".join(rotulo(atleta) for atleta in escolhidos)
+    return f"{nomes} saíram inspirados da palestra e estão em grande fase na próxima rodada."
+
+
+EFEITOS_DA_SEMANA = {
+    "patrocinio": efeito_patrocinio,
+    "amistoso": efeito_amistoso,
+    "camisas": efeito_camisas,
+    "investidor": efeito_investidor,
+    "pagar_aumento": efeito_pagar_aumento,
+    "renovar": efeito_renovar,
+    "negar_aumento": efeito_negar_aumento,
+    "treino_finalizacao": efeito_treino_finalizacao,
+    "treino_defesa": efeito_treino_defesa,
+    "dar_folga": efeito_dar_folga,
+    "negar_folga": efeito_negar_folga,
+    "loja": efeito_loja,
+    "multa": efeito_multa,
+    "dar_chance": efeito_dar_chance,
+    "esperar_chance": efeito_esperar_chance,
+    "festa_torcida": efeito_festa_torcida,
+    "palestra": efeito_palestra,
+}
