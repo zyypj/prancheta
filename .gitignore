@@ -6,3 +6,4 @@ venv/
 .vscode/
 dados/saves/*
 !dados/saves/.gitkeep
+dados/sumulas/
