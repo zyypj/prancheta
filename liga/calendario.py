@@ -17,8 +17,7 @@ def gerar_calendario(ids):
             jogos.append((casa, fora) if (numero + indice) % 2 == 0 else (fora, casa))
         turno.append(jogos)
         times = [times[0], times[-1]] + times[1:-1]
-    returno = [[(fora, casa) for casa, fora in rodada] for rodada in turno]
-    return turno + returno
+    return turno
 
 
 def jogo_do_clube(rodada, clube_id):

@@ -1,7 +1,8 @@
 from pathlib import Path
 
 NOME_JOGO = "PRANCHETA"
-VERSAO = "1.0"
+VERSAO = "2.0"
+VERSAO_SAVE = 2
 
 PASTA_RAIZ = Path(__file__).resolve().parent
 PASTA_DADOS = PASTA_RAIZ / "dados"
@@ -29,12 +30,30 @@ POSICOES = ("GOL", "DEF", "MEI", "ATA")
 COMPOSICAO_ELENCO = {"GOL": 2, "DEF": 6, "MEI": 6, "ATA": 4}
 
 NIVEIS = {
-    "grande": {"nome": "Grande", "meta": "título", "multiplicador": 1.0, "posicao_meta": 1},
-    "medio": {"nome": "Médio", "meta": "G4", "multiplicador": 1.3, "posicao_meta": 4},
-    "pequeno": {"nome": "Pequeno", "meta": "não cair", "multiplicador": 1.6, "posicao_meta": 8},
+    "grande": {"nome": "Grande", "meta": "título", "multiplicador": 1.0, "posicao_meta": 1, "caixa": 60.0},
+    "medio": {"nome": "Médio", "meta": "G4", "multiplicador": 1.3, "posicao_meta": 4, "caixa": 30.0},
+    "pequeno": {"nome": "Pequeno", "meta": "não cair", "multiplicador": 1.6, "posicao_meta": 8, "caixa": 15.0},
 }
 
-TOTAL_RODADAS = 18
+TOTAL_RODADAS = 9
+FASES_COPA = ("preliminar", "quartas", "semifinal", "final")
+NOMES_FASES = {"preliminar": "Fase preliminar", "quartas": "Quartas de final", "semifinal": "Semifinal", "final": "Final"}
+CLASSIFICADOS_DIRETO_COPA = 6
+AGENDA = (
+    ("liga", 1),
+    ("liga", 2),
+    ("copa", "preliminar"),
+    ("liga", 3),
+    ("liga", 4),
+    ("copa", "quartas"),
+    ("liga", 5),
+    ("liga", 6),
+    ("copa", "semifinal"),
+    ("liga", 7),
+    ("liga", 8),
+    ("copa", "final"),
+    ("liga", 9),
+)
 PONTOS_VITORIA = 3
 PONTOS_EMPATE = 1
 ZONA_G4 = 4
@@ -49,6 +68,19 @@ DIFERENCA_FAVORITISMO = 5
 
 BONUS_META = 300
 BONUS_TITULO = 200
+BONUS_COPA = 250
+
+CONFIANCA_AVANCO_COPA = 3
+CONFIANCA_QUEDA_COPA = -4
+CONFIANCA_TITULO_COPA = 10
+
+PREMIO_VITORIA = 0.8
+PREMIO_EMPATE = 0.3
+PREMIO_FASE_COPA = 2.0
+PREMIO_TITULO_COPA = 5.0
+MAX_ELENCO = 25
+MINIMO_POR_POSICAO = {"GOL": 2, "DEF": 5, "MEI": 5, "ATA": 3}
+AGENTES_LIVRES = 14
 
 MAX_SUBSTITUICOES = 5
 RECUPERACAO_ENERGIA = 30
