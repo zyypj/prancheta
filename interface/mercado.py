@@ -15,6 +15,7 @@ from mercado.transferencias import (
     ofertas_por,
     pode_sair,
     preco_pedido,
+    sugerir_contratacoes,
     tentar_comprar,
     vender,
 )
@@ -192,8 +193,9 @@ def tela_mercado(estado):
     """
     Mostra o menu principal do mercado da bola.
 
-    Exibe as cinco últimas notícias e deixa o usuário comprar de outros clubes, contratar jogadores sem clube
-    ou vender um jogador, até escolher voltar.
+    Exibe as cinco últimas notícias e a principal indicação do olheiro, e deixa o usuário comprar de outros
+    clubes, contratar jogadores sem clube, vender um jogador ou ver as sugestões do olheiro, até escolher
+    voltar.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -206,16 +208,28 @@ def tela_mercado(estado):
             for texto in recentes:
                 console.print(f"  • {texto}")
             console.print()
-        console.print(" 1 - Comprar de outros clubes   2 - Jogadores sem clube   3 - Vender jogador   0 - Voltar")
-        escolha = ler_opcao(0, 3)
+        sugestoes = sugerir_contratacoes(estado, 1)
+        if sugestoes:
+            indicado = sugestoes[0]
+            console.print(
+                f" [yellow]Olheiro indica:[/] {rotulo(indicado['jogador'])} ({indicado['jogador']['qualidade']})"
+                f" [dim]— {indicado['motivo']}[/]\n"
+            )
+        console.print(
+            " 1 - Comprar de outros clubes   2 - Jogadores sem clube   3 - Vender jogador"
+            "   4 - Sugestões do olheiro   0 - Voltar"
+        )
+        escolha = ler_opcao(0, 4)
         if escolha == 0:
             return
         if escolha == 1:
             comprar_de_clubes(estado)
         elif escolha == 2:
             contratar_sem_clube(estado)
-        else:
+        elif escolha == 3:
             vender_jogador(estado)
+        else:
+            sugestoes_do_olheiro(estado)
 
 
 def ficha_do_jogador(clube, jogador):
@@ -334,3 +348,54 @@ def tela_proposta(estado, evento):
             historico.append(
                 f"Você pediu {dinheiro(pedido)}. O {interessado} subiu a oferta para {dinheiro(negociacao['oferta'])}."
             )
+
+
+def sugestoes_do_olheiro(estado):
+    """
+    Mostra as sugestões de contratação do olheiro e conduz a contratação da escolhida.
+
+    Lista até seis jogadores que cabem no caixa, com clube (ou "sem clube"), qualidade, idade, custo e o
+    motivo da indicação. Ao escolher um jogador sem clube, contrata pagando as luvas; de outro clube, pede a
+    proposta em milhões, sugerindo o preço pedido. Se o elenco estiver cheio ou não houver indicação, apenas
+    avisa.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
+    cabecalho_mercado(estado, "SUGESTÕES DO OLHEIRO")
+    sugestoes = sugerir_contratacoes(estado)
+    if not sugestoes:
+        clube = clube_do_jogador(estado)
+        if len(clube["elenco"]) >= MAX_ELENCO:
+            mostrar_mensagem("Seu elenco está cheio. Venda alguém para abrir vaga.", "yellow")
+        else:
+            mostrar_mensagem("O olheiro não achou ninguém que melhore o time e caiba no caixa agora.", "yellow")
+        return
+    tabela = Table(header_style="bold")
+    for coluna in ("#", "Jogador", "Clube", "Qual", "Idade", "Custo", "Por quê"):
+        tabela.add_column(coluna)
+    for numero, item in enumerate(sugestoes, start=1):
+        jogador = item["jogador"]
+        tabela.add_row(
+            str(numero),
+            rotulo(jogador),
+            item["vendedor"]["nome"] if item["vendedor"] else "[green]sem clube[/]",
+            str(jogador["qualidade"]),
+            str(jogador.get("idade", "-")),
+            dinheiro(item["custo"]) + ("" if item["vendedor"] else " (luvas)"),
+            item["motivo"],
+        )
+    console.print(tabela)
+    console.print(" [bold]0[/] Voltar")
+    escolha = ler_opcao(0, len(sugestoes))
+    if not escolha:
+        return
+    item = sugestoes[escolha - 1]
+    if item["vendedor"] is None:
+        sucesso, mensagem = contratar_livre(estado, item["jogador"])
+    else:
+        oferta = ler_valor(f" Sua proposta em milhões (pedida {dinheiro(item['custo'])}, 0 cancela) > ", 0.1, 999)
+        if not oferta:
+            return
+        sucesso, mensagem = tentar_comprar(estado, item["jogador"], item["vendedor"], oferta)
+    mostrar_mensagem(mensagem, "green" if sucesso else "red")
