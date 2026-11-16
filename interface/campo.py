@@ -18,6 +18,8 @@ COLUNAS_ZONA = {
     "saida": LARGURA_AREA // 2 + 1,
     "defesa": (LARGURA_AREA + 1 + SEPARADORES[1]) // 2,
     "meio": LARGURA_CAMPO // 2,
+    "intermediaria": SEPARADORES[2] - 3,
+    "linha_de_fundo": LARGURA_CAMPO - 3,
     "ataque": (SEPARADORES[2] + LARGURA_CAMPO - 2 - LARGURA_AREA) // 2,
     "area": LARGURA_CAMPO - 2 - LARGURA_AREA // 2,
     "gol": LARGURA_CAMPO - 2,
@@ -50,9 +52,10 @@ def posicao_alvo(partida, clube_jogador):
     """
     Calcula onde a bola deve aparecer no desenho do campo.
 
-    A coluna vem da zona da bola (meio, ataque, área ou gol), usando o meio-campo quando nenhum time tem a
-    posse, e a linha vem da faixa do campo. Como o campo é desenhado com o clube do jogador atacando para a
-    direita, a coluna é espelhada quando a bola está com o adversário.
+    A coluna vem da zona da bola (saída, campo de defesa, meio, intermediária, entrada da área, linha de
+    fundo, área ou gol), usando o meio-campo quando nenhum time tem a posse, e a linha vem da faixa do campo;
+    na linha de fundo, a bola fica colada na lateral de cima ou de baixo. Como o campo é desenhado com o clube
+    do jogador atacando para a direita, a coluna é espelhada quando a bola está com o adversário.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -66,6 +69,8 @@ def posicao_alvo(partida, clube_jogador):
     zona = bola["zona"] if bola["time"] is not None else "meio"
     if zona == "gol":
         linha = 3
+    elif zona == "linha_de_fundo":
+        linha = ALTURA_CAMPO - 1 if faixa == 2 else 0
     elif zona == "area":
         linha = LINHAS_FAIXA_AREA[faixa]
     else:
@@ -172,7 +177,7 @@ def cabecalho(partida, clube_jogador):
     )
 
 
-def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, destaque):
+def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, destaque, rodape=None):
     """
     Imprime um quadro completo da tela da partida.
 
@@ -188,6 +193,7 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
         pergunta (str | None): Pergunta feita ao jogador, ou None para não mostrar.
         opcoes (list | None): Textos das opções de resposta, ou None para não mostrar.
         destaque (str | None): Mensagem de destaque, como o aviso de gol, ou None.
+        rodape (str | None): Texto extra no fim da linha de opções, como o aviso das revelações. Padrão None.
     """
     cabecalho(partida, clube_jogador)
     console.print(desenhar_campo(coluna, linha))
@@ -211,10 +217,11 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
             " "
             + "   ".join(f"[bold]{numero}[/] {texto}" for numero, texto in enumerate(opcoes, start=1))
             + "   [bold]0[/] Pausar"
+            + (f"   {rodape}" if rodape else "")
         )
 
 
-def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None):
+def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None, rodape=None):
     """
     Atualiza a tela da partida, levando a bola até a posição atual.
 
@@ -230,6 +237,7 @@ def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=F
         opcoes (list | None): Textos das opções de resposta. Padrão None.
         animar (bool): Se a bola deve se mover aos poucos até o destino. Padrão False.
         destaque (str | None): Mensagem de destaque, como o aviso de gol. Padrão None.
+        rodape (str | None): Texto extra no fim da linha de opções. Padrão None.
     """
     alvo = posicao_alvo(partida, clube_jogador)
     if "tela" not in partida:
@@ -247,7 +255,14 @@ def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=F
         intermediario = (coluna, linha) != alvo
         desenhar_no_lugar(
             lambda c=coluna, lin=linha, i=intermediario: desenhar_quadro(
-                partida, clube_jogador, c, lin, None if i else pergunta, None if i else opcoes, None if i else destaque
+                partida,
+                clube_jogador,
+                c,
+                lin,
+                None if i else pergunta,
+                None if i else opcoes,
+                None if i else destaque,
+                None if i else rodape,
             )
         )
         if intermediario:

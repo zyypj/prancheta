@@ -449,3 +449,74 @@ paradinha | {jogador} faz a paradinha e {goleiro} cai para um lado!
 paradinha | Paradinha de {jogador}! {goleiro} se adianta no pulo.
 paradinha_esperou | {jogador} faz a paradinha, mas {goleiro} não cai na finta e espera!
 paradinha_esperou | {goleiro} lê a paradinha de {jogador} e fica parado no meio!
+ganhou_na_defesa | {jogador} recupera a bola no campo de defesa e o {time} sai jogando de trás.
+ganhou_na_defesa | O {time} rouba a bola perto da própria área, com {jogador}.
+ganhou_na_defesa | {jogador} intercepta no campo de defesa e o {time} recomeça a construção.
+ganhou_na_defesa | Desarme de {jogador} lá atrás. Bola do {time}.
+ganhou_na_intermediaria | {jogador} rouba a bola na intermediária! O {time} está perto do gol.
+ganhou_na_intermediaria | O {time} recupera adiantado, com {jogador}, a uns 35 metros do gol.
+ganhou_na_intermediaria | Pressão funcionou: {jogador} toma a bola na intermediária.
+conduzir_ok | {jogador} conduz a bola e ganha metros, {marcador} não acompanha.
+conduzir_ok | {jogador} avança com a bola dominada pelo meio.
+conduzir_ok | Arrancada de {jogador} desde o campo de defesa!
+conduzir_erro | {jogador} tenta conduzir e {marcador} rouba ainda no campo de defesa!
+conduzir_erro | {marcador} pressiona e toma a bola de {jogador} perto da área dele!
+inverter_ok | {jogador} inverte o jogo com um passe longo para o outro lado.
+inverter_ok | Que inversão de {jogador}! O {time} muda o lado do ataque.
+inverter_erro | {jogador} tenta inverter, mas a bola sai fraca e {marcador} intercepta.
+inverter_erro | A inversão de {jogador} vai direto pela lateral.
+rasteiro_ok | {jogador} vai até a linha de fundo e cruza rasteiro para trás!
+rasteiro_ok | Passe da morte de {jogador}! A bola volta para a marca do pênalti.
+rasteiro_erro | {jogador} tenta o cruzamento rasteiro e {marcador} corta.
+rasteiro_erro | O passe para trás de {jogador} passa por todo mundo.
+chute_intermediaria | {jogador} arrisca da intermediária, {tipo}!
+chute_intermediaria | Que ousadia! {jogador} chuta de muito longe, {tipo}!
+chute_intermediaria | {jogador} solta o pé a 35 metros do gol, {tipo}!
+chute_sem_angulo | {jogador} chuta sem ângulo, {tipo}, da linha de fundo!
+chute_sem_angulo | {jogador} bate {tipo} quase da linha de fundo, procurando o canto!
+um_contra_um | {jogador} recebe na linha de fundo e encara {marcador} no mano a mano!
+um_contra_um | Bola com {jogador} pela ponta, {marcador} fecha. Vai ter duelo!
+um_contra_um_ok | {jogador} passa por {marcador} e invade a área!
+um_contra_um_ok | Que drible de {jogador}! {marcador} ficou para trás e ele entra na área!
+ultrapassagem | {jogador} passa por fora, recebe de {companheiro} e cruza!
+ultrapassagem | Ultrapassagem de {jogador}! {companheiro} toca e ele vai cruzar.
+falta_meia_lua | {marcador} derruba {jogador} bem na meia-lua! Falta na melhor posição para o {time}!
+falta_meia_lua | Falta perigosíssima para o {time}, na meia-lua. A barreira se arma.
+goleiro_pressionado | {jogador} corre para pressionar {goleiro}, que está com a bola nos pés!
+goleiro_pressionado | {goleiro} tem a bola na área e {jogador} vem para cima!
+goleiro_driblou | {goleiro} dá um corte em {jogador} e sai jogando! Que coragem!
+goleiro_driblou | O goleiro {goleiro} dribla {jogador} dentro da área! A torcida vai à loucura.
+goleiro_perdeu | {jogador} toma a bola de {goleiro} dentro da área! O gol está quase vazio!
+goleiro_perdeu | Falha grave! {goleiro} tenta driblar e {jogador} rouba!
+goleiro_tocou | {goleiro} toca com segurança para {jogador}.
+goleiro_tocou | {goleiro} resolve rápido e rola para {jogador}.
+interceptou_saida | {jogador} intercepta o passe do goleiro {goleiro} na área!
+interceptou_saida | O passe de {goleiro} sai curto e {jogador} chega antes!
+virada | {jogador} tem a bola no campo de defesa do {time} e levanta a cabeça.
+virada | O {time} troca passes lá atrás, bola com {jogador}.
+virada_ok | {jogador} inverte para {companheiro}, que recebe livre do outro lado!
+virada_ok | Passe longo de {jogador} e {companheiro} domina sozinho na intermediária.
+virada_erro | {jogador} tenta a inversão e a bola fica no meio do caminho.
+virada_erro | Inversão errada de {jogador}, o adversário recupera perto da área!
+ligacao_ok | {jogador} faz a ligação direta e {companheiro} sai na cara do gol!
+ligacao_ok | Lançamento de {jogador} nas costas da zaga! {companheiro} dispara!
+ligacao_erro | A ligação direta de {jogador} vai longa demais e sai pela linha de fundo.
+ligacao_erro | {jogador} lança, mas a zaga sobe junta e afasta.
+dois_contra_um | {jogador} e {companheiro} contra {marcador}! Dois contra um na entrada da área!
+dois_contra_um | Só {marcador} na frente de {jogador} e {companheiro}!
+levantamento | {jogador} recebe na intermediária e olha a área.
+levantamento | Bola com {jogador}, a 35 metros do gol, o {time} se aproxima.
+pivo | {jogador} recebe de costas na entrada da área, com {marcador} colado.
+pivo | {jogador} faz o pivô e protege a bola de {marcador}.
+pivo_girou | {jogador} gira em cima de {marcador} e fica de frente para o gol!
+pivo_girou | Que giro de {jogador}! {marcador} ficou vendido!
+pivo_perdeu | {jogador} tenta girar, mas {marcador} tira a bola.
+pivo_perdeu | {marcador} antecipa o giro de {jogador} e recupera.
+pivo_segurou | {jogador} segura a bola e espera {companheiro} chegar.
+pivo_segurou | {jogador} prende a bola e toca para {companheiro}, que vem de trás.
+contra_ataque_sofrido | O {time} rouba a bola e {jogador} sai em velocidade! Só {marcador} na cobertura!
+contra_ataque_sofrido | Contra-ataque perigoso do {time}! {jogador} conduz, {marcador} volta correndo.
+recuou_contra | O {time} recua as linhas e fecha a área.
+recuou_contra | Todo mundo atrás da linha da bola no {time}.
+bote_furado | {marcador} dá o bote e erra! {jogador} passa livre!
+bote_furado | {jogador} deixa {marcador} no chão e segue em direção ao gol!

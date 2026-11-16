@@ -5,6 +5,7 @@ from elenco.escalacao import rotulo
 from elenco.substituicoes import aplicar_desgaste
 from partida.jogadas import CHANCE_JOGADA_ESPECIAL, jogada_especial, sortear_acontecimento
 from partida.lances import (
+    LUGARES_DE_INICIO,
     PESOS_PORTADOR,
     disputa_de_penaltis,
     disputar_meio,
@@ -20,6 +21,8 @@ from partida.lances import (
     sortear_eventos_do_lance,
 )
 
+NARRACAO_DO_INICIO = {"defesa": "ganhou_na_defesa", "meio": "meio_ganhou", "intermediaria": "ganhou_na_intermediaria"}
+
 
 def jogar_lance(partida):
     """
@@ -28,7 +31,8 @@ def jogar_lance(partida):
     Aplica o desgaste e os ajustes dos controles nos dois times, sorteia os eventos do lance e os
     acontecimentos extras, e disputa a bola no meio. Se ninguém ganha, narra a bola saindo. Se alguém ganha,
     em CHANCE_JOGADA_ESPECIAL (24%) dos lances o time ganha uma jogada especial (tiro de meta, lateral, falta,
-    arrancada, pressão na saída e outras); no resto, joga uma posse normal. Se a jogada terminar em
+    arrancada, pressão na saída e outras); no resto, joga uma posse normal que começa num dos
+    LUGARES_DE_INICIO: campo de defesa, meio-campo ou intermediária. Se a jogada terminar em
     contra-ataque, o outro time joga uma posse de contra-ataque.
 
     Args:
@@ -46,19 +50,22 @@ def jogar_lance(partida):
         lateral = random.choice((partida["casa"], partida["fora"]))
         registrar(partida, "meio_nada", {"time": partida["times"][lateral]["nome"]}, tipo="meio")
         return
-    portador = escolher_jogador(partida["times"][vencedor], PESOS_PORTADOR["meio"])
-    entregar_bola(partida, vencedor, "meio", None, portador)
     if random.random() < CHANCE_JOGADA_ESPECIAL:
+        portador = escolher_jogador(partida["times"][vencedor], PESOS_PORTADOR["meio"])
+        entregar_bola(partida, vencedor, "meio", None, portador)
         proximo = jogada_especial(partida, vencedor, portador)
     else:
+        lugar = random.choices(list(LUGARES_DE_INICIO), weights=list(LUGARES_DE_INICIO.values()))[0]
+        portador = escolher_jogador(partida["times"][vencedor], PESOS_PORTADOR[lugar])
+        entregar_bola(partida, vencedor, lugar, None, portador)
         registrar(
             partida,
-            "meio_ganhou",
+            NARRACAO_DO_INICIO[lugar],
             {"time": partida["times"][vencedor]["nome"], "jogador": rotulo(portador)},
             tipo="meio",
             time_id=vencedor,
         )
-        proximo = jogar_posse(partida, vencedor, portador=portador)
+        proximo = jogar_posse(partida, vencedor, portador=portador, zona_inicial=lugar)
     if proximo:
         jogar_posse(partida, proximo[0], contra_ataque=True, portador=proximo[1])
 

@@ -29,15 +29,16 @@ def ia_ataque(partida, time_id, zona, portador):
     """
     Decide a ação da inteligência artificial quando o time está com a bola.
 
-    Sorteia a ação com pesos que dependem da zona e da ofensividade do plano. No meio-campo, quanto mais
-    ofensivo, mais o time enfia, dribla e lança, e menos toca; o estilo "jogo direto" aumenta o peso do
-    lançamento. No ataque, o cruzamento fica bem mais provável quando a bola está pela ponta. Na área, o chute
-    é a ação mais provável.
+    Sorteia a ação com pesos que dependem da zona e da ofensividade do plano. No campo de defesa, o time mais
+    ofensivo conduz e lança mais; no meio-campo e na intermediária, enfia, dribla e lança mais, e toca menos;
+    o estilo "jogo direto" aumenta o peso do lançamento. No ataque, o cruzamento fica bem mais provável quando
+    a bola está pela ponta; na linha de fundo, o time cruza alto ou rasteiro para trás. Na área, o chute é a
+    ação mais provável.
 
     Args:
         partida (dict): Estado da partida em andamento.
         time_id (str): Identificador do time que ataca.
-        zona (str): Zona do campo onde está a bola ("meio", "ataque" ou "area").
+        zona (str): Zona do campo onde está a bola, uma das chaves de ACOES.
         portador (dict): Jogador com a bola, não usado pela inteligência artificial.
 
     Returns:
@@ -46,8 +47,29 @@ def ia_ataque(partida, time_id, zona, portador):
     """
     plano = partida["times"][time_id]["plano"]
     ofensividade = plano["ofensividade"]
+    direto = 2.5 if plano["estilo"] == "jogo direto" else 0
+    if zona == "defesa":
+        return escolher_ponderado(
+            {
+                "tocar": 6 - 0.5 * ofensividade,
+                "conduzir": 1 + 0.3 * ofensividade,
+                "lancar": 0.5 + 0.4 * ofensividade + direto,
+                "inverter": 1.5,
+            }
+        )
+    if zona == "intermediaria":
+        return escolher_ponderado(
+            {
+                "tocar": 5 - 0.5 * ofensividade,
+                "enfiar": 0.5 + 0.3 * ofensividade,
+                "driblar": 0.5 * ofensividade,
+                "abrir": 2,
+                "chutar": 0.3 * ofensividade,
+            }
+        )
+    if zona == "linha_de_fundo":
+        return escolher_ponderado({"cruzar": 4, "rasteiro": 2.5, "driblar": 0.4 * ofensividade, "chutar": 0.3})
     if zona == "meio":
-        direto = 2.5 if plano["estilo"] == "jogo direto" else 0
         return escolher_ponderado(
             {
                 "tocar": 7 - ofensividade,
@@ -106,12 +128,12 @@ def ia_escolha(partida, time_id, pergunta, opcoes):
         partida (dict): Estado da partida em andamento.
         time_id (str): Identificador do time que decide.
         pergunta (str): Texto da decisão, não usado pela inteligência artificial.
-        opcoes (list[tuple]): Opções no formato (chave, texto, peso).
+        opcoes (list[tuple]): Opções no formato (chave, texto, peso) ou (chave, texto, peso, chance).
 
     Returns:
         str: Chave da opção sorteada, com chance proporcional ao peso.
     """
-    return random.choices([chave for chave, _, _ in opcoes], weights=[peso for _, _, peso in opcoes])[0]
+    return random.choices([opcao[0] for opcao in opcoes], weights=[opcao[2] for opcao in opcoes])[0]
 
 
 def ia_bater_penalti(partida, time_id, batedor, goleiro):

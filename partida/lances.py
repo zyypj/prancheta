@@ -1,15 +1,31 @@
 import random
 
-from config import MANDO_DE_CAMPO, MAX_SUBSTITUICOES
+from config import MANDO_DE_CAMPO, MAX_SUBSTITUICOES, REVELACOES_POR_PARTIDA
 from elenco.escalacao import atributo_efetivo, disponivel, forca_setores, limitar, rotulo
 from elenco.substituicoes import marcar_desfalques, registrar_amarelo, substituir
 from partida.narracao import narrar
 
-DESCRICAO_ZONAS = {"meio": "no meio-campo", "ataque": "na entrada da área", "area": "dentro da área"}
-PROXIMA_ZONA = {"meio": "ataque", "ataque": "area"}
+DESCRICAO_ZONAS = {
+    "defesa": "no campo de defesa",
+    "meio": "no meio-campo",
+    "intermediaria": "na intermediária",
+    "ataque": "na entrada da área",
+    "linha_de_fundo": "na linha de fundo",
+    "area": "dentro da área",
+}
+PROXIMA_ZONA = {
+    "defesa": "meio",
+    "meio": "intermediaria",
+    "intermediaria": "ataque",
+    "ataque": "area",
+    "linha_de_fundo": "area",
+}
 ACOES = {
+    "defesa": ("tocar", "conduzir", "lancar", "inverter"),
     "meio": ("tocar", "enfiar", "driblar", "lancar", "abrir"),
+    "intermediaria": ("tocar", "enfiar", "driblar", "abrir", "chutar"),
     "ataque": ("tocar", "tabelar", "driblar", "cruzar", "chutar"),
+    "linha_de_fundo": ("cruzar", "rasteiro", "driblar", "chutar"),
     "area": ("chutar", "driblar", "tocar"),
 }
 NOMES_ACOES = {
@@ -21,12 +37,45 @@ NOMES_ACOES = {
     "tabelar": "Tabelar",
     "cruzar": "Cruzar",
     "chutar": "Chutar",
+    "conduzir": "Conduzir",
+    "inverter": "Inverter o jogo",
+    "rasteiro": "Cruzar rasteiro para trás",
 }
 CHANCE_BASE = {
+    "defesa": {"tocar": 0.86, "conduzir": 0.66, "lancar": 0.40, "inverter": 0.70},
     "meio": {"tocar": 0.80, "enfiar": 0.32, "lancar": 0.45, "abrir": 0.74},
+    "intermediaria": {"tocar": 0.72, "enfiar": 0.30, "abrir": 0.70},
     "ataque": {"tocar": 0.76, "tabelar": 0.50, "cruzar": 0.55},
+    "linha_de_fundo": {"cruzar": 0.60, "rasteiro": 0.52},
     "area": {"tocar": 0.66},
 }
+LOCAL_DO_CHUTE = {"intermediaria": "intermediaria", "ataque": "longe", "linha_de_fundo": "sem_angulo", "area": "area"}
+ZONA_DO_LOCAL = {
+    "longe": "ataque",
+    "meio_campo": "meio",
+    "falta": "ataque",
+    "primeira": "ataque",
+    "intermediaria": "intermediaria",
+    "sem_angulo": "linha_de_fundo",
+}
+SETOR_DO_ATAQUE = {
+    "defesa": "meio",
+    "meio": "meio",
+    "intermediaria": "meio",
+    "ataque": "ataque",
+    "linha_de_fundo": "ataque",
+    "area": "ataque",
+}
+SETOR_DA_DEFESA = {
+    "defesa": "ataque",
+    "meio": "meio",
+    "intermediaria": "meio",
+    "ataque": "defesa",
+    "linha_de_fundo": "defesa",
+    "area": "defesa",
+}
+LUGARES_DE_INICIO = {"defesa": 3, "meio": 5, "intermediaria": 2}
+PASSOS_DA_POSSE = 8
 DRIBLES = {
     "corte": {"nome": "Corte seco", "base": 0.56, "bonus": 0.00, "peso": 4},
     "caneta": {"nome": "Caneta", "base": 0.42, "bonus": 0.06, "peso": 2},
@@ -50,8 +99,10 @@ LOCAIS = {
     "escanteio": {"gol": 0.30, "alvo": -0.12},
     "primeira": {"gol": 0.17, "alvo": -0.16},
     "bicicleta": {"gol": 0.48, "alvo": -0.32},
+    "intermediaria": {"gol": 0.10, "alvo": -0.22},
+    "sem_angulo": {"gol": 0.10, "alvo": -0.24},
 }
-LOCAIS_COM_BLOQUEIO = ("longe", "area", "primeira")
+LOCAIS_COM_BLOQUEIO = ("longe", "area", "primeira", "intermediaria")
 GOLEIRO_NO_CARA_A_CARA = (
     ("sair", "Sair abafando", 3),
     ("esperar", "Esperar no gol", 3),
@@ -77,11 +128,39 @@ NOMES_DEFESAS = {
     "falta": "Falta tática",
 }
 EFEITO_DEFESA = {
-    "bote": {"meio": -0.07, "ataque": -0.07, "area": -0.07},
-    "pressao": {"meio": -0.10, "ataque": 0.04, "area": 0.04},
-    "fechar": {"meio": -0.03, "ataque": -0.03, "area": -0.03},
-    "recuar": {"meio": 0.05, "ataque": -0.02, "area": -0.06},
-    "falta": {"meio": 0.0, "ataque": 0.0, "area": -0.07},
+    "bote": {
+        "defesa": -0.05,
+        "meio": -0.07,
+        "intermediaria": -0.07,
+        "ataque": -0.07,
+        "linha_de_fundo": -0.07,
+        "area": -0.07,
+    },
+    "pressao": {
+        "defesa": -0.12,
+        "meio": -0.10,
+        "intermediaria": -0.02,
+        "ataque": 0.04,
+        "linha_de_fundo": 0.04,
+        "area": 0.04,
+    },
+    "fechar": {
+        "defesa": -0.02,
+        "meio": -0.03,
+        "intermediaria": -0.03,
+        "ataque": -0.03,
+        "linha_de_fundo": -0.03,
+        "area": -0.03,
+    },
+    "recuar": {
+        "defesa": 0.08,
+        "meio": 0.05,
+        "intermediaria": 0.02,
+        "ataque": -0.02,
+        "linha_de_fundo": -0.04,
+        "area": -0.06,
+    },
+    "falta": {"defesa": 0.0, "meio": 0.0, "intermediaria": 0.0, "ataque": 0.0, "linha_de_fundo": 0.0, "area": -0.07},
 }
 CANTOS = ("esquerda", "meio", "direita")
 FORCAS_PENALTI = ("colocado", "forte", "paradinha")
@@ -91,11 +170,21 @@ PESO_MEIO = 0.006
 PESO_FINALIZACAO = 0.004
 FATOR_GOL = 1.55
 PESOS_PORTADOR = {
+    "defesa": {"DEF": 5, "MEI": 3},
     "meio": {"MEI": 5, "DEF": 1, "ATA": 2},
+    "intermediaria": {"MEI": 5, "ATA": 3, "DEF": 1},
     "ataque": {"ATA": 4, "MEI": 4, "DEF": 0.5},
+    "linha_de_fundo": {"ATA": 4, "MEI": 3, "DEF": 2},
     "area": {"ATA": 6, "MEI": 2, "DEF": 0.5},
 }
-PESOS_MARCADOR = {"meio": {"MEI": 5, "DEF": 2, "ATA": 1}, "ataque": {"DEF": 5, "MEI": 2}, "area": {"DEF": 6, "MEI": 1}}
+PESOS_MARCADOR = {
+    "defesa": {"ATA": 5, "MEI": 3},
+    "meio": {"MEI": 5, "DEF": 2, "ATA": 1},
+    "intermediaria": {"MEI": 4, "DEF": 3},
+    "ataque": {"DEF": 5, "MEI": 2},
+    "linha_de_fundo": {"DEF": 6, "MEI": 1},
+    "area": {"DEF": 6, "MEI": 1},
+}
 PESOS_CABECEIO = {"ATA": 5, "DEF": 2, "MEI": 1}
 PESOS_REBOTE = {"ATA": 5, "MEI": 3, "DEF": 1}
 
@@ -175,6 +264,8 @@ def criar_partida(clube_casa, clube_fora, frases, plano_casa=None, plano_fora=No
         "narracao": [],
         "sumula": [],
         "ocorrencias": [],
+        "chances": None,
+        "revelacoes": {clube_casa["id"]: REVELACOES_POR_PARTIDA, clube_fora["id"]: REVELACOES_POR_PARTIDA},
         "chuva": random.random() < 0.12,
         "torcida": 0,
         "bola": {"time": None, "zona": "meio", "faixa": 1},
@@ -336,6 +427,22 @@ def escolher_jogador(time, pesos, excluir=None):
     return random.choices(candidatos, weights=[pesos.get(jogador["pos"], 0.5) or 0.5 for jogador in candidatos])[0]
 
 
+def atacante_de_referencia(time, excluir=None):
+    """
+    Escolhe o jogador de frente com melhor finalização, usado para estimar chances de jogadas que ainda não
+    têm finalizador definido.
+
+    Args:
+        time (dict): Time da partida.
+        excluir (dict | None): Jogador que não pode ser escolhido. Padrão None.
+
+    Returns:
+        dict: Atacante ou meia em campo com maior finalização efetiva, ou qualquer jogador se não houver.
+    """
+    candidatos = [j for j in time["em_campo"] if j is not excluir and j["pos"] in ("ATA", "MEI")]
+    return max(candidatos or time["em_campo"], key=lambda j: atributo_efetivo(j, "fin"))
+
+
 def melhor_batedor(time):
     """
     Escolhe o jogador de linha em campo com a maior finalização efetiva.
@@ -363,13 +470,14 @@ def perguntar(partida, time_id, pergunta, opcoes):
         partida (dict): Estado da partida.
         time_id (str): Time que decide.
         pergunta (str): Texto da pergunta.
-        opcoes (list): Lista de tuplas (chave, rótulo, peso).
+        opcoes (list): Lista de tuplas (chave, rótulo, peso) ou (chave, rótulo, peso, chance), em que a chance
+            de a opção dar certo, entre 0 e 1, pode ser revelada pelo jogador humano.
 
     Returns:
         str: Chave da opção escolhida.
     """
     escolha = partida["controles"][time_id]["escolha"](partida, time_id, pergunta, opcoes)
-    chaves = [chave for chave, _, _ in opcoes]
+    chaves = [opcao[0] for opcao in opcoes]
     return escolha if escolha in chaves else chaves[0]
 
 
@@ -616,8 +724,8 @@ def valor_da_acao(portador, acao, drible):
     """
     Calcula o atributo do portador que pesa na ação escolhida.
 
-    Na arrancada vale o físico; nos demais dribles, a média de finalização, passe e físico; nas outras ações,
-    o passe.
+    Na arrancada e na condução vale o físico; nos demais dribles, a média de finalização, passe e físico; nas
+    outras ações, o passe.
 
     Args:
         portador (dict): Jogador com a bola.
@@ -627,6 +735,8 @@ def valor_da_acao(portador, acao, drible):
     Returns:
         float: Valor efetivo do atributo usado na ação.
     """
+    if acao == "conduzir":
+        return atributo_efetivo(portador, "fis")
     if acao == "driblar":
         if drible == "arrancada":
             return atributo_efetivo(portador, "fis")
@@ -642,7 +752,8 @@ def chance_da_acao(partida, atacante_id, zona, faixa, acao, portador, marcador, 
 
     Parte da chance base da ação na zona (ou do drible), com penalidade de 0,12 para cruzamento pelo meio.
     Soma a diferença entre o atributo do portador e o desarme do marcador (peso 0,4) e entre o setor de ataque
-    e o de defesa (peso 0,6), o bônus acumulado, os efeitos da ofensividade dos dois times, da intensidade do
+    e o de defesa (peso 0,6, com os setores de SETOR_DO_ATAQUE e SETOR_DA_DEFESA para cada zona), o bônus
+    acumulado, os efeitos da ofensividade dos dois times, da intensidade do
     defensor e da defesa escolhida. Com chuva, passes, lançamentos e cruzamentos perdem 0,06. O resultado fica
     entre 5% e 95%.
 
@@ -669,8 +780,8 @@ def chance_da_acao(partida, atacante_id, zona, faixa, acao, portador, marcador, 
     base = DRIBLES[drible]["base"] if acao == "driblar" else CHANCE_BASE[zona][acao]
     if acao == "cruzar" and faixa == 1:
         base -= 0.12
-    setor_atq = forca_atq["meio"] if zona == "meio" else forca_atq["ataque"]
-    setor_def = forca_def["meio"] if zona == "meio" else forca_def["defesa"]
+    setor_atq = forca_atq[SETOR_DO_ATAQUE[zona]]
+    setor_def = forca_def[SETOR_DA_DEFESA[zona]]
     diferenca = (valor_da_acao(portador, acao, drible) - atributo_efetivo(marcador, "des")) * 0.4 + (
         setor_atq - setor_def
     ) * 0.6
@@ -758,8 +869,8 @@ def escolher_chute(partida, atacante_id, finalizador, local):
     """
     Pergunta ao time como o finalizador vai bater na bola.
 
-    Oferece os tipos de chute com seus pesos; o chute forte ganha peso extra de longe ou do meio-campo e a
-    cavadinha ganha peso extra cara a cara.
+    Oferece os tipos de chute com seus pesos e a chance de gol de cada um, para as revelações; o chute forte
+    ganha peso extra de longe ou do meio-campo e a cavadinha ganha peso extra cara a cara.
 
     Args:
         partida (dict): Estado da partida.
@@ -777,7 +888,7 @@ def escolher_chute(partida, atacante_id, finalizador, local):
             peso += 2
         if chave == "cavadinha" and local == "cara":
             peso += 2
-        opcoes.append((chave, chute["nome"], peso))
+        opcoes.append((chave, chute["nome"], peso, chance_de_gol(partida, atacante_id, finalizador, local, chave)))
     return perguntar(partida, atacante_id, f"Como {rotulo(finalizador)} vai bater?", opcoes)
 
 
@@ -829,11 +940,12 @@ def tentar_bloqueio(partida, atacante_id, finalizador, local):
     defensor_id = outro(partida, atacante_id)
     defensor = partida["times"][defensor_id]
     zagueiro = escolher_jogador(defensor, PESOS_MARCADOR["area" if local == "area" else "ataque"])
+    chance_carrinho = limitar(0.32 + (atributo_efetivo(zagueiro, "des") - 70) * 0.004, 0.05, 0.9)
     escolha = perguntar(
         partida,
         defensor_id,
         f"{rotulo(finalizador)} prepara o chute! Como o {defensor['nome']} defende?",
-        list(BLOQUEIOS),
+        [opcao + (chance,) for opcao, chance in zip(BLOQUEIOS, (chance_carrinho, 0.15, 0.0))],
     )
     dados = {"marcador": rotulo(zagueiro), "jogador": rotulo(finalizador)}
     if escolha == "carrinho":
@@ -844,7 +956,7 @@ def tentar_bloqueio(partida, atacante_id, finalizador, local):
             if revisar_penalti(partida, atacante_id):
                 cobrar_penalti(partida, atacante_id)
             return "penalti"
-        if random.random() < 0.32 + (atributo_efetivo(zagueiro, "des") - 70) * 0.004:
+        if random.random() < chance_carrinho:
             registrar(partida, "bloqueio_carrinho", dados, tipo="defesa", time_id=atacante_id)
             return "bloqueado"
         registrar(partida, "carrinho_falhou", dados, tipo="lance", time_id=atacante_id)
@@ -855,6 +967,131 @@ def tentar_bloqueio(partida, atacante_id, finalizador, local):
             return "bloqueado"
         return "fechado"
     return "nenhum"
+
+
+def probabilidades_do_chute(partida, atacante_id, finalizador, local, tipo, bonus, defesa, fator_desvio=1.0):
+    """
+    Calcula a chance de um chute ir no alvo e, indo, de virar gol.
+
+    No alvo: base do tipo de chute e do local, mais a finalização (no cabeceio, média com o físico) e metade
+    do bônus, com 0,06 a menos contra linha recuada. Gol: compara finalização e reflexo do goleiro, dividindo
+    pelo fator do goleiro no tipo de chute (a cavadinha cara a cara engana mais) e pelo desvio, multiplica por
+    FATOR_GOL e soma metade do bônus; o estilo jogo direto tira 0,03.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que finaliza.
+        finalizador (dict): Jogador que chuta.
+        local (str): Local da finalização, uma das chaves de LOCAIS.
+        tipo (str): Tipo de chute.
+        bonus (float): Bônus acumulado na jogada.
+        defesa (str): Postura defensiva do adversário.
+        fator_desvio (float): Multiplicador do fator do goleiro quando a bola desvia. Padrão 1.0.
+
+    Returns:
+        tuple: (chance de ir no alvo, chance de gol se for no alvo), ainda sem os limites.
+    """
+    atacante = partida["times"][atacante_id]
+    goleiro = goleiro_de(partida["times"][outro(partida, atacante_id)])
+    chute = CHUTES[tipo]
+    finalizacao = atributo_efetivo(finalizador, "fin")
+    if local == "cabeceio":
+        finalizacao = (finalizacao + atributo_efetivo(finalizador, "fis")) / 2
+    alvo = chute["alvo"] + LOCAIS[local]["alvo"] + (finalizacao - 65) * 0.004 + bonus * 0.5
+    if defesa == "recuar" and local in ("longe", "area", "cara"):
+        alvo -= 0.06
+    fator_goleiro = (0.45 if tipo == "cavadinha" and local == "cara" else chute["goleiro"]) * fator_desvio
+    reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
+    gol = (LOCAIS[local]["gol"] + (finalizacao - reflexo) * PESO_FINALIZACAO) / fator_goleiro * FATOR_GOL + bonus * 0.5
+    if atacante["plano"]["estilo"] == "jogo direto":
+        gol -= 0.03
+    return alvo, gol
+
+
+def chance_de_gol(partida, atacante_id, finalizador, local, tipo="colocado", bonus=0.0, defesa="fechar"):
+    """
+    Calcula a chance de um chute virar gol, já com os limites usados no sorteio.
+
+    Não conta bloqueio, desvio, frango nem bola salva em cima da linha, que são raros. É o número mostrado nas
+    revelações.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time que finaliza.
+        finalizador (dict): Jogador que chuta.
+        local (str): Local da finalização.
+        tipo (str): Tipo de chute. Padrão "colocado".
+        bonus (float): Bônus acumulado na jogada. Padrão 0.0.
+        defesa (str): Postura defensiva do adversário. Padrão "fechar".
+
+    Returns:
+        float: Chance de gol, entre 0 e 1.
+    """
+    alvo, gol = probabilidades_do_chute(partida, atacante_id, finalizador, local, tipo, bonus, defesa)
+    return limitar(alvo, 0.1, 0.95) * limitar(gol, 0.03, 0.9)
+
+
+def chance_media_do_drible(partida, atacante_id, zona, faixa, portador, marcador, defesa, bonus):
+    """
+    Calcula a chance média de um drible dar certo, ponderando os tipos de drible pelo peso de cada um.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time com a bola.
+        zona (str): Zona da jogada.
+        faixa (int): Faixa do campo.
+        portador (dict): Jogador com a bola.
+        marcador (dict): Defensor que marca o lance.
+        defesa (str): Postura defensiva do adversário.
+        bonus (float): Bônus acumulado na jogada.
+
+    Returns:
+        float: Chance média, entre 0 e 1.
+    """
+    total = sum(dados["peso"] for dados in DRIBLES.values())
+    return (
+        sum(
+            chance_da_acao(partida, atacante_id, zona, faixa, "driblar", portador, marcador, defesa, bonus, chave)
+            * dados["peso"]
+            for chave, dados in DRIBLES.items()
+        )
+        / total
+    )
+
+
+def chances_das_acoes(partida, atacante_id, zona, faixa, portador, marcador, defesa, bonus):
+    """
+    Calcula a chance de cada ação da zona dar certo, para as revelações.
+
+    Para chutar, é a chance de gol de um chute colocado do local da zona; para driblar, a média dos dribles;
+    nas demais ações, a chance de a jogada prosseguir.
+
+    Args:
+        partida (dict): Estado da partida.
+        atacante_id (str): Time com a bola.
+        zona (str): Zona da jogada.
+        faixa (int): Faixa do campo.
+        portador (dict): Jogador com a bola.
+        marcador (dict): Defensor que marca o lance.
+        defesa (str): Postura defensiva do adversário.
+        bonus (float): Bônus acumulado na jogada.
+
+    Returns:
+        dict: Chance de cada ação de ACOES[zona], entre 0 e 1.
+    """
+    chances = {}
+    for acao in ACOES[zona]:
+        if acao == "chutar":
+            chances[acao] = chance_de_gol(
+                partida, atacante_id, portador, LOCAL_DO_CHUTE[zona], "colocado", bonus, defesa
+            )
+        elif acao == "driblar":
+            chances[acao] = chance_media_do_drible(partida, atacante_id, zona, faixa, portador, marcador, defesa, bonus)
+        else:
+            chances[acao] = chance_da_acao(
+                partida, atacante_id, zona, faixa, acao, portador, marcador, defesa, bonus, None
+            )
+    return chances
 
 
 def finalizar(
@@ -888,7 +1125,7 @@ def finalizar(
     goleiro = goleiro_de(defensor)
     chute = CHUTES[tipo]
     partida["ultimo_local"] = local
-    mover_bola(partida, atacante_id, "area" if local not in ("longe", "meio_campo", "falta", "primeira") else "ataque")
+    mover_bola(partida, atacante_id, ZONA_DO_LOCAL.get(local, "area"))
     atacante["chutes"] += 1
     bloqueio = "nenhum"
     if local in LOCAIS_COM_BLOQUEIO and random.random() < 0.35:
@@ -906,13 +1143,7 @@ def finalizar(
         tipo="chute",
         time_id=atacante_id,
     )
-    finalizacao = atributo_efetivo(finalizador, "fin")
-    if local == "cabeceio":
-        finalizacao = (finalizacao + atributo_efetivo(finalizador, "fis")) / 2
-    alvo = chute["alvo"] + LOCAIS[local]["alvo"] + (finalizacao - 65) * 0.004 + bonus * 0.5
-    alvo += {"carrinho_falhou": 0.03, "fechado": -0.05}.get(bloqueio, 0)
-    if defesa == "recuar" and local in ("longe", "area", "cara"):
-        alvo -= 0.06
+    ajuste_alvo = {"carrinho_falhou": 0.03, "fechado": -0.05}.get(bloqueio, 0)
     fator_desvio = 1.0
     if random.random() < 0.06:
         if random.random() < 0.45:
@@ -921,8 +1152,10 @@ def finalizar(
                 cobrar_escanteio(partida, atacante_id, defesa)
             return
         registrar(partida, "desvio", {"jogador": rotulo(finalizador)}, tipo="oportunidade", time_id=atacante_id)
-        alvo += 0.15
+        ajuste_alvo += 0.15
         fator_desvio = 0.6
+    alvo, chance = probabilidades_do_chute(partida, atacante_id, finalizador, local, tipo, bonus, defesa, fator_desvio)
+    alvo += ajuste_alvo
     if random.random() >= limitar(alvo, 0.1, 0.95):
         if random.random() < 0.12:
             registrar(partida, "trave", {"jogador": rotulo(finalizador)}, tipo="trave", time_id=atacante_id)
@@ -932,13 +1165,6 @@ def finalizar(
         registrar(partida, "fora", {"jogador": rotulo(finalizador)}, tipo="fora", time_id=atacante_id)
         return
     atacante["no_alvo"] += 1
-    fator_goleiro = (0.45 if tipo == "cavadinha" and local == "cara" else chute["goleiro"]) * fator_desvio
-    reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
-    chance = (
-        LOCAIS[local]["gol"] + (finalizacao - reflexo) * PESO_FINALIZACAO
-    ) / fator_goleiro * FATOR_GOL + bonus * 0.5
-    if atacante["plano"]["estilo"] == "jogo direto":
-        chance -= 0.03
     nome_goleiro = rotulo(goleiro) if goleiro else "o zagueiro improvisado"
     if random.random() < limitar(chance, 0.03, 0.9):
         if random.random() < 0.03:
@@ -982,8 +1208,18 @@ def pegar_rebote(partida, atacante_id, defesa):
         atacante_id,
         f"Rebote! {rotulo(jogador)} pega a sobra. E agora?",
         [
-            ("primeira", "Chutar de primeira", 5),
-            ("ajeitar", "Ajeitar e bater", 3),
+            (
+                "primeira",
+                "Chutar de primeira",
+                5,
+                chance_de_gol(partida, atacante_id, jogador, "rebote", "forte", 0, defesa),
+            ),
+            (
+                "ajeitar",
+                "Ajeitar e bater",
+                3,
+                0.55 * chance_de_gol(partida, atacante_id, jogador, "area", "colocado", 0, defesa),
+            ),
         ],
     )
     if escolha == "primeira":
@@ -1023,11 +1259,11 @@ def cobrar_escanteio(partida, atacante_id, defesa):
         atacante_id,
         "Escanteio! Como cobrar?",
         [
-            ("primeira", "Na primeira trave", 3),
-            ("segunda", "Na segunda trave", 3),
-            ("curto", "Cobrança curta", 2),
-            ("fechado", "Fechado, no goleiro", 1),
-            ("ensaiada", "Jogada ensaiada", 2),
+            ("primeira", "Na primeira trave", 3, 0.45),
+            ("segunda", "Na segunda trave", 3, 0.38),
+            ("curto", "Cobrança curta", 2, 0.6),
+            ("fechado", "Fechado, no goleiro", 1, 0.45),
+            ("ensaiada", "Jogada ensaiada", 2, 0.5),
         ],
     )
     if escolha == "fechado":
@@ -1096,6 +1332,7 @@ def cobrar_falta(partida, atacante_id, defesa):
     """
     time = partida["times"][atacante_id]
     batedor = melhor_batedor(time)
+    referencia = atacante_de_referencia(time, batedor)
     mover_bola(partida, atacante_id, "ataque", 1)
     registrar(partida, "falta_perigosa", {"time": time["nome"]}, tipo="bola_parada", time_id=atacante_id)
     escolha = perguntar(
@@ -1103,11 +1340,31 @@ def cobrar_falta(partida, atacante_id, defesa):
         atacante_id,
         f"Falta perigosa! {rotulo(batedor)} na bola. Como cobrar?",
         [
-            ("barreira", "Por cima da barreira", 4),
-            ("rasteiro", "Rasteiro, por baixo", 2),
-            ("forte", "Bomba no canto", 2),
-            ("cruzar", "Cruzar na área", 3),
-            ("rolar", "Rolar para um companheiro bater", 2),
+            (
+                "barreira",
+                "Por cima da barreira",
+                4,
+                chance_de_gol(partida, atacante_id, batedor, "falta", "colocado", 0, defesa),
+            ),
+            (
+                "rasteiro",
+                "Rasteiro, por baixo",
+                2,
+                0.8 * chance_de_gol(partida, atacante_id, batedor, "falta", "colocado", 0.03, defesa),
+            ),
+            ("forte", "Bomba no canto", 2, chance_de_gol(partida, atacante_id, batedor, "falta", "forte", 0, defesa)),
+            (
+                "cruzar",
+                "Cruzar na área",
+                3,
+                chance_de_gol(partida, atacante_id, referencia, "cabeceio", "colocado", 0, defesa),
+            ),
+            (
+                "rolar",
+                "Rolar para um companheiro bater",
+                2,
+                chance_de_gol(partida, atacante_id, referencia, "primeira", "forte", 0.03, defesa),
+            ),
         ],
     )
     if escolha == "cruzar":
@@ -1297,8 +1554,28 @@ def falta_tatica(partida, atacante_id, zona, portador, defesa):
         time_id=defensor_id,
     )
     cartao_na_falta(partida, defensor_id, marcador, 0.45)
-    if zona == "ataque":
+    if zona in ("ataque", "linha_de_fundo"):
         cobrar_falta(partida, atacante_id, defesa)
+
+
+def chance_drible_goleiro(jogador, goleiro, bonus):
+    """
+    Calcula a chance de o atacante driblar o goleiro no cara a cara.
+
+    Parte de 50% e soma a diferença entre a técnica do atacante (média de finalização e físico) e o reflexo do
+    goleiro (peso 0,005), mais o bônus, ficando entre 15% e 85%.
+
+    Args:
+        jogador (dict): Atacante cara a cara.
+        goleiro (dict | None): Goleiro adversário, ou None se não houver.
+        bonus (float): Bônus acumulado na jogada, já com o efeito da escolha do goleiro.
+
+    Returns:
+        float: Chance de o drible dar certo.
+    """
+    reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
+    tecnica = (atributo_efetivo(jogador, "fin") + atributo_efetivo(jogador, "fis")) / 2
+    return limitar(0.5 + (tecnica - reflexo) * 0.005 + bonus, 0.15, 0.85)
 
 
 def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
@@ -1329,10 +1606,20 @@ def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
         atacante_id,
         f"{rotulo(jogador)} está cara a cara com o goleiro!",
         [
-            ("colocado", "Tocar no canto", 4),
-            ("forte", "Encher o pé", 3),
-            ("cavadinha", "Cavadinha", 2),
-            ("driblar", "Driblar o goleiro", 2),
+            (
+                "colocado",
+                "Tocar no canto",
+                4,
+                chance_de_gol(partida, atacante_id, jogador, "cara", "colocado", bonus, defesa),
+            ),
+            ("forte", "Encher o pé", 3, chance_de_gol(partida, atacante_id, jogador, "cara", "forte", bonus, defesa)),
+            (
+                "cavadinha",
+                "Cavadinha",
+                2,
+                chance_de_gol(partida, atacante_id, jogador, "cara", "cavadinha", bonus, defesa),
+            ),
+            ("driblar", "Driblar o goleiro", 2, chance_drible_goleiro(jogador, goleiro, bonus)),
         ],
     )
     nome_goleiro = rotulo(goleiro) if goleiro else "o zagueiro"
@@ -1350,9 +1637,7 @@ def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
     if escolha != "driblar":
         finalizar(partida, atacante_id, jogador, "cara", escolha, bonus + efeito, defesa)
         return
-    reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
-    tecnica = (atributo_efetivo(jogador, "fin") + atributo_efetivo(jogador, "fis")) / 2
-    if random.random() < limitar(0.5 + (tecnica - reflexo) * 0.005 + bonus + efeito, 0.15, 0.85):
+    if random.random() < chance_drible_goleiro(jogador, goleiro, bonus + efeito):
         registrar(partida, "driblou_goleiro", {"jogador": rotulo(jogador)}, time_id=atacante_id)
         partida["times"][atacante_id]["chutes"] += 1
         partida["times"][atacante_id]["no_alvo"] += 1
@@ -1392,11 +1677,36 @@ def cruzamento(partida, atacante_id, cruzador, bonus, defesa):
         atacante_id,
         f"A bola vem na área para {rotulo(receptor)}!",
         [
-            ("cabecear", "Cabecear", 5),
-            ("voleio", "Bater de voleio", 2),
-            ("dominar", "Dominar e chutar", 3),
-            ("escorar", "Escorar para um companheiro", 2),
-            ("bicicleta", "Tentar de bicicleta", 1),
+            (
+                "cabecear",
+                "Cabecear",
+                5,
+                chance_de_gol(partida, atacante_id, receptor, "cabeceio", "colocado", bonus, defesa),
+            ),
+            (
+                "voleio",
+                "Bater de voleio",
+                2,
+                chance_de_gol(partida, atacante_id, receptor, "voleio", "forte", bonus, defesa),
+            ),
+            (
+                "dominar",
+                "Dominar e chutar",
+                3,
+                0.6 * chance_de_gol(partida, atacante_id, receptor, "area", "colocado", bonus, defesa),
+            ),
+            (
+                "escorar",
+                "Escorar para um companheiro",
+                2,
+                0.55 * chance_de_gol(partida, atacante_id, receptor, "area", "colocado", bonus + 0.06, defesa),
+            ),
+            (
+                "bicicleta",
+                "Tentar de bicicleta",
+                1,
+                chance_de_gol(partida, atacante_id, receptor, "bicicleta", "forte", bonus, defesa),
+            ),
         ],
     )
     if escolha == "cabecear":
@@ -1455,8 +1765,13 @@ def oportunidade_do_meio(partida, atacante_id, portador, defesa):
         atacante_id,
         f"{nome_goleiro} está adiantado! {rotulo(portador)} arrisca do meio-campo?",
         [
-            ("arriscar", "Chutar do meio-campo", 1),
-            ("seguir", "Seguir a jogada", 4),
+            (
+                "arriscar",
+                "Chutar do meio-campo",
+                1,
+                chance_de_gol(partida, atacante_id, portador, "meio_campo", "forte", 0, defesa),
+            ),
+            ("seguir", "Seguir a jogada", 4, 1.0),
         ],
     )
     if escolha == "arriscar":
@@ -1493,17 +1808,20 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
     """
     Simula uma posse de bola completa do time atacante.
 
-    A posse começa no meio-campo, na zona_inicial pedida por uma jogada especial, ou já no ataque em
-    contra-ataque (bônus de 0,08) e, no estilo jogo direto, com 40% de chance (bônus de -0,03). O adversário
-    escolhe a postura defensiva; a falta tática fora da área
-    encerra a posse na hora. Em até seis passos, o time escolhe uma ação por zona (no último passo, toca no
-    meio ou chuta nas outras zonas), que pode virar falta, finalização, avanço de zona, troca de portador ou
-    perda da bola. Na perda, pode haver escanteio, gol contra no cruzamento ou recuperação do adversário, que
-    puxa um contra-ataque se jogar nesse estilo contra um time ofensivo (50%), com 10% de chance geral ou com
-    25% de chance quando a pressão alta rouba no meio-campo. Pênaltis podem ser revisados pelo VAR; um drible
-    errado na área pode virar simulação; e uma enfiada em impedimento às vezes passa batida pelo bandeira. Se
-    os seis passos acabarem sem finalização nem perda, a narração diz que o time rodou a bola sem achar espaço
-    e a posse termina.
+    A posse começa no meio-campo, na zona_inicial pedida (campo de defesa, meio ou intermediária, por
+    exemplo), ou já no ataque em contra-ataque (bônus de 0,08) e, no estilo jogo direto, com 40% de chance
+    (bônus de -0,03). O adversário escolhe a postura defensiva; a falta tática fora da área encerra a posse na
+    hora. Em até PASSOS_DA_POSSE (8) passos, o time escolhe uma ação da zona onde está a bola (campo de
+    defesa, meio, intermediária, entrada da área, linha de fundo ou área); antes de cada escolha, a chance de
+    cada ação fica em partida["chances"] para as revelações. No último passo, toca nas zonas de trás ou chuta
+    nas da frente. A ação pode virar falta, finalização, avanço de zona, troca de portador ou perda da bola;
+    perder a bola no campo de defesa dá contra-ataque ao adversário em 35% das vezes. Na perda, pode haver
+    escanteio, gol contra no cruzamento ou recuperação do adversário, que puxa um contra-ataque se jogar nesse
+    estilo contra um time ofensivo (50%), com 10% de chance geral ou com 25% de chance quando a pressão alta
+    rouba no meio-campo ou no campo de defesa. Pênaltis podem ser revisados pelo VAR; um drible errado na área
+    pode virar simulação; e uma enfiada em impedimento às vezes passa batida pelo bandeira. Se os passos
+    acabarem sem finalização nem perda, a narração diz que o time rodou a bola sem achar espaço e a posse
+    termina.
 
     Args:
         partida (dict): Estado da partida.
@@ -1543,7 +1861,7 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
         falta_tatica(partida, atacante_id, zona, portador, defesa)
         return None
     trocar_portador = False
-    for passo in range(6):
+    for passo in range(PASSOS_DA_POSSE):
         if trocar_portador:
             portador = escolher_jogador(atacante, PESOS_PORTADOR[zona], excluir=portador)
         entregar_bola(partida, atacante_id, zona, faixa, portador)
@@ -1554,15 +1872,17 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
             )
         if zona == "meio" and random.random() < 0.025 and oportunidade_do_meio(partida, atacante_id, portador, defesa):
             return None
-        if passo == 5:
-            acao = "tocar" if zona == "meio" else "chutar"
+        marcador = escolher_jogador(defensor, PESOS_MARCADOR[zona])
+        if passo == PASSOS_DA_POSSE - 1:
+            acao = "chutar" if zona in LOCAL_DO_CHUTE else "tocar"
         else:
+            partida["chances"] = chances_das_acoes(partida, atacante_id, zona, faixa, portador, marcador, defesa, bonus)
             acao = controles[atacante_id]["ataque"](partida, atacante_id, zona, portador)
+            partida["chances"] = None
         if acao not in ACOES[zona]:
             acao = ACOES[zona][0]
-        marcador = escolher_jogador(defensor, PESOS_MARCADOR[zona])
         if acao == "chutar":
-            local = "longe" if zona == "ataque" else "area"
+            local = LOCAL_DO_CHUTE[zona]
             finalizar(
                 partida,
                 atacante_id,
@@ -1589,13 +1909,23 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
                 partida,
                 atacante_id,
                 f"Que drible {rotulo(portador)} vai tentar?",
-                [(chave, dados_drible["nome"], dados_drible["peso"]) for chave, dados_drible in DRIBLES.items()],
+                [
+                    (
+                        chave,
+                        dados_drible["nome"],
+                        dados_drible["peso"],
+                        chance_da_acao(
+                            partida, atacante_id, zona, faixa, "driblar", portador, marcador, defesa, bonus, chave
+                        ),
+                    )
+                    for chave, dados_drible in DRIBLES.items()
+                ],
             )
         dados = {"jogador": rotulo(portador), "marcador": rotulo(marcador), "time": atacante["nome"]}
         if random.random() < chance_da_acao(
             partida, atacante_id, zona, faixa, acao, portador, marcador, defesa, bonus, drible
         ):
-            if defesa == "pressao" and zona == "meio":
+            if defesa == "pressao" and zona in ("defesa", "meio"):
                 bonus += 0.06
             if acao == "driblar":
                 registrar(partida, f"drible_{drible}_ok", dados, time_id=atacante_id)
@@ -1607,8 +1937,18 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
                 continue
             registrar(partida, f"{acao}_ok", dados, time_id=atacante_id)
             if acao == "cruzar":
-                cruzamento(partida, atacante_id, portador, bonus + (0.04 if faixa != 1 else 0.0), defesa)
+                extra = (0.04 if faixa != 1 else 0.0) + (0.04 if zona == "linha_de_fundo" else 0.0)
+                cruzamento(partida, atacante_id, portador, bonus + extra, defesa)
                 return None
+            if acao == "rasteiro":
+                companheiro = escolher_jogador(atacante, PESOS_REBOTE, excluir=portador)
+                entregar_bola(partida, atacante_id, "area", 1, companheiro)
+                finalizar(partida, atacante_id, companheiro, "area", "colocado", bonus + 0.08, defesa)
+                return None
+            if acao == "conduzir":
+                zona = PROXIMA_ZONA[zona]
+                bonus += 0.02
+                continue
             if acao == "enfiar":
                 recebedor = escolher_jogador(atacante, {"ATA": 6, "MEI": 2}, excluir=portador)
                 if random.random() < 0.4:
@@ -1625,12 +1965,16 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
             trocar_portador = True
             if acao == "abrir":
                 faixa = random.choice((0, 2))
-                zona = "ataque"
+                zona = "linha_de_fundo" if zona == "intermediaria" else "ataque"
             elif acao == "lancar":
-                zona = "ataque"
-                bonus += 0.04
-            elif zona == "meio" and random.random() < 0.5:
-                zona = "ataque"
+                zona = "intermediaria" if zona == "defesa" else "ataque"
+                bonus += 0.02 if zona == "intermediaria" else 0.04
+            elif acao == "inverter":
+                faixa = 2 if faixa == 0 else 0
+                zona = PROXIMA_ZONA[zona]
+                bonus += 0.02
+            elif zona in ("defesa", "meio", "intermediaria") and random.random() < 0.5:
+                zona = PROXIMA_ZONA[zona]
             else:
                 bonus += 0.03
             continue
@@ -1653,7 +1997,7 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
             if random.random() < 0.3:
                 cobrar_escanteio(partida, atacante_id, defesa)
                 return None
-        if defesa == "recuar" and zona != "meio" and random.random() < 0.25:
+        if defesa == "recuar" and zona in ("ataque", "linha_de_fundo", "area") and random.random() < 0.25:
             cobrar_escanteio(partida, atacante_id, defesa)
             return None
         if random.random() < 0.5:
@@ -1669,7 +2013,9 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
             and atacante["plano"]["ofensividade"] >= 4
             and random.random() < 0.5
         )
-        if contra or random.random() < 0.10 or (defesa == "pressao" and zona == "meio" and random.random() < 0.25):
+        pressao_alta = defesa == "pressao" and zona in ("defesa", "meio") and random.random() < 0.25
+        perdeu_atras = zona == "defesa" and random.random() < 0.35
+        if contra or random.random() < 0.10 or pressao_alta or perdeu_atras:
             return defensor_id, marcador
         return None
     registrar(
