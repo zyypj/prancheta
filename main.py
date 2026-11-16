@@ -6,17 +6,25 @@ from interface import telas
 from interface.campo import criar_exibidor
 from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
+from interface.mercado import tela_mercado
 from liga.eventos import aplicar_efeito, preparar_evento, sortear_evento
 from liga.temporada import (
     adversario_de,
+    avancar_etapa,
     clube_do_jogador,
     criar_estado_novo,
+    descricao_etapa,
+    etapa_atual,
+    fechar_fase_copa,
     fechar_rodada,
     jogo_do_jogador,
+    jogo_neutro,
+    mata_mata,
     resumo_final,
     simular_outros_jogos,
     temporada_acabou,
 )
+from mercado.transferencias import movimentar_mercado
 from partida.lances import criar_partida, jogar_partida
 from partida.narracao import carregar_frases
 from partida.simulacao import CONTROLE_IA, plano_ia
@@ -90,17 +98,18 @@ def montar_partida(estado, recursos, modo, velocidade):
     casa_id, fora_id = jogo_do_jogador(estado)
     casa = estado["clubes"][casa_id]
     fora = estado["clubes"][fora_id]
+    neutro = jogo_neutro(estado)
     planos = {
-        casa_id: casa["plano"] if casa_id == estado["clube_id"] else plano_ia(casa, fora, True),
+        casa_id: casa["plano"] if casa_id == estado["clube_id"] else plano_ia(casa, fora, not neutro),
         fora_id: fora["plano"] if fora_id == estado["clube_id"] else plano_ia(fora, casa, False),
     }
-    partida = criar_partida(casa, fora, recursos["frases"], planos[casa_id], planos[fora_id])
+    partida = criar_partida(casa, fora, recursos["frases"], planos[casa_id], planos[fora_id], neutro)
     partida["modo"] = modo
     partida["velocidade"] = velocidade
     return partida
 
 
-def registrar_sumula(estado, resultado, numero):
+def registrar_sumula(estado, resultado, chave, titulo_jogo):
     """
     Registra a súmula de uma partida disputada.
 
@@ -109,12 +118,13 @@ def registrar_sumula(estado, resultado, numero):
     Args:
         estado (dict): Estado atual da temporada.
         resultado (dict): Resultado e súmula da partida.
-        numero (int): Número da rodada disputada.
+        chave (str): Chave da súmula no histórico (número da rodada ou fase da copa).
+        titulo_jogo (str): Competição e rodada ou fase, usado no arquivo de texto.
     """
-    estado["sumulas"][str(numero)] = resultado["sumula"]
+    estado["sumulas"][chave] = resultado["sumula"]
     casa = estado["clubes"][resultado["mandante"]]["nome"]
     fora = estado["clubes"][resultado["visitante"]]["nome"]
-    cabecalho = f"Rodada {numero}: {casa} {resultado['gm']} x {resultado['gv']} {fora}"
+    cabecalho = f"{titulo_jogo}: {casa} {resultado['gm']} x {resultado['gv']} {fora}"
     texto = [cabecalho] + [f"  {linha}" for linha in resultado["sumula"]]
     anexar_txt(PASTA_SUMULAS / f"{nome_do_arquivo(estado['tecnico'])}.txt", "\n".join(texto) + "\n")
 
@@ -137,29 +147,58 @@ def evento_da_semana(estado, recursos):
     telas.mostrar_mensagem(mensagem)
 
 
-def jogar_rodada(estado, recursos):
+def escolher_como_jogar(estado):
     while True:
         escolha = telas.pre_jogo(estado)
-        if escolha == 0:
-            return
-        if escolha == 4:
+        if escolha == 5:
+            telas.mostrar_clube(estado, adversario_de(jogo_do_jogador(estado), estado["clube_id"]))
+        elif escolha == 6:
             telas.editar_plano(clube_do_jogador(estado))
-            continue
-        break
+        else:
+            return escolha
+
+
+def jogar_partida_do_jogador(estado, recursos, escolha):
     completar_titulares(clube_do_jogador(estado))
     modo = "jogar" if escolha == 1 else "simular"
-    velocidade = "rapida" if escolha == 3 else "normal"
+    velocidade = "rapida" if escolha in (3, 4) else "normal"
     partida = montar_partida(estado, recursos, modo, velocidade)
     adversario = adversario_de(jogo_do_jogador(estado), estado["clube_id"])
-    controles = {estado["clube_id"]: CONTROLE_HUMANO, adversario: CONTROLE_IA}
-    resultado = jogar_partida(partida, controles, criar_exibidor(estado["clube_id"], menu_pausa))
+    if escolha == 4:
+        controles = {estado["clube_id"]: CONTROLE_IA, adversario: CONTROLE_IA}
+        with console.status("Simulando a partida..."):
+            resultado = jogar_partida(partida, controles, mata_mata=mata_mata(estado))
+    else:
+        controles = {estado["clube_id"]: CONTROLE_HUMANO, adversario: CONTROLE_IA}
+        exibidor = criar_exibidor(estado["clube_id"], menu_pausa)
+        resultado = jogar_partida(partida, controles, exibidor, mata_mata(estado))
     telas.mostrar_fim_de_jogo(estado, resultado)
-    with console.status("Simulando os outros jogos da rodada..."):
-        resultados = [resultado] + simular_outros_jogos(estado, recursos["frases"])
-    numero = estado["rodada"]
-    registrar_sumula(estado, resultado, numero)
-    informacao = fechar_rodada(estado, resultados)
-    telas.mostrar_resultados_rodada(estado, resultados, informacao, numero)
+    return resultado
+
+
+def jogar_etapa(estado, recursos):
+    etapa = etapa_atual(estado)
+    competicao, valor = etapa
+    resultado = None
+    if jogo_do_jogador(estado):
+        escolha = escolher_como_jogar(estado)
+        if escolha == 0:
+            return
+        resultado = jogar_partida_do_jogador(estado, recursos, escolha)
+    with console.status("Simulando os outros jogos..."):
+        resultados = ([resultado] if resultado else []) + simular_outros_jogos(estado, recursos["frases"])
+    if competicao == "liga":
+        registrar_sumula(estado, resultado, str(valor), f"Liga, rodada {valor}")
+        informacao = fechar_rodada(estado, resultados)
+        titulo_tela = f"RESULTADOS DA RODADA {valor}"
+    else:
+        if resultado:
+            registrar_sumula(estado, resultado, f"copa-{valor}", descricao_etapa(etapa))
+        informacao = fechar_fase_copa(estado, resultados)
+        titulo_tela = f"RESULTADOS — {descricao_etapa(etapa).upper()}"
+    noticias = movimentar_mercado(estado)
+    telas.mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias)
+    avancar_etapa(estado)
     if not temporada_acabou(estado):
         evento_da_semana(estado, recursos)
     if salvar_jogo(estado):
@@ -182,7 +221,7 @@ def central(estado, recursos):
         escolha = telas.mostrar_central(estado)
         clube = clube_do_jogador(estado)
         if escolha == 1:
-            jogar_rodada(estado, recursos)
+            jogar_etapa(estado, recursos)
         elif escolha == 2:
             telas.mostrar_elenco(clube)
         elif escolha == 3:
@@ -190,8 +229,14 @@ def central(estado, recursos):
         elif escolha == 4:
             telas.mostrar_classificacao(estado)
         elif escolha == 5:
-            telas.mostrar_rodadas(estado)
+            telas.mostrar_copa(estado)
         elif escolha == 6:
+            telas.mostrar_rodadas(estado)
+        elif escolha == 7:
+            tela_mercado(estado)
+        elif escolha == 8:
+            telas.escolher_clube_para_ver(estado)
+        elif escolha == 9:
             mensagem = "Jogo salvo!" if salvar_jogo(estado) else "Não foi possível salvar o jogo."
             telas.mostrar_mensagem(mensagem)
         elif confirmar(" Salvar antes de voltar ao menu?"):
