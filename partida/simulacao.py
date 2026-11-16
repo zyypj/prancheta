@@ -82,7 +82,8 @@ def ajustar_ofensividade(partida, time_id):
 
 def trocar_cansados(partida, time_id, limite_energia, quantidade):
     time = partida["times"][time_id]
-    cansados = sorted([j for j in time["em_campo"] if j["pos"] != "GOL" and j["energia"] < limite_energia], key=lambda j: j["energia"])
+    cansados = sorted([j for j in time["em_campo"] if j["pos"] != "GOL" and j["energia"] < limite_energia],
+                      key=lambda j: j["energia"])
     for jogador in cansados[:quantidade]:
         if time["subs"] >= SUBSTITUICOES_IA or not pode_substituir(time):
             return
@@ -125,7 +126,8 @@ CONTROLE_IA = {
 def plano_ia(clube, adversario, em_casa):
     plano = dict(clube["plano"])
     diferenca = clube["forca"] - adversario["forca"]
-    ofensividade = plano["ofensividade"] + (1 if em_casa else 0) + (1 if diferenca > 8 else 0) - (1 if diferenca < -8 else 0)
+    ofensividade = plano["ofensividade"] + (1 if em_casa else 0) + (1 if diferenca > 8 else 0) - (
+        1 if diferenca < -8 else 0)
     plano["ofensividade"] = int(limitar(ofensividade, 1, 5))
     return plano
 

@@ -3,7 +3,8 @@ from rich.table import Table
 from config import ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
 from interface.campo import barra, mostrar_partida
 from interface.entrada import console, ler_opcao, limpar, pausar
-from partida.lances import ACOES, CANTOS, DEFESAS, DESCRICAO_ZONAS, FORCAS_PENALTI, NOMES_ACOES, NOMES_DEFESAS, fazer_substituicao, outro
+from partida.lances import ACOES, CANTOS, DEFESAS, DESCRICAO_ZONAS, FORCAS_PENALTI, NOMES_ACOES, NOMES_DEFESAS, \
+    fazer_substituicao, outro
 from partida.simulacao import CONTROLE_IA
 
 DESENHO_GOL = (
@@ -30,7 +31,8 @@ def humano_ataque(partida, time_id, zona, portador):
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     acoes = ACOES[zona]
     local = DESCRICAO_ZONAS[zona]
-    indice = escolher_no_campo(partida, time_id, f"{portador['nome']} está com a bola {local}. O que fazer?", [NOMES_ACOES[a] for a in acoes])
+    indice = escolher_no_campo(partida, time_id, f"{portador['nome']} está com a bola {local}. O que fazer?",
+                               [NOMES_ACOES[a] for a in acoes])
     if indice is None:
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     return acoes[indice]
@@ -40,7 +42,8 @@ def humano_defesa(partida, time_id):
     if partida["modo"] == "simular":
         return CONTROLE_IA["defesa"](partida, time_id)
     adversario = partida["times"][outro(partida, time_id)]
-    indice = escolher_no_campo(partida, time_id, f"O {adversario['nome']} vai atacar. Como defender?", [NOMES_DEFESAS[d] for d in DEFESAS])
+    indice = escolher_no_campo(partida, time_id, f"O {adversario['nome']} vai atacar. Como defender?",
+                               [NOMES_DEFESAS[d] for d in DEFESAS])
     if indice is None:
         return CONTROLE_IA["defesa"](partida, time_id)
     return DEFESAS[indice]
@@ -82,7 +85,8 @@ def tabela_jogadores(jogadores, titulo):
     for coluna in ("#", "Jogador", "Pos", "Qual", "Energia"):
         tabela.add_column(coluna)
     for numero, jogador in enumerate(jogadores, start=1):
-        tabela.add_row(str(numero), jogador["nome"], jogador["pos"], str(jogador["qualidade"]), barra(jogador["energia"]))
+        tabela.add_row(str(numero), jogador["nome"], jogador["pos"], str(jogador["qualidade"]),
+                       barra(jogador["energia"]))
     return tabela
 
 
@@ -120,7 +124,8 @@ def menu_substituicao(partida, time_id):
             console.print(" [red]Sem substituições disponíveis.[/]")
             pausar("Enter para voltar à pausa...")
             return
-        console.print(tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)"))
+        console.print(
+            tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)"))
         console.print(" [bold]0[/] Voltar à pausa")
         escolha = ler_opcao(0, len(time["em_campo"]), " Quem sai? > ")
         if not escolha:
@@ -138,12 +143,14 @@ def menu_plano_partida(partida, time_id):
     console.print(" [bold]1[/] Estilo   [bold]2[/] Ofensividade   [bold]3[/] Intensidade   [bold]0[/] Voltar")
     escolha = ler_opcao(0, 3)
     if escolha == 1:
-        console.print(" " + "   ".join(f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1)) + "   [bold]0[/] Voltar")
+        console.print(" " + "   ".join(
+            f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1)) + "   [bold]0[/] Voltar")
         novo = ler_opcao(0, len(ESTILOS))
         if novo:
             plano["estilo"] = ESTILOS[novo - 1]
     elif escolha == 2:
-        plano["ofensividade"] = ler_opcao(0, 5, " Ofensividade (1 retranca a 5 tudo ao ataque, 0 mantém) > ") or plano["ofensividade"]
+        plano["ofensividade"] = ler_opcao(0, 5, " Ofensividade (1 retranca a 5 tudo ao ataque, 0 mantém) > ") or plano[
+            "ofensividade"]
     elif escolha == 3:
         plano["intensidade"] = ler_opcao(0, 5, " Intensidade (1 a 5, 0 mantém) > ") or plano["intensidade"]
 

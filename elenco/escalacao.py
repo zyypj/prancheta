@@ -116,12 +116,14 @@ def escalar_automatico(elenco, formacao):
 
 def completar_titulares(clube):
     por_id = {jogador["id"]: jogador for jogador in clube["elenco"]}
-    validos = [identificador for identificador in clube["titulares"] if identificador in por_id and disponivel(por_id[identificador])]
+    validos = [identificador for identificador in clube["titulares"] if
+               identificador in por_id and disponivel(por_id[identificador])]
     if len(validos) == 11:
         clube["titulares"] = validos
         return []
     sugestao = escalar_automatico(clube["elenco"], clube["plano"]["formacao"])
-    trocados = [por_id[identificador]["nome"] for identificador in clube["titulares"] if identificador not in validos and identificador in por_id]
+    trocados = [por_id[identificador]["nome"] for identificador in clube["titulares"] if
+                identificador not in validos and identificador in por_id]
     for identificador in sugestao:
         if len(validos) >= 11:
             break
@@ -143,11 +145,16 @@ def media(valores, padrao):
 
 
 def forca_setores(em_campo):
-    por_posicao = {posicao: [jogador for jogador in em_campo if jogador["pos"] == posicao] for posicao in ("GOL", "DEF", "MEI", "ATA")}
+    por_posicao = {posicao: [jogador for jogador in em_campo if jogador["pos"] == posicao] for posicao in
+                   ("GOL", "DEF", "MEI", "ATA")}
     contagem = contar_posicoes(em_campo)
-    defesa = media([atributo_efetivo(j, "des") * 0.8 + atributo_efetivo(j, "fis") * 0.2 for j in por_posicao["DEF"]], 35)
-    meio = media([atributo_efetivo(j, "pas") * 0.6 + atributo_efetivo(j, "des") * 0.2 + atributo_efetivo(j, "fis") * 0.2 for j in por_posicao["MEI"]], 35)
-    ataque = media([atributo_efetivo(j, "fin") * 0.7 + atributo_efetivo(j, "fis") * 0.3 for j in por_posicao["ATA"]], 35)
+    defesa = media([atributo_efetivo(j, "des") * 0.8 + atributo_efetivo(j, "fis") * 0.2 for j in por_posicao["DEF"]],
+                   35)
+    meio = media(
+        [atributo_efetivo(j, "pas") * 0.6 + atributo_efetivo(j, "des") * 0.2 + atributo_efetivo(j, "fis") * 0.2 for j in
+         por_posicao["MEI"]], 35)
+    ataque = media([atributo_efetivo(j, "fin") * 0.7 + atributo_efetivo(j, "fis") * 0.3 for j in por_posicao["ATA"]],
+                   35)
     ataque = ataque * 0.75 + media([atributo_efetivo(j, "pas") for j in por_posicao["MEI"]], 35) * 0.25
     goleiro = max([atributo_efetivo(j, "ref") for j in por_posicao["GOL"]], default=30)
     defesa += (contagem["DEF"] - 4) * 2.5

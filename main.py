@@ -2,10 +2,10 @@ import sys
 
 from config import ARQUIVO_EVENTOS, ARQUIVO_NARRACAO, ARQUIVO_NOMES, ARQUIVO_TIMES, PASTA_SUMULAS
 from elenco.escalacao import completar_titulares, ler_banco_de_nomes
+from interface import telas
 from interface.campo import criar_exibidor
 from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
-from interface import telas
 from liga.eventos import aplicar_efeito, preparar_evento, sortear_evento
 from liga.temporada import (
     adversario_de,
@@ -23,6 +23,7 @@ from partida.simulacao import CONTROLE_IA, plano_ia
 from persistencia.arquivos import anexar_txt, ler_json, ler_linhas_txt
 from persistencia.ranking import ler_ranking, registrar_ranking
 from persistencia.save import carregar_jogo, listar_saves, nome_do_arquivo, salvar_jogo
+
 
 def carregar_recursos():
     """

@@ -82,7 +82,8 @@ def posicao_atual(estado):
 
 
 def resultado_para(clube_id, resultado):
-    feitos, sofridos = (resultado["gm"], resultado["gv"]) if resultado["mandante"] == clube_id else (resultado["gv"], resultado["gm"])
+    feitos, sofridos = (resultado["gm"], resultado["gv"]) if resultado["mandante"] == clube_id else (resultado["gv"],
+                                                                                                     resultado["gm"])
     if feitos > sofridos:
         return "V"
     if feitos == sofridos:
@@ -115,7 +116,8 @@ def fechar_rodada(estado, resultados):
         registrar_resultado(estado["tabela"], resultado)
         rodada.append({chave: resultado[chave] for chave in ("mandante", "visitante", "gm", "gv")})
     estado["historico"].append(rodada)
-    do_jogador = next(resultado for resultado in resultados if estado["clube_id"] in (resultado["mandante"], resultado["visitante"]))
+    do_jogador = next(
+        resultado for resultado in resultados if estado["clube_id"] in (resultado["mandante"], resultado["visitante"]))
     letra, variacao = variacao_de_confianca(estado, do_jogador)
     estado["ultimos"] = (estado["ultimos"] + [letra])[-5:]
     ajustar_confianca(estado, variacao)

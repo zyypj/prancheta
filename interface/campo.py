@@ -127,7 +127,8 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
     if pergunta:
         console.print(f"\n [bold yellow]{pergunta}[/]")
     if opcoes:
-        console.print(" " + "   ".join(f"[bold]{numero}[/] {texto}" for numero, texto in enumerate(opcoes, start=1)) + "   [bold]0[/] Pausar")
+        console.print(" " + "   ".join(
+            f"[bold]{numero}[/] {texto}" for numero, texto in enumerate(opcoes, start=1)) + "   [bold]0[/] Pausar")
 
 
 def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None):
