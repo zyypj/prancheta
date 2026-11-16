@@ -17,8 +17,6 @@ tocar_ok | {jogador} toca com calma e o {time} avança.
 tocar_ok | Troca de passes bonita do {time}, {jogador} participa.
 tocar_erro | {jogador} erra o passe e entrega a bola.
 tocar_erro | Passe interceptado! {marcador} estava atento.
-driblar_ok | {jogador} passa pelo marcador com um drible seco!
-driblar_ok | Que lindo! {jogador} deixa {marcador} no chão.
 driblar_erro | {jogador} tenta o drible, mas {marcador} desarma.
 driblar_erro | {marcador} chega firme e tira a bola de {jogador}.
 lancar_ok | {jogador} lança longo e encontra o companheiro livre!
@@ -29,11 +27,7 @@ cruzar_ok | {jogador} cruza na área!
 cruzar_ok | Cruzamento perigoso de {jogador}!
 cruzar_erro | {jogador} cruza e {marcador} tira de cabeça.
 cruzar_erro | Cruzamento fechado demais de {jogador}, o goleiro fica com ela.
-chute | {jogador} solta a bomba!
-chute | {jogador} arrisca de fora da área!
-chute | {jogador} bate cruzado!
 cara | {jogador} fica cara a cara com o goleiro!
-cabeceio | {jogador} sobe mais alto que todo mundo e cabeceia!
 gol | GOOOOOL! {jogador} marca para o {time}! {placar}.
 gol | É GOL! {jogador} balança a rede! {placar}.
 gol | GOOOL do {time}! {jogador} não perdoa! {placar}.
@@ -62,3 +56,48 @@ penalti_gol | {jogador} bate e converte! {placar}.
 penalti_defesa | DEFENDEU! {goleiro} pega o pênalti!
 penalti_fora | {jogador} bate pra fora! Desperdiçou!
 substituicao | Substituição no {time}: sai {sai}, entra {entra}.
+chute_longe | {jogador} arrisca {tipo} de fora da área!
+chute_longe | {jogador} solta a bomba de longe, {tipo}!
+chute_longe | {jogador} tenta da intermediária, {tipo}!
+chute_area | {jogador} bate {tipo} dentro da área!
+chute_area | {jogador} finaliza {tipo} da marca do pênalti!
+chute_area | {jogador} gira e bate {tipo} na pequena área!
+chute_cara | {jogador} bate {tipo} na saída do goleiro!
+chute_cara | {jogador} finaliza {tipo}, só ele e o goleiro!
+chute_cabeceio | {jogador} sobe mais alto que todo mundo e cabeceia!
+chute_cabeceio | {jogador} testa firme para o gol!
+chute_voleio | {jogador} pega de voleio!
+chute_voleio | Que tentativa! {jogador} emenda de primeira, no ar!
+chute_rebote | {jogador} bate de primeira no rebote!
+chute_meio_campo | {jogador} arrisca do meio-campo!
+chute_falta | {jogador} cobra a falta {tipo}!
+chute_escanteio | {jogador} cabeceia após o escanteio!
+trave | NA TRAVE! A bola explode no poste!
+trave | Uhhh! {jogador} acerta o travessão!
+rebote | A bola sobra para {jogador} na área!
+rebote | Rebote! {jogador} estava esperto e pega a sobra!
+rebote_bloqueado | {jogador} demora para ajeitar e a zaga bloqueia.
+enfiar_ok | {jogador} dá um passe em profundidade perfeito!
+enfiar_ok | Que enfiada de {jogador}! A defesa ficou parada!
+enfiar_erro | {jogador} tenta a enfiada, mas {marcador} corta.
+impedimento | Impedimento! O bandeira levanta.
+abrir_ok | {jogador} abre o jogo na ponta.
+abrir_erro | {jogador} tenta abrir o jogo, mas {marcador} intercepta.
+tabelar_ok | Tabela perfeita! {jogador} invade a área!
+tabelar_erro | A tabela não sai, {marcador} corta no meio.
+drible_corte_ok | {jogador} dá um corte seco em {marcador}!
+drible_caneta_ok | CANETA! {jogador} passa a bola entre as pernas de {marcador}!
+drible_chapeu_ok | Chapéu! {jogador} encobre {marcador} com classe!
+drible_arrancada_ok | {jogador} arranca em velocidade e deixa {marcador} para trás!
+pressao_ok | Pressão alta! {marcador} rouba a bola no campo de ataque.
+falta_tatica | {marcador} para a jogada de {jogador} com uma falta tática.
+goleiro_adiantado | {goleiro} está adiantado, quase na intermediária!
+gol_contra | GOL CONTRA! {jogador} desvia para a própria rede! {placar}.
+caimbra | {jogador} sente câimbra e não tem condições de continuar.
+escanteio_afastado | A zaga afasta o escanteio.
+escanteio_curto | Cobrança curta, a bola chega para {jogador}.
+gol_olimpico | O escanteio vai fechado... direto para o gol! {jogador} marca um GOL OLÍMPICO!
+driblou_goleiro | {jogador} dribla o goleiro e entra com bola e tudo!
+goleiro_salva | {goleiro} sai bem e fica com a bola nos pés de {jogador}.
+dominar_erro | {jogador} demora para dominar e a zaga tira.
+barreira | A bola explode na barreira!

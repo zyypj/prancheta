@@ -1,6 +1,6 @@
 import random
 
-from elenco.escalacao import atributo_efetivo, limitar
+from elenco.escalacao import limitar
 from elenco.substituicoes import melhor_substituto, pode_substituir
 from partida.lances import CANTOS, FORCAS_PENALTI, criar_partida, fazer_substituicao, goleiro_de, jogar_partida
 
@@ -17,19 +17,38 @@ def ia_ataque(partida, time_id, zona, portador):
     ofensividade = plano["ofensividade"]
     if zona == "meio":
         direto = 2.5 if plano["estilo"] == "jogo direto" else 0
-        return escolher_ponderado({"tocar": 7 - ofensividade, "driblar": 0.6 * ofensividade, "lancar": 0.5 + 0.4 * ofensividade + direto})
-    return escolher_ponderado({"chutar": 1.5 + 0.8 * ofensividade, "driblar": 0.5 * ofensividade, "cruzar": 1.5, "tocar": 4.5 - ofensividade})
+        return escolher_ponderado({
+            "tocar": 7 - ofensividade,
+            "enfiar": 0.4 + 0.3 * ofensividade,
+            "driblar": 0.6 * ofensividade,
+            "lancar": 0.5 + 0.4 * ofensividade + direto,
+            "abrir": 2,
+        })
+    if zona == "ataque":
+        na_ponta = partida["bola"]["faixa"] != 1
+        return escolher_ponderado({
+            "tocar": 4.5 - ofensividade,
+            "tabelar": 1.5,
+            "driblar": 0.5 * ofensividade,
+            "cruzar": 3.5 if na_ponta else 1,
+            "chutar": 0.6 * ofensividade,
+        })
+    return escolher_ponderado({"chutar": 2.5 + 0.6 * ofensividade, "driblar": 0.6 * ofensividade, "tocar": 1.2})
 
 
 def ia_defesa(partida, time_id):
     plano = partida["times"][time_id]["plano"]
-    return escolher_ponderado({"bote": plano["intensidade"], "fechar": 3, "recuar": 5 - plano["ofensividade"]})
+    return escolher_ponderado({
+        "bote": plano["intensidade"],
+        "pressao": 0.5 * plano["intensidade"] + (1 if plano["ofensividade"] >= 4 else 0),
+        "fechar": 3,
+        "recuar": 5 - plano["ofensividade"],
+        "falta": 0.3,
+    })
 
 
-def ia_falta(partida, time_id, batedor):
-    if atributo_efetivo(batedor, "fin") >= 70 and random.random() < 0.7:
-        return "direto"
-    return "cruzar"
+def ia_escolha(partida, time_id, pergunta, opcoes):
+    return random.choices([chave for chave, _, _ in opcoes], weights=[peso for _, _, peso in opcoes])[0]
 
 
 def ia_bater_penalti(partida, time_id, batedor, goleiro):
@@ -94,7 +113,7 @@ def ia_ajuste(partida, time_id):
 CONTROLE_IA = {
     "ataque": ia_ataque,
     "defesa": ia_defesa,
-    "falta": ia_falta,
+    "escolha": ia_escolha,
     "bater_penalti": ia_bater_penalti,
     "defender_penalti": ia_defender_penalti,
     "lesao": ia_lesao,

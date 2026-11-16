@@ -3,7 +3,7 @@ from rich.table import Table
 from config import ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
 from interface.campo import barra, mostrar_partida
 from interface.entrada import console, ler_opcao, limpar, pausar
-from partida.lances import ACOES, CANTOS, DEFESAS, FORCAS_PENALTI, NOMES_ACOES, NOMES_DEFESAS, fazer_substituicao, outro
+from partida.lances import ACOES, CANTOS, DEFESAS, DESCRICAO_ZONAS, FORCAS_PENALTI, NOMES_ACOES, NOMES_DEFESAS, fazer_substituicao, outro
 from partida.simulacao import CONTROLE_IA
 
 DESENHO_GOL = (
@@ -29,7 +29,7 @@ def humano_ataque(partida, time_id, zona, portador):
     if partida["modo"] == "simular":
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     acoes = ACOES[zona]
-    local = "no ataque" if zona == "ataque" else "no meio-campo"
+    local = DESCRICAO_ZONAS[zona]
     indice = escolher_no_campo(partida, time_id, f"{portador['nome']} está com a bola {local}. O que fazer?", [NOMES_ACOES[a] for a in acoes])
     if indice is None:
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
@@ -46,12 +46,13 @@ def humano_defesa(partida, time_id):
     return DEFESAS[indice]
 
 
-def humano_falta(partida, time_id, batedor):
+def humano_escolha(partida, time_id, pergunta, opcoes):
     if partida["modo"] == "simular":
-        return CONTROLE_IA["falta"](partida, time_id, batedor)
-    mostrar_partida(partida, time_id, pergunta=f"Falta perigosa! {batedor['nome']} vai cobrar.")
-    console.print(" [bold]1[/] Bater direto   [bold]2[/] Cruzar na área")
-    return "direto" if ler_opcao(1, 2) == 1 else "cruzar"
+        return CONTROLE_IA["escolha"](partida, time_id, pergunta, opcoes)
+    indice = escolher_no_campo(partida, time_id, pergunta, [nome for _, nome, _ in opcoes])
+    if indice is None:
+        return CONTROLE_IA["escolha"](partida, time_id, pergunta, opcoes)
+    return opcoes[indice][0]
 
 
 def tela_penalti(partida, time_id, titulo):
@@ -189,7 +190,7 @@ def humano_ajuste(partida, time_id):
 CONTROLE_HUMANO = {
     "ataque": humano_ataque,
     "defesa": humano_defesa,
-    "falta": humano_falta,
+    "escolha": humano_escolha,
     "bater_penalti": humano_bater_penalti,
     "defender_penalti": humano_defender_penalti,
     "lesao": humano_lesao,
