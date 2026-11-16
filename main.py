@@ -6,7 +6,7 @@ from interface import telas
 from interface.campo import criar_exibidor
 from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
-from interface.mercado import tela_mercado
+from interface.mercado import tela_mercado, tela_proposta
 from liga.eventos import aplicar_efeito, preparar_evento, sortear_evento
 from liga.temporada import (
     adversario_de,
@@ -139,7 +139,8 @@ def evento_da_semana(estado, recursos):
     Executa um evento aleatório após uma rodada.
 
     Sorteia um acontecimento, apresenta suas opções ao usuário, aplica o efeito escolhido e atualiza a
-    escalação do clube.
+    escalação do clube. Quando o evento é uma proposta por um jogador, abre a tela de negociação, e o valor
+    acertado nela é o que entra no caixa.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -147,8 +148,10 @@ def evento_da_semana(estado, recursos):
     """
     clube = clube_do_jogador(estado)
     evento = preparar_evento(sortear_evento(recursos["eventos"]), clube)
-    efeito = telas.mostrar_evento(evento)
-    mensagem = aplicar_efeito(estado, efeito, evento["jogador_id"], recursos["nomes"])
+    negociacao = evento["negociacao"]
+    efeito = tela_proposta(estado, evento) if negociacao else telas.mostrar_evento(evento)
+    valor_venda = negociacao["acordo"] if negociacao else None
+    mensagem = aplicar_efeito(estado, efeito, evento["jogador_id"], recursos["nomes"], valor_venda)
     completar_titulares(clube)
     telas.mostrar_mensagem(mensagem)
 

@@ -1,9 +1,11 @@
 from rich.table import Table
 
-from config import MAX_ELENCO, POSICOES
-from elenco.escalacao import valor_de_mercado
+from config import CONFIANCA_NEGOCIACAO_FRACASSADA, CONFIANCA_SEGURAR, CONFIANCA_VENDA, MAX_ELENCO, POSICOES
+from elenco.escalacao import rotulo, valor_de_mercado
+from interface.campo import barra
 from interface.entrada import console, ler_opcao, ler_valor
-from interface.telas import mostrar_mensagem, titulo
+from interface.telas import mostrar_mensagem, status_jogador, titulo
+from liga.eventos import aceitar_oferta, qualidade_do_garoto, responder_contraproposta
 from liga.temporada import clube_do_jogador
 from mercado.transferencias import (
     contratar_livre,
@@ -214,3 +216,120 @@ def tela_mercado(estado):
             contratar_sem_clube(estado)
         else:
             vender_jogador(estado)
+
+
+def ficha_do_jogador(clube, jogador):
+    """
+    Monta uma tabela com os dados de um jogador do clube.
+
+    Mostra posição, idade, qualidade, atributos (o reflexo só para goleiros), energia, gols na temporada,
+    situação no elenco e valor de mercado.
+
+    Args:
+        clube (dict): Clube dono do jogador.
+        jogador (dict): Jogador a ser mostrado.
+
+    Returns:
+        rich.table.Table: Tabela de uma linha pronta para imprimir.
+    """
+    tabela = Table(show_header=True, header_style="bold", box=None, padding=(0, 1))
+    for coluna in ("Jogador", "Idade", "Qual", "Fin", "Pas", "Des", "Fís", "Ref", "Energia", "Gols", "Situação"):
+        tabela.add_column(coluna)
+    tabela.add_row(
+        f"[bold]{rotulo(jogador)}[/]",
+        str(jogador.get("idade", "-")),
+        f"[bold]{jogador['qualidade']}[/]",
+        str(jogador["fin"]),
+        str(jogador["pas"]),
+        str(jogador["des"]),
+        str(jogador["fis"]),
+        str(jogador["ref"]) if jogador["pos"] == "GOL" else "-",
+        barra(jogador["energia"], 6),
+        str(jogador["gols"]),
+        status_jogador(jogador, clube["titulares"]) or "reserva",
+    )
+    return tabela
+
+
+def quem_assume(clube, jogador):
+    """
+    Encontra o jogador da mesma posição que fica com a vaga se o atual for vendido.
+
+    Args:
+        clube (dict): Clube dono do jogador.
+        jogador (dict): Jogador que pode ser vendido.
+
+    Returns:
+        dict | None: Companheiro de posição com maior qualidade, ou None se não houver nenhum.
+    """
+    mesma_posicao = [j for j in clube["elenco"] if j["pos"] == jogador["pos"] and j["id"] != jogador["id"]]
+    return max(mesma_posicao, key=lambda j: j["qualidade"], default=None)
+
+
+def tela_proposta(estado, evento):
+    """
+    Mostra a proposta de um clube do exterior e conduz a negociação.
+
+    Exibe a ficha do jogador, o valor de mercado, a oferta atual com a porcentagem sobre o valor, como o caixa
+    fica se vender, quem assume a vaga, a qualidade do garoto que sobe da base e o efeito de cada decisão na
+    confiança da diretoria. O técnico pode aceitar, recusar ou pedir mais: cada contraproposta é respondida por
+    responder_contraproposta, e o histórico aparece embaixo da oferta enquanto o clube continua negociando.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        evento (dict): Evento preparado, com o jogador alvo e a negociação.
+
+    Returns:
+        str: Efeito a aplicar: "vender", "segurar" ou "negociacao_fracassou".
+    """
+    clube = clube_do_jogador(estado)
+    jogador = next(j for j in clube["elenco"] if j["id"] == evento["jogador_id"])
+    negociacao = evento["negociacao"]
+    interessado = negociacao["clube"]
+    substituto = quem_assume(clube, jogador)
+    historico = []
+    while True:
+        titulo("EVENTO DA SEMANA — PROPOSTA DO EXTERIOR")
+        console.print(f" O [bold]{interessado}[/] quer contratar [bold]{rotulo(jogador)}[/].\n")
+        console.print(ficha_do_jogador(clube, jogador))
+        oferta = negociacao["oferta"]
+        porcentagem = round(oferta / negociacao["valor"] * 100) if negociacao["valor"] else 100
+        caixa = clube.get("caixa", 0)
+        console.print(f"\n Valor de mercado:  {dinheiro(negociacao['valor'])}")
+        console.print(f" Oferta atual:      [bold green]{dinheiro(oferta)}[/] ({porcentagem}% do valor de mercado)")
+        console.print(f" Caixa do clube:    {dinheiro(caixa)} → [bold]{dinheiro(caixa + oferta)}[/] se vender")
+        if substituto:
+            console.print(f" Assume a vaga:     {rotulo(substituto)} (qualidade {substituto['qualidade']})")
+        console.print(f" Sobe da base:      um {jogador['pos']} com qualidade {qualidade_do_garoto(jogador)}")
+        console.print(
+            f" Diretoria:         quer vender. Vender +{CONFIANCA_VENDA} de confiança · segurar"
+            f" {CONFIANCA_SEGURAR} (jogador motivado) · clube desistir {CONFIANCA_NEGOCIACAO_FRACASSADA}"
+        )
+        for linha in historico:
+            console.print(f" [yellow]{linha}[/]")
+        console.print(f"\n 1 - Aceitar {dinheiro(oferta)}   2 - Pedir mais   3 - Recusar e segurar o jogador")
+        escolha = ler_opcao(1, 3)
+        if escolha == 1:
+            aceitar_oferta(negociacao)
+            return "vender"
+        if escolha == 3:
+            return "segurar"
+        minimo = round(oferta + 0.1, 1)
+        pedido = ler_valor(
+            f" Quanto pedir, em milhões? (a partir de {minimo:.1f}; 0 volta) > ", minimo, round(oferta * 3, 1)
+        )
+        if not pedido:
+            continue
+        resposta = responder_contraproposta(negociacao, pedido)
+        if resposta == "aceita":
+            mostrar_mensagem(f"O {interessado} aceitou pagar {dinheiro(pedido)}!", "bold green")
+            return "vender"
+        if resposta == "desiste":
+            mostrar_mensagem(f"O {interessado} achou caro demais e encerrou a negociação.", "bold red")
+            return "negociacao_fracassou"
+        if resposta == "mantem":
+            historico.append(f"Você pediu {dinheiro(pedido)}. O {interessado} manteve a oferta: é pegar ou largar.")
+        else:
+            historico.append(
+                f"Você pediu {dinheiro(pedido)}. O {interessado} subiu a oferta para {dinheiro(negociacao['oferta'])}."
+            )

@@ -87,6 +87,23 @@ MAX_ELENCO = 25
 MINIMO_POR_POSICAO = {"GOL": 2, "DEF": 5, "MEI": 5, "ATA": 3}
 AGENTES_LIVRES = 14
 
+CLUBES_DO_EXTERIOR = (
+    "Calcio Ventura (Itália)",
+    "Deportivo Mirasol (Espanha)",
+    "Olympique Garonne (França)",
+    "Lusitânia FC (Portugal)",
+    "FK Danúbio (Sérvia)",
+    "Al-Nakhla (Arábia Saudita)",
+    "Sakura Minato (Japão)",
+    "Atlético Pampero (Argentina)",
+)
+FAIXA_OFERTA_EXTERIOR = (1.1, 1.4)
+FAIXA_TETO_EXTERIOR = (1.0, 1.3)
+QUEDA_QUALIDADE_GAROTO = 12
+CONFIANCA_VENDA = 6
+CONFIANCA_SEGURAR = -3
+CONFIANCA_NEGOCIACAO_FRACASSADA = -2
+
 MAX_SUBSTITUICOES = 5
 RECUPERACAO_ENERGIA = 30
 ENERGIA_SEM_PERDA = 50
