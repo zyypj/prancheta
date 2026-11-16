@@ -1,0 +1,29 @@
+[
+  {"id": "grande_fase", "peso": 3, "alvo": "titular",
+   "texto": "{jogador} está voando nos treinos e entra em grande fase.",
+   "efeito": "grande_fase"},
+  {"id": "lesao_treino", "peso": 2, "alvo": "titular",
+   "texto": "{jogador} se machucou no treino e vai desfalcar o time.",
+   "efeito": "lesao_treino"},
+  {"id": "crise_vestiario", "peso": 2, "alvo": "melhor",
+   "texto": "Clima pesado no vestiário depois de uma discussão envolvendo {jogador}.",
+   "opcoes": [
+     {"texto": "Reunir o elenco e conversar", "efeito": "reuniao"},
+     {"texto": "Afastar {jogador} por uma rodada", "efeito": "afastar"}
+   ]},
+  {"id": "proposta", "peso": 2, "alvo": "melhor",
+   "texto": "Um clube do exterior fez uma proposta milionária por {jogador}.",
+   "opcoes": [
+     {"texto": "Vender (a diretoria quer o dinheiro)", "efeito": "vender"},
+     {"texto": "Segurar o jogador", "efeito": "segurar"}
+   ]},
+  {"id": "base", "peso": 2, "alvo": "nenhum",
+   "texto": "Um garoto da base foi promovido ao time principal.",
+   "efeito": "base"},
+  {"id": "protesto", "peso": 1, "alvo": "nenhum",
+   "texto": "A torcida protestou no treino cobrando resultados.",
+   "efeito": "protesto"},
+  {"id": "tranquila", "peso": 3, "alvo": "nenhum",
+   "texto": "Semana tranquila no CT. O elenco treinou e descansou bem.",
+   "efeito": "descanso"}
+]
