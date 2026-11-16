@@ -17,6 +17,9 @@ tocar_ok | {jogador} toca com calma e o {time} avança.
 tocar_ok | Troca de passes bonita do {time}, {jogador} participa.
 tocar_erro | {jogador} erra o passe e entrega a bola.
 tocar_erro | Passe interceptado! {marcador} estava atento.
+posse_sem_espaco | O {time} roda a bola de um lado para o outro, não acha espaço e o {defesa} recupera.
+posse_sem_espaco | Muita troca de passes do {time} e nenhuma brecha. O {defesa} retoma a posse.
+posse_sem_espaco | O {defesa} se fecha bem e o {time} desiste da jogada.
 driblar_erro | {jogador} tenta o drible, mas {marcador} desarma.
 driblar_erro | {marcador} chega firme e tira a bola de {jogador}.
 lancar_ok | {jogador} lança longo e encontra o companheiro livre!

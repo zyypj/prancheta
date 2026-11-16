@@ -1117,7 +1117,7 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
     """
     Simula uma posse de bola completa do time atacante.
 
-    A posse começa no meio-campo, ou já no ataque em contra-ataque (bônus de 0,08) e, no estilo jogo direto, com 40% de chance (bônus de -0,03). O adversário escolhe a postura defensiva; a falta tática fora da área encerra a posse na hora. Em até seis passos, o time escolhe uma ação por zona (no último passo, toca no meio ou chuta nas outras zonas), que pode virar falta, finalização, avanço de zona, troca de portador ou perda da bola. Na perda, pode haver escanteio, gol contra no cruzamento ou recuperação do adversário, que puxa um contra-ataque se jogar nesse estilo contra um time ofensivo (50%), com 10% de chance geral ou com 25% de chance quando a pressão alta rouba no meio-campo.
+    A posse começa no meio-campo, ou já no ataque em contra-ataque (bônus de 0,08) e, no estilo jogo direto, com 40% de chance (bônus de -0,03). O adversário escolhe a postura defensiva; a falta tática fora da área encerra a posse na hora. Em até seis passos, o time escolhe uma ação por zona (no último passo, toca no meio ou chuta nas outras zonas), que pode virar falta, finalização, avanço de zona, troca de portador ou perda da bola. Na perda, pode haver escanteio, gol contra no cruzamento ou recuperação do adversário, que puxa um contra-ataque se jogar nesse estilo contra um time ofensivo (50%), com 10% de chance geral ou com 25% de chance quando a pressão alta rouba no meio-campo. Se os seis passos acabarem sem finalização nem perda, a narração diz que o time rodou a bola sem achar espaço e a posse termina.
 
     Args:
         partida (dict): Estado da partida.
@@ -1252,7 +1252,7 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
         if contra or random.random() < 0.10 or (defesa == "pressao" and zona == "meio" and random.random() < 0.25):
             return defensor_id, marcador
         return None
-    registrar(partida, "tocar_erro", {"jogador": rotulo(partida["portador"]), "marcador": "a defesa"}, tipo="perda",
+    registrar(partida, "posse_sem_espaco", {"time": atacante["nome"], "defesa": defensor["nome"]}, tipo="perda",
               time_id=atacante_id)
     return None
 
