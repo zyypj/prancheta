@@ -1,15 +1,14 @@
+from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
 from config import (
     ESTILOS,
-    FASES_COPA,
     FORMACOES,
     NIVEIS,
     NOME_JOGO,
     NOMES_ESTILOS,
-    NOMES_FASES,
     TOTAL_RODADAS,
     VERSAO,
     ZONA_G4,
@@ -37,6 +36,10 @@ from mercado.transferencias import dinheiro
 from partida.simulacao import plano_ia
 
 OPCOES_MENU = ("Novo jogo", "Carregar", "Ranking", "Sair")
+LARGURA_NOME_CHAVE = 13
+LARGURA_VAGA = LARGURA_NOME_CHAVE + 7
+FASES_DA_CHAVE = ("quartas", "semifinal", "final")
+TITULOS_DA_CHAVE = ("QUARTAS", "SEMIFINAL", "FINAL (neutro)", "CAMPEÃO")
 CORES_RESULTADO = {"V": "green", "E": "yellow", "D": "red"}
 
 
@@ -964,31 +967,226 @@ def escolher_clube_para_ver(estado):
         mostrar_clube(estado, ordenada[escolha - 1]["id"])
 
 
+def nome_na_chave(clube):
+    """
+    Devolve o nome do clube num tamanho que cabe na chave da copa.
+
+    Nomes de até LARGURA_NOME_CHAVE (13) caracteres ficam inteiros; os mais longos ficam só com a primeira
+    palavra, como "Tropeiros" para "Tropeiros de Gravataí".
+
+    Args:
+        clube (dict): Clube a ser mostrado.
+
+    Returns:
+        str: Nome curto do clube.
+    """
+    nome = clube["nome"]
+    return nome if len(nome) <= LARGURA_NOME_CHAVE else nome.split()[0]
+
+
+def resultado_entre(resultados, time_a, time_b):
+    """
+    Procura o resultado do jogo entre dois clubes, em qualquer ordem de mando.
+
+    Args:
+        resultados (list[dict]): Resultados de uma fase da copa.
+        time_a (str): Identificador de um dos clubes.
+        time_b (str): Identificador do outro clube.
+
+    Returns:
+        dict | None: Resultado do confronto ou None se ele ainda não foi jogado.
+    """
+    return next((r for r in resultados if {r["mandante"], r["visitante"]} == {time_a, time_b}), None)
+
+
+def placar_na_chave(resultado, clube_id):
+    """
+    Monta o placar de um clube num confronto da chave, com os pênaltis entre parênteses.
+
+    Args:
+        resultado (dict | None): Resultado do confronto, ou None se ainda não foi jogado.
+        clube_id (str): Clube cujo placar será mostrado.
+
+    Returns:
+        str: Gols do clube (ex.: "2" ou "1 (4)"), ou texto vazio se o jogo ainda não aconteceu.
+    """
+    if not resultado:
+        return ""
+    gols = resultado["gm"] if resultado["mandante"] == clube_id else resultado["gv"]
+    penaltis = resultado.get("penaltis")
+    return f"{gols} ({penaltis[clube_id]})" if penaltis else str(gols)
+
+
+def vaga_na_chave(estado, clube_id, resultado=None, vazio="a definir"):
+    """
+    Monta o texto e o estilo de uma vaga da chave da copa.
+
+    A vaga tem largura fixa (LARGURA_VAGA): uma seta para o clube do usuário, o nome curto e o placar. Quem
+    venceu o confronto aparece em negrito na cor do clube, quem caiu aparece apagado e uma vaga ainda sem
+    clube mostra o texto de vazio.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube_id (str | None): Clube que ocupa a vaga, ou None se ela ainda não foi definida.
+        resultado (dict | None): Resultado do confronto que o clube jogou nessa fase. Padrão None.
+        vazio (str): Texto para a vaga sem clube. Padrão "a definir".
+
+    Returns:
+        tuple: (texto, estilo) da vaga, com o estilo no formato do rich.
+    """
+    if clube_id is None:
+        return f" {vazio}".ljust(LARGURA_VAGA), "dim"
+    clube = estado["clubes"][clube_id]
+    marca = "►" if clube_id == estado["clube_id"] else " "
+    texto = f"{marca}{nome_na_chave(clube):<{LARGURA_NOME_CHAVE}} {placar_na_chave(resultado, clube_id):>5}"
+    if resultado and resultado["vencedor"] != clube_id:
+        return texto, "dim"
+    if resultado:
+        return texto, f"bold {clube['cor']}"
+    return texto, clube["cor"]
+
+
+def desenhar_chave(colunas, titulos):
+    """
+    Desenha uma chave de mata-mata em texto, com as linhas ligando cada confronto ao vencedor.
+
+    Cada coluna é uma fase. Na primeira, as vagas ficam a cada duas linhas; nas seguintes, cada vaga fica na
+    altura do meio do confronto que a alimenta, ligada por "┐", "│", "├" e "┘". As vagas são encaixadas
+    por cima da grade de linhas, com o estilo de cada uma.
+
+    Args:
+        colunas (list[list[tuple]]): Vagas de cada fase, como (texto, estilo); cada coluna tem metade das
+            vagas da anterior.
+        titulos (tuple[str]): Título de cada coluna.
+
+    Returns:
+        list[str]: Linhas prontas para imprimir, com marcação do rich.
+    """
+    passo = LARGURA_VAGA + 5
+    alturas = [list(range(0, 2 * len(colunas[0]) - 1, 2))]
+    for coluna in colunas[1:]:
+        anterior = alturas[-1]
+        alturas.append([(anterior[2 * j] + anterior[2 * j + 1]) // 2 for j in range(len(coluna))])
+    total_linhas = 2 * len(colunas[0]) - 1
+    largura = passo * len(colunas)
+    grade = [[" "] * largura for _ in range(total_linhas)]
+    vagas = {}
+    for k, coluna in enumerate(colunas):
+        inicio = k * passo
+        for j, vaga in enumerate(coluna):
+            vagas[(alturas[k][j], inicio)] = vaga
+        if k + 1 == len(colunas):
+            continue
+        borda = inicio + LARGURA_VAGA + 1
+        for j, meio in enumerate(alturas[k + 1]):
+            cima, baixo = alturas[k][2 * j], alturas[k][2 * j + 1]
+            grade[cima][borda], grade[cima][borda + 1] = "─", "┐"
+            grade[baixo][borda], grade[baixo][borda + 1] = "─", "┘"
+            for linha in range(cima + 1, baixo):
+                grade[linha][borda + 1] = "│"
+            grade[meio][borda + 1], grade[meio][borda + 2], grade[meio][borda + 3] = "├", "─", "─"
+    cabecalho = "".join(f"{titulo_coluna:<{passo}}" for titulo_coluna in titulos).rstrip()
+    saida = [f" [bold]{cabecalho}[/]"]
+    for linha in range(total_linhas):
+        partes = []
+        posicao = 0
+        for (linha_vaga, inicio), (texto, estilo) in sorted(vagas.items(), key=lambda item: item[0][1]):
+            if linha_vaga != linha:
+                continue
+            partes.append(f"[dim]{''.join(grade[linha][posicao:inicio])}[/]")
+            partes.append(f"[{estilo}]{escape(texto)}[/]")
+            posicao = inicio + len(texto)
+        partes.append(f"[dim]{''.join(grade[linha][posicao:]).rstrip()}[/]")
+        saida.append(" " + "".join(partes))
+    return saida
+
+
+def colunas_da_chave_principal(estado):
+    """
+    Monta as vagas das quartas, da semifinal, da final e do campeão a partir dos confrontos e resultados.
+
+    As quartas seguem a ordem do sorteio, e cada vaga das fases seguintes é ocupada pelo vencedor do confronto
+    correspondente da fase anterior, como manda a chave. Antes do sorteio, as quartas aparecem como "a
+    sortear".
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        list[list[tuple]]: Quatro colunas de vagas (8, 4, 2 e 1), como (texto, estilo).
+    """
+    copa = estado["copa"]
+    confrontos = copa["confrontos"].get("quartas")
+    clubes = [clube for jogo in confrontos for clube in jogo] if confrontos else [None] * 8
+    colunas = []
+    for fase in FASES_DA_CHAVE:
+        resultados = copa["resultados"].get(fase, [])
+        vazio = "a sortear" if fase == "quartas" else "a definir"
+        coluna = []
+        vencedores = []
+        for j in range(0, len(clubes), 2):
+            time_a, time_b = clubes[j], clubes[j + 1]
+            resultado = resultado_entre(resultados, time_a, time_b) if time_a and time_b else None
+            coluna.append(vaga_na_chave(estado, time_a, resultado, vazio))
+            coluna.append(vaga_na_chave(estado, time_b, resultado, vazio))
+            vencedores.append(resultado["vencedor"] if resultado else None)
+        colunas.append(coluna)
+        clubes = vencedores
+    campeao = clubes[0]
+    if campeao:
+        clube = estado["clubes"][campeao]
+        colunas.append([(f" {clube['nome']}", f"bold {clube['cor']}")])
+    else:
+        colunas.append([(" a definir", "dim")])
+    return colunas
+
+
+def colunas_da_preliminar(estado):
+    """
+    Monta as vagas da fase preliminar e dos dois classificados para as quartas.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        list[list[tuple]]: Duas colunas de vagas (4 e 2), como (texto, estilo).
+    """
+    copa = estado["copa"]
+    resultados = copa["resultados"].get("preliminar", [])
+    coluna = []
+    classificados = []
+    for time_a, time_b in copa["confrontos"]["preliminar"]:
+        resultado = resultado_entre(resultados, time_a, time_b)
+        coluna.append(vaga_na_chave(estado, time_a, resultado))
+        coluna.append(vaga_na_chave(estado, time_b, resultado))
+        classificados.append(vaga_na_chave(estado, resultado["vencedor"] if resultado else None))
+    return [coluna, classificados]
+
+
 def mostrar_copa(estado):
     """
-    Exibe o chaveamento da copa.
+    Exibe a Copa Prancheta como uma chave de mata-mata.
 
-    Para cada fase, mostra os resultados com o clube que avançou, os confrontos ainda não jogados ou "a
-    definir". Depois mostra o campeão (quando houver), a situação do clube do usuário e as regras da copa.
-    Espera o usuário pressionar Enter.
+    Mostra primeiro a fase preliminar com os dois classificados e depois a chave principal, das quartas ao
+    campeão, ligando cada confronto ao vencedor. Vencedores aparecem em negrito, eliminados apagados e o
+    clube do usuário marcado com "►"; os pênaltis vão entre parênteses. Antes do sorteio das quartas, lista
+    os clubes já garantidos. No fim, mostra a situação do clube do usuário e as regras da copa, e espera o
+    usuário pressionar Enter.
 
     Args:
         estado (dict): Estado atual da temporada.
     """
     copa = estado["copa"]
     titulo("COPA PRANCHETA")
-    for fase in FASES_COPA:
-        console.print(f"\n [bold]{NOMES_FASES[fase]}[/]")
-        resultados = copa["resultados"].get(fase)
-        if resultados:
-            for resultado in resultados:
-                vencedor = estado["clubes"][resultado["vencedor"]]["sigla"]
-                console.print(linha_de_resultado(estado, resultado) + f"  [green]→ {vencedor}[/]")
-        elif copa["confrontos"].get(fase):
-            for jogo in copa["confrontos"][fase]:
-                console.print(f"  {texto_jogo(estado, jogo)}")
-        else:
-            console.print("  [dim]a definir[/]")
+    console.print()
+    for linha in desenhar_chave(colunas_da_preliminar(estado), ("FASE PRELIMINAR", "VAI ÀS QUARTAS")):
+        console.print(linha)
+    console.print()
+    for linha in desenhar_chave(colunas_da_chave_principal(estado), TITULOS_DA_CHAVE):
+        console.print(linha)
+    if "quartas" not in copa["confrontos"]:
+        garantidos = ", ".join(estado["clubes"][clube_id]["nome"] for clube_id in copa["classificados"])
+        console.print(f"\n [dim]Já garantidos nas quartas, que serão sorteadas: {garantidos}[/]")
     if copa["campeao"]:
         console.print(f"\n [bold green]Campeão: {estado['clubes'][copa['campeao']]['nome']}[/]")
     console.print(f"\n Seu clube: {situacao_do_clube(copa, estado['clube_id'])}")
