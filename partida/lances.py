@@ -103,6 +103,7 @@ LOCAIS = {
     "sem_angulo": {"gol": 0.10, "alvo": -0.24},
 }
 LOCAIS_COM_BLOQUEIO = ("longe", "area", "primeira", "intermediaria")
+LOCAIS_COM_MINIJOGO = ("area", "longe", "intermediaria", "primeira", "sem_angulo", "voleio", "bicicleta")
 GOLEIRO_NO_CARA_A_CARA = (
     ("sair", "Sair abafando", 3),
     ("esperar", "Esperar no gol", 3),
@@ -1126,6 +1127,8 @@ def finalizar(
     chute = CHUTES[tipo]
     partida["ultimo_local"] = local
     mover_bola(partida, atacante_id, ZONA_DO_LOCAL.get(local, "area"))
+    if local in LOCAIS_COM_MINIJOGO:
+        bonus += partida["controles"][atacante_id]["minijogo"](partida, atacante_id, "chute", local)
     atacante["chutes"] += 1
     bloqueio = "nenhum"
     if local in LOCAIS_COM_BLOQUEIO and random.random() < 0.35:
@@ -1380,12 +1383,13 @@ def cobrar_falta(partida, atacante_id, defesa):
         )
         finalizar(partida, atacante_id, companheiro, "primeira", "forte", 0.03, defesa)
         return
+    ajuste = partida["controles"][atacante_id]["minijogo"](partida, atacante_id, "falta", escolha)
     if escolha == "rasteiro" and random.random() < 0.2:
         registrar(partida, "barreira", tipo="defesa", time_id=atacante_id)
         return
     tipo = "forte" if escolha == "forte" else "colocado"
     bonus = 0.03 if escolha == "rasteiro" else 0.0
-    finalizar(partida, atacante_id, batedor, "falta", tipo, bonus, defesa)
+    finalizar(partida, atacante_id, batedor, "falta", tipo, bonus + ajuste, defesa)
 
 
 def resolver_cobranca(partida, atacante_id, batedor, goleiro, minijogo=True):
@@ -1404,8 +1408,9 @@ def resolver_cobranca(partida, atacante_id, batedor, goleiro, minijogo=True):
         atacante_id (str): Time que cobra.
         batedor (dict): Jogador que bate o pênalti.
         goleiro (dict | None): Goleiro adversário, ou None se não houver goleiro em campo.
-        minijogo (bool): Se o goleiro humano faz o minijogo de reflexo, que soma 0,15 à chance de defesa
-            quando ele acerta o canto. Padrão True; a disputa de pênaltis passa False.
+        minijogo (bool): Se há minijogos: o batedor humano faz o de concentração (acertar dificulta a defesa,
+            errar aumenta a chance de mandar para fora) e o goleiro humano faz o de reflexo quando acerta o
+            canto. Padrão True; a disputa de pênaltis passa False.
 
     Returns:
         str: Desfecho da cobrança: "fora", "defesa" ou "gol".
@@ -1420,12 +1425,17 @@ def resolver_cobranca(partida, atacante_id, batedor, goleiro, minijogo=True):
     finalizacao = atributo_efetivo(batedor, "fin")
     chance_fora = {"colocado": 0.04, "forte": 0.14, "paradinha": 0.06}.get(forca, 0.04)
     chance_fora += max(0, 70 - finalizacao) * 0.002
+    ajuste_batedor = 0.0
+    if minijogo:
+        ajuste_batedor = partida["controles"][atacante_id]["minijogo"](partida, atacante_id, "penalti", forca)
+    if ajuste_batedor < 0:
+        chance_fora += 0.06
     if random.random() < chance_fora:
         return "fora"
     if canto == pulo:
         defende = 0.80 if canto == "meio" else {"colocado": 0.55, "forte": 0.30, "paradinha": 0.50}.get(forca, 0.55)
         reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
-        defende += (reflexo - finalizacao) * 0.004
+        defende += (reflexo - finalizacao) * 0.004 - ajuste_batedor
         if minijogo:
             defende += partida["controles"][defensor_id]["minijogo"](partida, defensor_id, "goleiro", None)
         if random.random() < limitar(defende, 0.1, 0.9):
@@ -1638,6 +1648,10 @@ def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
         )
         registrar(partida, f"goleiro_{postura}", {"goleiro": nome_goleiro}, tipo="lance", time_id=defensor_id)
     efeito = EFEITO_GOLEIRO[escolha][postura]
+    efeito += partida["controles"][atacante_id]["minijogo"](partida, atacante_id, "cara_a_cara", escolha)
+    if goleiro:
+        defensor_id = outro(partida, atacante_id)
+        efeito -= partida["controles"][defensor_id]["minijogo"](partida, defensor_id, "goleiro_cara", postura)
     if escolha != "driblar":
         finalizar(partida, atacante_id, jogador, "cara", escolha, bonus + efeito, defesa)
         return
@@ -1865,6 +1879,8 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
     if defesa == "falta" and zona != "area":
         falta_tatica(partida, atacante_id, zona, portador, defesa)
         return None
+    if defesa in ("bote", "pressao"):
+        bonus -= controles[defensor_id]["minijogo"](partida, defensor_id, "desarme", defesa)
     trocar_portador = False
     for passo in range(PASSOS_DA_POSSE):
         if trocar_portador:

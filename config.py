@@ -136,4 +136,14 @@ ACRESCIMOS = (1, 5)
 
 PAUSA_RAPIDA = 0.15
 REVELACOES_POR_PARTIDA = 3
-CHANCE_MINIJOGO = {"drible": 0.4, "goleiro": 1.0, "cabeceio": 0.3}
+CHANCE_MINIJOGO = {
+    "drible": 0.4,
+    "goleiro": 1.0,
+    "cabeceio": 0.3,
+    "chute": 0.25,
+    "cara_a_cara": 0.5,
+    "goleiro_cara": 0.5,
+    "desarme": 0.15,
+    "falta": 0.6,
+    "penalti": 1.0,
+}

@@ -533,7 +533,17 @@ def humano_ajuste(partida, time_id):
     return None
 
 
-EFEITO_MINIJOGO = {"drible": (0.18, -0.12), "goleiro": (0.15, 0.0), "cabeceio": (0.1, -0.05)}
+EFEITO_MINIJOGO = {
+    "drible": (0.18, -0.12),
+    "goleiro": (0.15, 0.0),
+    "cabeceio": (0.1, -0.05),
+    "chute": (0.12, -0.06),
+    "cara_a_cara": (0.12, -0.06),
+    "goleiro_cara": (0.12, 0.0),
+    "desarme": (0.12, -0.05),
+    "falta": (0.1, -0.05),
+    "penalti": (0.15, -0.08),
+}
 
 
 def humano_minijogo(partida, time_id, tipo, detalhe):
@@ -541,13 +551,14 @@ def humano_minijogo(partida, time_id, tipo, detalhe):
     Às vezes transforma a jogada do jogador humano num minijogo.
 
     Só acontece quando a partida é jogada lance a lance, e com a chance de CHANCE_MINIJOGO para cada tipo
-    (drible 40%, goleiro no pênalti contra sempre, cabeçada 30%). Acertar ou errar muda a chance da jogada
-    conforme EFEITO_MINIJOGO.
+    (por exemplo: drible 40%, chute 25%, cara a cara 50%, falta direta 60%, pênalti a favor e contra sempre,
+    desarme 15%). Acertar ou errar muda a chance da jogada conforme EFEITO_MINIJOGO; nos minijogos de defesa,
+    o ganho ajuda o time do jogador a se defender.
 
     Args:
         partida (dict): Estado da partida em andamento.
         time_id (str): Identificador do clube do jogador.
-        tipo (str): "drible", "goleiro" ou "cabeceio".
+        tipo (str): Tipo de minijogo, uma das chaves de CHANCE_MINIJOGO.
         detalhe (str | None): Tipo de drible, quando o minijogo é de drible.
 
     Returns:
