@@ -4,7 +4,7 @@ from rich.text import Text
 
 from config import NOMES_ESTILOS, PAUSA_RAPIDA
 from elenco.escalacao import limitar, rotulo
-from interface.entrada import TERMINAL_REAL, console, desenhar_no_lugar, limpar
+from interface.entrada import TECLADO_REAL, TERMINAL_REAL, console, desenhar_no_lugar, limpar, tecla_pressionada
 from partida.lances import minuto_texto
 
 LARGURA_ZONA = 17
@@ -177,7 +177,7 @@ def cabecalho(partida, clube_jogador):
     )
 
 
-def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, destaque, rodape=None):
+def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, destaque, rodape=None, aviso=None):
     """
     Imprime um quadro completo da tela da partida.
 
@@ -194,6 +194,7 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
         opcoes (list | None): Textos das opções de resposta, ou None para não mostrar.
         destaque (str | None): Mensagem de destaque, como o aviso de gol, ou None.
         rodape (str | None): Texto extra no fim da linha de opções, como o aviso das revelações. Padrão None.
+        aviso (str | None): Linha apagada no pé da tela, como as teclas da simulação rápida. Padrão None.
     """
     cabecalho(partida, clube_jogador)
     console.print(desenhar_campo(coluna, linha))
@@ -219,9 +220,13 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
             + "   [bold]0[/] Pausar"
             + (f"   {rodape}" if rodape else "")
         )
+    if aviso:
+        console.print(f"\n [dim]{aviso}[/]")
 
 
-def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None, rodape=None):
+def mostrar_partida(
+    partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None, rodape=None, aviso=None
+):
     """
     Atualiza a tela da partida, levando a bola até a posição atual.
 
@@ -238,6 +243,7 @@ def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=F
         animar (bool): Se a bola deve se mover aos poucos até o destino. Padrão False.
         destaque (str | None): Mensagem de destaque, como o aviso de gol. Padrão None.
         rodape (str | None): Texto extra no fim da linha de opções. Padrão None.
+        aviso (str | None): Linha apagada no pé da tela. Padrão None.
     """
     alvo = posicao_alvo(partida, clube_jogador)
     if "tela" not in partida:
@@ -263,6 +269,7 @@ def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=F
                 None if i else opcoes,
                 None if i else destaque,
                 None if i else rodape,
+                aviso,
             )
         )
         if intermediario:
@@ -309,8 +316,9 @@ def criar_exibidor(clube_jogador, ao_pausar=None):
 
         Não faz nada se a partida estiver em pausa. Em terminal real redesenha a tela com animação; fora dele
         apenas imprime a última linha da narração e o destaque. Na velocidade rápida espera um tempo curto,
-        três vezes maior em eventos importantes como gol, expulsão e intervalo. Na velocidade normal espera o
-        Enter: P abre a pausa e R passa a simular o resto da partida em velocidade rápida.
+        três vezes maior em eventos importantes como gol, expulsão e intervalo, e confere sem travar se o
+        usuário apertou uma tecla: P abre a pausa e N volta para a velocidade normal. Na velocidade normal
+        espera o Enter: P abre a pausa e R passa a simular o resto da partida em velocidade rápida.
 
         Args:
             partida (dict): Estado da partida em andamento.
@@ -319,14 +327,21 @@ def criar_exibidor(clube_jogador, ao_pausar=None):
         if partida.get("em_pausa"):
             return
         destaque = destaque_do_evento(partida, evento)
+        rapida = partida["velocidade"] == "rapida"
+        aviso = "Simulação rápida · P pausa · N volta a assistir" if rapida and TECLADO_REAL else None
         if TERMINAL_REAL:
-            mostrar_partida(partida, clube_jogador, animar=True, destaque=destaque)
+            mostrar_partida(partida, clube_jogador, animar=True, destaque=destaque, aviso=aviso)
         else:
             console.print(f" {partida['narracao'][-1]}")
             if destaque:
                 console.print(f" {destaque}")
-        if partida["velocidade"] == "rapida":
+        if rapida:
             time.sleep(PAUSA_RAPIDA * (3 if evento["tipo"] in PAUSAS_LONGAS else 1))
+            tecla = tecla_pressionada()
+            if tecla == "p" and ao_pausar:
+                ao_pausar(partida, clube_jogador)
+            elif tecla == "n":
+                partida["velocidade"] = "normal"
             return
         resposta = console.input(" [dim]Enter avança · P pausa · R simula rápido[/] ").strip().lower()
         if resposta == "p" and ao_pausar:

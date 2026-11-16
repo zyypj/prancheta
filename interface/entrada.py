@@ -3,8 +3,14 @@ import sys
 
 from rich.console import Console
 
+if os.name == "nt":
+    import msvcrt
+else:
+    import select
+
 EM_IDE = "PYCHARM_HOSTED" in os.environ
 TERMINAL_REAL = sys.stdout.isatty()
+TECLADO_REAL = sys.stdin.isatty()
 console = Console(highlight=False, force_terminal=True if EM_IDE else None, legacy_windows=False if EM_IDE else None)
 
 
@@ -42,6 +48,32 @@ def desenhar_no_lugar(desenhar):
         linhas.pop()
     console.file.write("\x1b[H" + "".join(f"{linha}\x1b[K\n" for linha in linhas) + "\x1b[J")
     console.file.flush()
+
+
+def tecla_pressionada():
+    """
+    Verifica, sem esperar, se o usuário apertou alguma tecla.
+
+    No Windows usa msvcrt para ler a tecla na hora e descarta o que sobrou no buffer; nos outros sistemas usa
+    select, e a tecla só chega depois do Enter. Fora de um terminal de verdade (como no console comum de uma
+    IDE) não dá para ler o teclado sem travar o jogo, e a função sempre devolve None.
+
+    Returns:
+        str | None: Tecla apertada, em minúsculas, ou None se nada foi apertado.
+    """
+    if not TECLADO_REAL:
+        return None
+    if os.name == "nt":
+        if not msvcrt.kbhit():
+            return None
+        tecla = msvcrt.getwch()
+        while msvcrt.kbhit():
+            msvcrt.getwch()
+        return tecla.lower()
+    pronto, _, _ = select.select([sys.stdin], [], [], 0)
+    if not pronto:
+        return None
+    return sys.stdin.readline().strip().lower()[:1] or "\n"
 
 
 def ler_opcao(minimo, maximo, rotulo=" > "):
