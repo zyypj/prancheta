@@ -281,14 +281,16 @@ def trocar_titular(clube):
         clube (dict): Dados do clube, cuja lista de titulares é alterada.
 
     Returns:
-        str: Mensagem sobre o resultado da troca, ou texto vazio se o usuário cancelar na escolha do reserva.
+        str: Mensagem sobre o resultado da troca, ou texto vazio se o usuário cancelar em qualquer uma das duas perguntas.
     """
     limpar()
     tabela, jogadores = tabela_elenco(clube)
     console.print(tabela)
     console.print(" [bold]0[/] Cancelar")
     sai = ler_opcao(0, len(jogadores), " Número do titular que sai > ")
-    if not sai or jogadores[sai - 1]["id"] not in clube["titulares"]:
+    if not sai:
+        return ""
+    if jogadores[sai - 1]["id"] not in clube["titulares"]:
         return "Escolha um jogador que seja titular."
     entra = ler_opcao(0, len(jogadores), " Número do reserva que entra > ")
     if not entra:
