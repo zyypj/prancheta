@@ -17,6 +17,20 @@ DESENHO_GOL = (
 
 
 def escolher_no_campo(partida, time_id, pergunta, nomes):
+    """
+    Pergunta ao jogador uma opção com o campo da partida na tela.
+
+    Mostra o campo com a pergunta e as opções numeradas. Se o usuário digitar 0, abre o menu de pausa; ao voltar, se ele tiver passado a partida para simulação, desiste da pergunta, e senão pergunta de novo.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        pergunta (str): Texto da pergunta.
+        nomes (list): Textos das opções, na ordem em que aparecem.
+
+    Returns:
+        int | None: Índice da opção escolhida, começando em 0, ou None se a partida passou a ser simulada.
+    """
     while True:
         mostrar_partida(partida, time_id, pergunta=pergunta, opcoes=nomes)
         escolha = ler_opcao(0, len(nomes))
@@ -28,6 +42,20 @@ def escolher_no_campo(partida, time_id, pergunta, nomes):
 
 
 def humano_ataque(partida, time_id, zona, portador):
+    """
+    Deixa o jogador escolher a jogada de ataque de quem está com a bola.
+
+    Mostra as ações possíveis na zona em que a bola está, como tocar, driblar, cruzar ou chutar. Quando a partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o controle da IA.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        zona (str): Zona do campo onde está a bola: meio, ataque ou area.
+        portador (dict): Jogador que está com a bola.
+
+    Returns:
+        str: Chave da ação de ataque escolhida.
+    """
     if partida["modo"] == "simular":
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     acoes = ACOES[zona]
@@ -40,6 +68,18 @@ def humano_ataque(partida, time_id, zona, portador):
 
 
 def humano_defesa(partida, time_id):
+    """
+    Deixa o jogador escolher como defender o próximo ataque do adversário.
+
+    Mostra as defesas possíveis, como dar o bote, pressão alta ou recuar. Quando a partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o controle da IA.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+
+    Returns:
+        str: Chave da defesa escolhida.
+    """
     if partida["modo"] == "simular":
         return CONTROLE_IA["defesa"](partida, time_id)
     adversario = partida["times"][outro(partida, time_id)]
@@ -51,6 +91,20 @@ def humano_defesa(partida, time_id):
 
 
 def humano_escolha(partida, time_id, pergunta, opcoes):
+    """
+    Deixa o jogador responder a uma pergunta genérica do lance.
+
+    Mostra os nomes das opções no campo. Quando a partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o controle da IA, que sorteia pelos pesos.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        pergunta (str): Texto da pergunta.
+        opcoes (list): Tuplas (chave, nome, peso) de cada opção.
+
+    Returns:
+        str: Chave da opção escolhida.
+    """
     if partida["modo"] == "simular":
         return CONTROLE_IA["escolha"](partida, time_id, pergunta, opcoes)
     indice = escolher_no_campo(partida, time_id, pergunta, [nome for _, nome, _ in opcoes])
@@ -60,6 +114,16 @@ def humano_escolha(partida, time_id, pergunta, opcoes):
 
 
 def tela_penalti(partida, time_id, titulo):
+    """
+    Mostra a tela de cobrança de pênalti.
+
+    Exibe o campo da partida, o título da cobrança e o desenho do gol com os cantos numerados de 1 a 3.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        titulo (str): Texto que anuncia a cobrança.
+    """
     mostrar_partida(partida, time_id)
     console.print(f"\n [bold yellow]{titulo}[/]")
     for linha in DESENHO_GOL:
@@ -67,6 +131,20 @@ def tela_penalti(partida, time_id, titulo):
 
 
 def humano_bater_penalti(partida, time_id, batedor, goleiro):
+    """
+    Deixa o jogador cobrar um pênalti a favor.
+
+    Mostra a tela do pênalti e pede o canto (esquerda, meio ou direita) e a força da batida: colocado, que quase nunca sai, ou forte, que é difícil de pegar mas pode ir para fora.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        batedor (dict): Jogador que vai cobrar.
+        goleiro (dict | None): Goleiro adversário, ou None se não houver.
+
+    Returns:
+        tuple: Canto e força escolhidos.
+    """
     nome_goleiro = rotulo(goleiro) if goleiro else "ninguém"
     tela_penalti(partida, time_id, f"PÊNALTI A FAVOR! {rotulo(batedor)} contra {nome_goleiro}.")
     canto = CANTOS[ler_opcao(1, 3, " Canto (1-3) > ") - 1]
@@ -76,12 +154,38 @@ def humano_bater_penalti(partida, time_id, batedor, goleiro):
 
 
 def humano_defender_penalti(partida, time_id, batedor, goleiro):
+    """
+    Deixa o jogador escolher para onde o goleiro pula num pênalti contra.
+
+    Mostra a tela do pênalti e pede o canto do pulo, entre esquerda, meio e direita.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        batedor (dict): Jogador adversário que vai cobrar.
+        goleiro (dict | None): Goleiro do jogador, ou None se o time estiver sem goleiro.
+
+    Returns:
+        str: Canto escolhido para o pulo.
+    """
     nome_goleiro = rotulo(goleiro) if goleiro else "o goleiro improvisado"
     tela_penalti(partida, time_id, f"PÊNALTI CONTRA! {rotulo(batedor)} na bola. Para onde {nome_goleiro} pula?")
     return CANTOS[ler_opcao(1, 3, " Canto (1-3) > ") - 1]
 
 
 def tabela_jogadores(jogadores, titulo):
+    """
+    Monta uma tabela numerada de jogadores.
+
+    Cada linha mostra o número para escolha, o nome, a posição, a qualidade e a barra de energia.
+
+    Args:
+        jogadores (list): Jogadores a listar.
+        titulo (str): Título da tabela.
+
+    Returns:
+        Table: Tabela do rich pronta para imprimir.
+    """
     tabela = Table(title=titulo, title_style="bold", header_style="bold")
     for coluna in ("#", "Jogador", "Pos", "Qual", "Energia"):
         tabela.add_column(coluna)
@@ -92,6 +196,18 @@ def tabela_jogadores(jogadores, titulo):
 
 
 def escolher_entrada(time, mensagem):
+    """
+    Pede ao jogador o reserva que vai entrar em campo.
+
+    Se o banco estiver vazio ou o limite de substituições já tiver sido atingido, avisa e espera o Enter. Caso contrário, mostra a tabela do banco e deixa escolher um jogador ou cancelar com 0.
+
+    Args:
+        time (dict): Time do jogador na partida.
+        mensagem (str): Título mostrado na tabela do banco.
+
+    Returns:
+        dict | None: Reserva escolhido, ou None se não houver substituição possível ou o usuário cancelar.
+    """
     if not time["banco"] or time["subs"] >= MAX_SUBSTITUICOES:
         console.print(" [red]Sem substituições disponíveis.[/]")
         pausar("Enter para continuar...")
@@ -104,6 +220,16 @@ def escolher_entrada(time, mensagem):
 
 
 def humano_lesao(partida, time_id, lesionado):
+    """
+    Deixa o jogador repor um atleta que se lesionou.
+
+    Avisa que o jogador saiu de campo e pede quem entra no lugar dele; se alguém for escolhido, faz a substituição. Enquanto isso a partida fica marcada como em pausa, e depois volta ao estado de pausa que tinha antes.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        lesionado (dict): Jogador que se lesionou.
+    """
     time = partida["times"][time_id]
     mostrar_partida(partida, time_id, pergunta=f"{rotulo(lesionado)} saiu de campo e não pode voltar.")
     pausado = partida.get("em_pausa", False)
@@ -115,6 +241,15 @@ def humano_lesao(partida, time_id, lesionado):
 
 
 def menu_substituicao(partida, time_id):
+    """
+    Abre o menu de substituições durante a pausa.
+
+    Mostra os jogadores em campo e o número de substituições feitas, pede quem sai e depois quem entra, e faz a troca. Repete até o usuário voltar com 0 ou até não haver mais substituições possíveis, mostrando o resultado da última troca no topo.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+    """
     time = partida["times"][time_id]
     mensagem = ""
     while True:
@@ -140,6 +275,15 @@ def menu_substituicao(partida, time_id):
 
 
 def menu_plano_partida(partida, time_id):
+    """
+    Deixa o jogador mudar o plano de jogo durante a partida.
+
+    O usuário escolhe mudar o estilo, a ofensividade ou a intensidade. O estilo vem de uma lista numerada, e a ofensividade e a intensidade vão de 1 a 5; digitar 0 mantém o valor atual.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+    """
     plano = partida["times"][time_id]["plano"]
     console.print(" [bold]1[/] Estilo   [bold]2[/] Ofensividade   [bold]3[/] Intensidade   [bold]0[/] Voltar")
     escolha = ler_opcao(0, 3)
@@ -157,6 +301,14 @@ def menu_plano_partida(partida, time_id):
 
 
 def mostrar_estatisticas(partida):
+    """
+    Exibe as estatísticas da partida dos dois times.
+
+    Mostra uma tabela com a posse de bola em porcentagem, as finalizações, as finalizações no alvo e as faltas de cada time.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+    """
     tabela = Table(header_style="bold")
     casa = partida["times"][partida["casa"]]
     fora = partida["times"][partida["fora"]]
@@ -172,6 +324,16 @@ def mostrar_estatisticas(partida):
 
 
 def menu_pausa(partida, time_id, motivo="pausa"):
+    """
+    Pausa a partida e abre as opções da pausa.
+
+    Marca a partida como em pausa enquanto o menu está aberto e desmarca ao sair, mesmo se ocorrer um erro.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        motivo (str): Motivo da pausa: pausa, intervalo ou expulsao. Padrão "pausa".
+    """
     partida["em_pausa"] = True
     try:
         opcoes_da_pausa(partida, time_id, motivo)
@@ -180,6 +342,16 @@ def menu_pausa(partida, time_id, motivo="pausa"):
 
 
 def opcoes_da_pausa(partida, time_id, motivo):
+    """
+    Mostra o menu da pausa até o jogador decidir continuar.
+
+    Exibe o campo com o título conforme o motivo e, no intervalo, as estatísticas. O usuário pode continuar, fazer substituição, mudar o plano, alternar entre jogar lance a lance e simular o resto, e alternar o avanço entre manual (Enter) e automático rápido.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        motivo (str): Motivo da pausa: pausa, intervalo ou expulsao.
+    """
     titulos = {"intervalo": "INTERVALO", "expulsao": "EXPULSÃO! Jogo parado.", "pausa": "JOGO PAUSADO"}
     while True:
         mostrar_partida(partida, time_id, pergunta=titulos.get(motivo, "JOGO PAUSADO"))
@@ -205,10 +377,25 @@ def opcoes_da_pausa(partida, time_id, motivo):
 
 
 def humano_pausa(partida, time_id, motivo):
+    """
+    Abre o menu de pausa quando a partida para, como no intervalo ou numa expulsão.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+        motivo (str): Motivo da parada: intervalo ou expulsao.
+    """
     menu_pausa(partida, time_id, motivo)
 
 
 def humano_ajuste(partida, time_id):
+    """
+    Não faz ajustes automáticos, pois o jogador humano muda o time pelo menu de pausa.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+    """
     return None
 
 

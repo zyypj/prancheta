@@ -148,6 +148,17 @@ def evento_da_semana(estado, recursos):
 
 
 def escolher_como_jogar(estado):
+    """
+    Mostra a tela de pré-jogo até o usuário decidir como disputar a partida.
+
+    As opções de ver o adversário e de ajustar o plano de jogo abrem suas telas e voltam para o pré-jogo, sem iniciar a partida.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        int: 1 para jogar, 2 para simular assistindo, 3 para simular rápido, 4 para ir direto ao resultado ou 0 para voltar.
+    """
     while True:
         escolha = telas.pre_jogo(estado)
         if escolha == 5:
@@ -159,6 +170,19 @@ def escolher_como_jogar(estado):
 
 
 def jogar_partida_do_jogador(estado, recursos, escolha):
+    """
+    Disputa a partida do clube do jogador no modo escolhido.
+
+    Completa os titulares desfalcados, monta a partida e define quem controla cada time. No modo "só o resultado" os dois times ficam com a IA e nada é exibido; nos outros modos o jogador controla o próprio time e a partida é desenhada no campo. Em jogos de mata-mata o empate vai para os pênaltis.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Recursos carregados, incluindo as frases de narração.
+        escolha (int): Modo escolhido no pré-jogo, de 1 a 4.
+
+    Returns:
+        dict: Resultado da partida, com placar, súmula e vencedor.
+    """
     completar_titulares(clube_do_jogador(estado))
     modo = "jogar" if escolha == 1 else "simular"
     velocidade = "rapida" if escolha in (3, 4) else "normal"
@@ -177,6 +201,15 @@ def jogar_partida_do_jogador(estado, recursos, escolha):
 
 
 def jogar_etapa(estado, recursos):
+    """
+    Disputa a etapa atual da temporada, seja uma rodada da liga ou uma fase da copa.
+
+    Joga a partida do clube do jogador (se ele estiver na etapa), simula os outros jogos, registra a súmula e fecha a rodada ou a fase. Depois movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento da semana e salva o jogo automaticamente.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Recursos carregados (frases, eventos e nomes).
+    """
     etapa = etapa_atual(estado)
     competicao, valor = etapa
     resultado = None
@@ -206,6 +239,14 @@ def jogar_etapa(estado, recursos):
 
 
 def encerrar_temporada(estado):
+    """
+    Encerra a temporada e mostra o resumo final.
+
+    Calcula a pontuação do técnico e grava no ranking uma única vez, mesmo que o save seja aberto de novo depois do fim.
+
+    Args:
+        estado (dict): Estado da temporada encerrada.
+    """
     resumo = resumo_final(estado)
     if not estado.get("ranking_registrado"):
         estado["ranking_registrado"] = registrar_ranking(resumo)
@@ -214,6 +255,15 @@ def encerrar_temporada(estado):
 
 
 def central(estado, recursos):
+    """
+    Mantém o usuário na central do clube durante a temporada.
+
+    Mostra a central e executa a opção escolhida: próximo jogo, elenco, plano de jogo, classificação, copa, rodadas, mercado, clubes ou salvar. Ao voltar, pergunta se deve salvar. Quando a temporada acaba, encerra e sai.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Recursos carregados do jogo.
+    """
     while True:
         if temporada_acabou(estado):
             encerrar_temporada(estado)
@@ -247,6 +297,14 @@ def central(estado, recursos):
 
 
 def abrir_save(recursos):
+    """
+    Lista os saves, carrega o escolhido e abre a central do clube.
+
+    Mostra um aviso se o arquivo estiver corrompido ou for de uma versão antiga.
+
+    Args:
+        recursos (dict): Recursos carregados do jogo.
+    """
     caminho = telas.escolher_save(listar_saves())
     if not caminho:
         return
@@ -258,6 +316,13 @@ def abrir_save(recursos):
 
 
 def executar_opcao(escolha, recursos):
+    """
+    Executa a opção escolhida no menu inicial.
+
+    Args:
+        escolha (int): 1 para novo jogo, 2 para carregar e 3 para ver o ranking.
+        recursos (dict): Recursos carregados do jogo.
+    """
     if escolha == 1:
         estado = novo_jogo(recursos)
         if estado:
@@ -269,6 +334,11 @@ def executar_opcao(escolha, recursos):
 
 
 def main():
+    """
+    Ponto de entrada do jogo.
+
+    Carrega os recursos e repete o menu inicial até o usuário escolher sair. Qualquer erro inesperado numa opção é mostrado na tela e o jogo volta ao menu em vez de fechar.
+    """
     recursos = carregar_recursos()
     while True:
         escolha = telas.mostrar_menu_inicial()

@@ -9,6 +9,11 @@ console = Console(highlight=False, force_terminal=True if EM_IDE else None, lega
 
 
 def limpar():
+    """
+    Limpa a tela do terminal.
+
+    Em terminal real apaga a tela; quando a saída não é um terminal, como no console de uma IDE, imprime uma linha divisória no lugar.
+    """
     if TERMINAL_REAL:
         console.clear()
     else:
@@ -16,6 +21,14 @@ def limpar():
 
 
 def desenhar_no_lugar(desenhar):
+    """
+    Redesenha a tela por cima do quadro anterior, sem limpar e sem piscar.
+
+    Fora de um terminal real apenas chama a função de desenho. Em terminal real, captura o que seria impresso, volta o cursor ao topo da tela, escreve cada linha apagando o resto dela e apaga o que sobrou abaixo do novo quadro.
+
+    Args:
+        desenhar (callable): Função sem parâmetros que imprime o quadro.
+    """
     if not TERMINAL_REAL:
         desenhar()
         return
@@ -29,6 +42,19 @@ def desenhar_no_lugar(desenhar):
 
 
 def ler_opcao(minimo, maximo, rotulo=" > "):
+    """
+    Lê do usuário um número inteiro dentro de um intervalo.
+
+    Repete a pergunta, com uma mensagem de erro, até ser digitado um número inteiro entre o mínimo e o máximo.
+
+    Args:
+        minimo (int): Menor valor aceito.
+        maximo (int): Maior valor aceito.
+        rotulo (str): Texto mostrado antes da digitação. Padrão " > ".
+
+    Returns:
+        int: Número digitado.
+    """
     while True:
         texto = console.input(rotulo).strip()
         if texto.isdigit() and minimo <= int(texto) <= maximo:
@@ -37,6 +63,19 @@ def ler_opcao(minimo, maximo, rotulo=" > "):
 
 
 def ler_valor(rotulo, minimo, maximo):
+    """
+    Lê do usuário um valor decimal dentro de um intervalo, aceitando 0 para cancelar.
+
+    Aceita vírgula ou ponto como separador decimal e arredonda o valor para uma casa. Repete a pergunta, com uma mensagem de erro, até o valor ser 0 ou estar entre o mínimo e o máximo.
+
+    Args:
+        rotulo (str): Texto mostrado antes da digitação.
+        minimo (float): Menor valor aceito, além do 0.
+        maximo (float): Maior valor aceito.
+
+    Returns:
+        float: Valor digitado, ou 0 se o usuário cancelou.
+    """
     while True:
         texto = console.input(rotulo).strip().replace(",", ".")
         try:
@@ -49,6 +88,19 @@ def ler_valor(rotulo, minimo, maximo):
 
 
 def ler_texto(rotulo, minimo=2, maximo=20):
+    """
+    Lê do usuário um texto curto, como um nome, aceitando 0 para voltar.
+
+    Junta os espaços repetidos e exige um tamanho dentro do limite e pelo menos uma letra, repetindo a pergunta até receber um texto válido. O texto aceito volta com a inicial de cada palavra em maiúscula.
+
+    Args:
+        rotulo (str): Texto mostrado antes da digitação.
+        minimo (int): Menor quantidade de caracteres aceita. Padrão 2.
+        maximo (int): Maior quantidade de caracteres aceita. Padrão 20.
+
+    Returns:
+        str | None: Texto digitado, ou None se o usuário digitou 0.
+    """
     while True:
         texto = " ".join(console.input(rotulo).split())
         if texto == "0":
@@ -59,6 +111,17 @@ def ler_texto(rotulo, minimo=2, maximo=20):
 
 
 def confirmar(pergunta):
+    """
+    Faz uma pergunta de sim ou não ao usuário.
+
+    Aceita s, sim, n, nao ou não, sem diferenciar maiúsculas, e repete a pergunta para qualquer outra resposta.
+
+    Args:
+        pergunta (str): Texto da pergunta.
+
+    Returns:
+        bool: True se o usuário respondeu sim, False se respondeu não.
+    """
     while True:
         resposta = console.input(f"{pergunta} (s/n) ").strip().lower()
         if resposta in ("s", "sim"):
@@ -69,4 +132,10 @@ def confirmar(pergunta):
 
 
 def pausar(texto="Enter para voltar..."):
+    """
+    Mostra um aviso e espera o usuário apertar Enter.
+
+    Args:
+        texto (str): Aviso mostrado. Padrão "Enter para voltar...".
+    """
     console.input(f"\n[dim]{texto}[/]")

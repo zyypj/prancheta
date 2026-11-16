@@ -25,12 +25,36 @@ PAUSAS_LONGAS = ("gol", "penalti_fim", "vermelho", "intervalo", "fim", "var", "l
 
 
 def barra(valor, tamanho=10):
+    """
+    Monta uma barra de progresso colorida para um valor percentual.
+
+    A parte cheia é proporcional ao valor, limitado entre 0 e 100, e fica verde a partir de 60, amarela a partir de 35 e vermelha abaixo disso. Ao lado da barra aparece o valor arredondado com o símbolo de porcentagem.
+
+    Args:
+        valor (float): Valor percentual a representar, como a energia de um jogador.
+        tamanho (int): Quantidade de caracteres da barra. Padrão 10.
+
+    Returns:
+        str: Barra formatada com marcação do rich.
+    """
     cheio = round(limitar(valor, 0, 100) / 100 * tamanho)
     cor = "green" if valor >= 60 else ("yellow" if valor >= 35 else "red")
     return f"[{cor}]{'█' * cheio}[/][dim]{'░' * (tamanho - cheio)}[/] {round(valor)}%"
 
 
 def posicao_alvo(partida, clube_jogador):
+    """
+    Calcula onde a bola deve aparecer no desenho do campo.
+
+    A coluna vem da zona da bola (meio, ataque, área ou gol), usando o meio-campo quando nenhum time tem a posse, e a linha vem da faixa do campo. Como o campo é desenhado com o clube do jogador atacando para a direita, a coluna é espelhada quando a bola está com o adversário.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        clube_jogador (str): Identificador do clube controlado pelo jogador.
+
+    Returns:
+        tuple: Coluna e linha da bola na grade do campo.
+    """
     bola = partida["bola"]
     faixa = bola.get("faixa", 1)
     zona = bola["zona"] if bola["time"] is not None else "meio"
@@ -47,6 +71,14 @@ def posicao_alvo(partida, clube_jogador):
 
 
 def gramado_vazio():
+    """
+    Cria a grade de caracteres do campo sem a bola.
+
+    Desenha as divisórias entre as zonas, as traves nas duas pontas, as grandes áreas, as marcas de pênalti e a marca do centro do campo.
+
+    Returns:
+        list: Lista de linhas, cada uma uma lista de caracteres do gramado.
+    """
     grade = [[" "] * LARGURA_CAMPO for _ in range(ALTURA_CAMPO)]
     for linha in grade:
         for separador in SEPARADORES:
@@ -72,6 +104,18 @@ def gramado_vazio():
 
 
 def desenhar_campo(coluna, linha):
+    """
+    Monta o desenho completo do campo com a bola na posição indicada.
+
+    Coloca a moldura superior e inferior, pinta o gramado de verde, troca o caractere da posição informada pela bola e acrescenta embaixo os rótulos das zonas de defesa, meio e ataque.
+
+    Args:
+        coluna (int): Coluna da bola na grade do campo.
+        linha (int): Linha da bola na grade do campo.
+
+    Returns:
+        Text: Texto do rich com o campo pronto para imprimir.
+    """
     topo = "┌" + "┬".join("─" * LARGURA_ZONA for _ in range(3)) + "┐"
     base = "└" + "┴".join("─" * LARGURA_ZONA for _ in range(3)) + "┘"
     campo = Text()
@@ -90,6 +134,15 @@ def desenhar_campo(coluna, linha):
 
 
 def cabecalho(partida, clube_jogador):
+    """
+    Exibe o placar e o resumo do plano de jogo no topo da tela da partida.
+
+    A primeira linha mostra os clubes nas suas cores, o placar, o tempo, o minuto e o aviso de chuva forte quando houver. A segunda mostra a formação, o estilo, a ofensividade, a intensidade, as substituições feitas pelo jogador e se a partida está sendo jogada lance a lance ou simulada.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        clube_jogador (str): Identificador do clube controlado pelo jogador.
+    """
     casa = partida["times"][partida["casa"]]
     fora = partida["times"][partida["fora"]]
     tempo = "1º TEMPO" if partida["tempo"] == 1 else "2º TEMPO"
@@ -109,6 +162,20 @@ def cabecalho(partida, clube_jogador):
 
 
 def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, destaque):
+    """
+    Imprime um quadro completo da tela da partida.
+
+    Mostra o cabeçalho, o campo com a bola, as últimas linhas da narração com a mais recente em destaque e, quando algum time tem a posse, quem está com a bola, sua qualidade e sua energia. Por fim, mostra o destaque, a pergunta e as opções numeradas, sempre com a opção 0 para pausar.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        clube_jogador (str): Identificador do clube controlado pelo jogador.
+        coluna (int): Coluna da bola na grade do campo.
+        linha (int): Linha da bola na grade do campo.
+        pergunta (str | None): Pergunta feita ao jogador, ou None para não mostrar.
+        opcoes (list | None): Textos das opções de resposta, ou None para não mostrar.
+        destaque (str | None): Mensagem de destaque, como o aviso de gol, ou None.
+    """
     cabecalho(partida, clube_jogador)
     console.print(desenhar_campo(coluna, linha))
     linhas = partida["narracao"]
@@ -132,6 +199,19 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
 
 
 def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None):
+    """
+    Atualiza a tela da partida, levando a bola até a posição atual.
+
+    Na primeira chamada limpa a tela e guarda a posição da bola em partida["tela"]. Com animação ligada, em terminal real e na velocidade normal, a bola anda de três em três colunas até o destino, e os quadros intermediários são desenhados sem pergunta, opções nem destaque. Cada quadro é redesenhado no mesmo lugar da tela e, ao final, a posição guardada é atualizada.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        clube_jogador (str): Identificador do clube controlado pelo jogador.
+        pergunta (str | None): Pergunta feita ao jogador. Padrão None.
+        opcoes (list | None): Textos das opções de resposta. Padrão None.
+        animar (bool): Se a bola deve se mover aos poucos até o destino. Padrão False.
+        destaque (str | None): Mensagem de destaque, como o aviso de gol. Padrão None.
+    """
     alvo = posicao_alvo(partida, clube_jogador)
     if "tela" not in partida:
         limpar()
@@ -155,6 +235,16 @@ def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=F
 
 
 def destaque_do_evento(partida, evento):
+    """
+    Gera a mensagem de destaque de um evento da partida.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        evento (dict): Evento que acabou de acontecer.
+
+    Returns:
+        str | None: Faixa de gol na cor do time que marcou, ou None se o evento não for gol.
+    """
     if evento["tipo"] == "gol":
         cor = partida["times"][evento["time"]]["cor"]
         return f"[bold {cor} reverse]   G O O O O O L !   [/]"
@@ -162,7 +252,28 @@ def destaque_do_evento(partida, evento):
 
 
 def criar_exibidor(clube_jogador, ao_pausar=None):
+    """
+    Cria a função que mostra cada evento da partida na tela.
+
+    A função criada guarda o clube do jogador e a ação de pausa, e é chamada pelo motor da partida a cada evento.
+
+    Args:
+        clube_jogador (str): Identificador do clube controlado pelo jogador.
+        ao_pausar (callable | None): Função chamada com a partida e o clube do jogador quando o usuário pede pausa. Padrão None.
+
+    Returns:
+        callable: Função exibir(partida, evento).
+    """
     def exibir(partida, evento):
+        """
+        Mostra um evento da partida e espera o ritmo escolhido.
+
+        Não faz nada se a partida estiver em pausa. Em terminal real redesenha a tela com animação; fora dele apenas imprime a última linha da narração e o destaque. Na velocidade rápida espera um tempo curto, três vezes maior em eventos importantes como gol, expulsão e intervalo. Na velocidade normal espera o Enter: P abre a pausa e R passa a simular o resto da partida em velocidade rápida.
+
+        Args:
+            partida (dict): Estado da partida em andamento.
+            evento (dict): Evento que acabou de acontecer.
+        """
         if partida.get("em_pausa"):
             return
         destaque = destaque_do_evento(partida, evento)

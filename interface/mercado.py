@@ -21,12 +21,27 @@ LIMITE_DA_LISTA = 15
 
 
 def cabecalho_mercado(estado, subtitulo="MERCADO DA BOLA"):
+    """
+    Exibe o título de uma tela do mercado com o caixa e o tamanho do elenco.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        subtitulo (str): Título da tela. Padrão "MERCADO DA BOLA".
+    """
     clube = clube_do_jogador(estado)
     titulo(subtitulo)
     console.print(f" Caixa: [bold]{dinheiro(clube.get('caixa', 0))}[/]   Elenco: {len(clube['elenco'])}/{MAX_ELENCO} jogadores\n")
 
 
 def escolher_posicao():
+    """
+    Pergunta ao usuário qual posição quer ver no mercado.
+
+    As opções são goleiro, defensor, meia, atacante, todas as posições ou voltar.
+
+    Returns:
+        tuple: Par (seguir, posicao): seguir é False se o usuário escolheu voltar, e posicao é a sigla escolhida ou None para todas.
+    """
     console.print(" Posição: 1 GOL   2 DEF   3 MEI   4 ATA   5 Todas   0 Voltar")
     escolha = ler_opcao(0, 5)
     if escolha == 0:
@@ -35,6 +50,14 @@ def escolher_posicao():
 
 
 def comprar_de_clubes(estado):
+    """
+    Conduz a compra de um jogador de outro clube.
+
+    O usuário filtra por posição e vê os 15 primeiros jogadores à venda, com clube, qualidade, idade, valor de mercado e preço pedido. Depois escolhe um jogador e digita uma proposta em milhões, ou 0 para cancelar, e vê se a compra foi aceita.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     cabecalho_mercado(estado, "COMPRAR DE OUTROS CLUBES")
     seguir, posicao = escolher_posicao()
     if not seguir:
@@ -64,6 +87,14 @@ def comprar_de_clubes(estado):
 
 
 def contratar_sem_clube(estado):
+    """
+    Conduz a contratação de um jogador sem clube.
+
+    Lista os jogadores livres da maior para a menor qualidade, com posição, idade e luvas. O usuário escolhe um deles ou volta com 0, e vê se a contratação deu certo. Se não houver jogadores livres, apenas avisa.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     cabecalho_mercado(estado, "JOGADORES SEM CLUBE")
     livres = sorted(estado["livres"], key=lambda jogador: jogador["qualidade"], reverse=True)
     if not livres:
@@ -83,6 +114,14 @@ def contratar_sem_clube(estado):
 
 
 def vender_jogador(estado):
+    """
+    Conduz a venda de um jogador do elenco para outro clube.
+
+    Lista o elenco ordenado por posição e qualidade, indicando os titulares. Se o jogador escolhido puder sair sem deixar o elenco ou a posição abaixo do mínimo e algum clube fizer proposta, mostra as ofertas e deixa o usuário aceitar uma delas ou recusar todas.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     clube = clube_do_jogador(estado)
     cabecalho_mercado(estado, "VENDER JOGADOR")
     ordem = {"GOL": 0, "DEF": 1, "MEI": 2, "ATA": 3}
@@ -117,6 +156,14 @@ def vender_jogador(estado):
 
 
 def tela_mercado(estado):
+    """
+    Mostra o menu principal do mercado da bola.
+
+    Exibe as cinco últimas notícias e deixa o usuário comprar de outros clubes, contratar jogadores sem clube ou vender um jogador, até escolher voltar.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     while True:
         cabecalho_mercado(estado)
         recentes = estado.get("noticias", [])[-5:]

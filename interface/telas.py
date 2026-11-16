@@ -41,16 +41,39 @@ CORES_RESULTADO = {"V": "green", "E": "yellow", "D": "red"}
 
 
 def titulo(texto):
+    """
+    Limpa a tela e exibe um título em destaque.
+
+    Args:
+        texto (str): Texto do título, mostrado em negrito dentro de um painel verde.
+    """
     limpar()
     console.print(Panel.fit(f"[bold]{texto}[/]", border_style="green"))
 
 
 def nivel_de_forca(forca):
+    """
+    Converte a força de um clube em uma barra de 1 a 5 blocos.
+
+    Args:
+        forca (int): Força do clube.
+
+    Returns:
+        str: Barra com marcação do rich, com blocos verdes preenchidos e o restante esmaecido.
+    """
     quantidade = max(1, min(5, (forca - 50) // 7))
     return f"[green]{'█' * quantidade}[/][dim]{'░' * (5 - quantidade)}[/]"
 
 
 def mostrar_menu_inicial():
+    """
+    Exibe o menu inicial do jogo e lê a opção escolhida.
+
+    Mostra o nome e a versão do jogo e as opções Novo jogo, Carregar, Ranking e Sair.
+
+    Returns:
+        int: Opção escolhida, de 1 a 4.
+    """
     limpar()
     console.print(Panel.fit(f"[bold green]{' '.join(NOME_JOGO)}[/]  [dim]v{VERSAO}[/]", border_style="green"))
     for numero, opcao in enumerate(OPCOES_MENU, start=1):
@@ -59,6 +82,17 @@ def mostrar_menu_inicial():
 
 
 def escolher_clube(clubes_base):
+    """
+    Exibe a tela de escolha do clube para um novo jogo.
+
+    Mostra uma tabela com o nome, o nível, a força e a meta da diretoria de cada clube, além de um aviso sobre o multiplicador do ranking para clubes menores. O usuário escolhe um clube pelo número ou digita 0 para voltar.
+
+    Args:
+        clubes_base (list): Lista de clubes disponíveis para escolha.
+
+    Returns:
+        str | None: Identificador do clube escolhido ou None se o usuário voltar.
+    """
     titulo("ESCOLHA SEU CLUBE")
     tabela = Table(header_style="bold")
     for coluna in ("#", "Clube", "Nível", "Força", "Meta da diretoria"):
@@ -75,16 +109,46 @@ def escolher_clube(clubes_base):
 
 
 def texto_jogo(estado, jogo):
+    """
+    Monta o texto de um confronto no formato "Mandante x Visitante".
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        jogo (tuple): Par com os identificadores do mandante e do visitante.
+
+    Returns:
+        str: Texto com marcação do rich, com o nome de cada clube na sua cor.
+    """
     casa = estado["clubes"][jogo[0]]
     fora = estado["clubes"][jogo[1]]
     return f"[bold {casa['cor']}]{casa['nome']}[/] x [bold {fora['cor']}]{fora['nome']}[/]"
 
 
 def texto_ultimos(letras):
+    """
+    Formata a sequência dos últimos resultados com uma cor para cada letra.
+
+    Args:
+        letras (list): Letras dos resultados, sendo "V" vitória, "E" empate e "D" derrota.
+
+    Returns:
+        str: Letras coloridas separadas por espaço, ou "-" se não houver resultados.
+    """
     return " ".join(f"[{CORES_RESULTADO[letra]}]{letra}[/]" for letra in letras) or "-"
 
 
 def local_do_jogo(estado, jogo, clube_id):
+    """
+    Informa onde o clube vai jogar a partida.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        jogo (tuple): Par com os identificadores do mandante e do visitante.
+        clube_id (str): Identificador do clube de referência.
+
+    Returns:
+        str: "campo neutro", "em casa" ou "fora de casa".
+    """
     if jogo_neutro(estado):
         return "campo neutro"
     return "em casa" if jogo[0] == clube_id else "fora de casa"
@@ -104,6 +168,17 @@ OPCOES_CENTRAL = (
 
 
 def mostrar_central(estado):
+    """
+    Exibe a central do clube e lê a opção escolhida.
+
+    Mostra o técnico, a meta, a posição na liga, o caixa, a situação na copa, os últimos jogos, a confiança da diretoria e o próximo compromisso. Se o clube não joga na etapa atual da copa, a primeira opção passa a ser acompanhar a rodada da copa. As opções vão de Próximo jogo até Salvar, e 0 volta ao menu.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        int: Opção escolhida, de 0 a 9.
+    """
     clube = clube_do_jogador(estado)
     nivel = NIVEIS[clube["nivel"]]
     titulo(f"CENTRAL DO CLUBE — {clube['nome'].upper()}")
@@ -129,6 +204,18 @@ def mostrar_central(estado):
 
 
 def status_jogador(jogador, titulares):
+    """
+    Monta o texto de situação de um jogador para a tabela do elenco.
+
+    Indica se o jogador é titular, se está lesionado, suspenso ou em grande fase e quantos cartões amarelos tem.
+
+    Args:
+        jogador (dict): Dados do jogador.
+        titulares (list): Identificadores dos jogadores titulares.
+
+    Returns:
+        str: Situações com marcação do rich separadas por espaço, ou texto vazio se não houver nenhuma.
+    """
     partes = []
     if jogador["id"] in titulares:
         partes.append("[green]titular[/]")
@@ -144,6 +231,17 @@ def status_jogador(jogador, titulares):
 
 
 def tabela_elenco(clube):
+    """
+    Monta a tabela com todos os jogadores do elenco.
+
+    Os jogadores são ordenados por posição (goleiro, defesa, meio e ataque) e, dentro de cada posição, da maior para a menor qualidade. A tabela mostra os atributos, a energia, os gols, o valor de mercado e a situação de cada um; a coluna de reflexo só é preenchida para goleiros.
+
+    Args:
+        clube (dict): Dados do clube.
+
+    Returns:
+        tuple: Tabela pronta para imprimir (rich.table.Table) e a lista de jogadores na mesma ordem das linhas.
+    """
     tabela = Table(header_style="bold")
     for coluna in ("#", "Jogador", "Pos", "Qual", "Idade", "Fin", "Pas", "Des", "Fís", "Ref", "Energia", "Gols", "Valor", "Situação"):
         tabela.add_column(coluna)
@@ -161,6 +259,12 @@ def tabela_elenco(clube):
 
 
 def mostrar_elenco(clube):
+    """
+    Exibe a tabela do elenco do clube e espera o usuário pressionar Enter.
+
+    Args:
+        clube (dict): Dados do clube.
+    """
     titulo(f"ELENCO — {clube['nome'].upper()}")
     tabela, _ = tabela_elenco(clube)
     console.print(tabela)
@@ -168,6 +272,17 @@ def mostrar_elenco(clube):
 
 
 def trocar_titular(clube):
+    """
+    Troca um titular por um reserva escolhido pelo usuário.
+
+    Mostra a tabela do elenco e pede o número do titular que sai e depois o do reserva que entra. O reserva precisa estar disponível e não pode já ser titular; a troca é feita na mesma posição da lista de titulares.
+
+    Args:
+        clube (dict): Dados do clube, cuja lista de titulares é alterada.
+
+    Returns:
+        str: Mensagem sobre o resultado da troca, ou texto vazio se o usuário cancelar na escolha do reserva.
+    """
     limpar()
     tabela, jogadores = tabela_elenco(clube)
     console.print(tabela)
@@ -187,11 +302,29 @@ def trocar_titular(clube):
 
 
 def nome_curto(nome):
+    """
+    Abrevia o nome de um jogador para a inicial do primeiro nome e o último sobrenome.
+
+    Args:
+        nome (str): Nome completo do jogador.
+
+    Returns:
+        str: Nome abreviado (ex.: "J. Silva"), ou o próprio nome se tiver uma só palavra.
+    """
     partes = nome.split()
     return nome if len(partes) == 1 else f"{partes[0][0]}. {partes[-1]}"
 
 
 def estilo_do_titular(jogador):
+    """
+    Define o estilo do nome de um titular no desenho da formação.
+
+    Args:
+        jogador (dict): Dados do jogador.
+
+    Returns:
+        str: "bold red" se o jogador não estiver disponível, "bold yellow" se a energia estiver abaixo de 50 e "bold bright_white" nos demais casos.
+    """
     if not disponivel(jogador):
         return "bold red"
     if jogador["energia"] < 50:
@@ -200,6 +333,18 @@ def estilo_do_titular(jogador):
 
 
 def linha_do_setor(desenho, rotulo, celulas, larguras, largura):
+    """
+    Acrescenta ao desenho uma linha de um setor do campo.
+
+    Escreve o rótulo do setor à esquerda e centraliza as células na largura disponível, separadas por cinco espaços.
+
+    Args:
+        desenho (rich.text.Text): Texto do desenho, alterado no lugar.
+        rotulo (str): Rótulo do setor, como "ATA" ou "GOL"; pode ser vazio.
+        celulas (list): Pares de texto e estilo de cada célula.
+        larguras (list): Largura de cada célula, na mesma ordem.
+        largura (int): Largura total da linha.
+    """
     tamanho = sum(larguras) + 5 * max(0, len(larguras) - 1)
     desenho.append(f"{rotulo:<5}", style="dim")
     desenho.append(" " * max(0, (largura - 5 - tamanho) // 2))
@@ -211,6 +356,18 @@ def linha_do_setor(desenho, rotulo, celulas, larguras, largura):
 
 
 def desenho_formacao(clube, largura=88):
+    """
+    Desenha os titulares do clube dispostos por setor do campo.
+
+    Os setores aparecem de cima para baixo: ataque, meio, defesa e goleiro. Cada jogador mostra o nome abreviado e, abaixo, a qualidade e a energia; o nome fica amarelo se ele estiver cansado e vermelho se estiver indisponível. A formação aparece no título do painel.
+
+    Args:
+        clube (dict): Dados do clube.
+        largura (int): Largura do desenho, sem contar a borda e o espaçamento interno. Padrão: 88.
+
+    Returns:
+        rich.panel.Panel: Painel pronto para imprimir.
+    """
     titulares = [j for j in clube["elenco"] if j["id"] in clube["titulares"]]
     desenho = Text()
     for indice, posicao in enumerate(("ATA", "MEI", "DEF", "GOL")):
@@ -234,6 +391,14 @@ def desenho_formacao(clube, largura=88):
 
 
 def editar_plano(clube):
+    """
+    Exibe a tela do plano de jogo e permite alterá-lo até o usuário voltar.
+
+    Mostra a formação, o estilo, a ofensividade, a intensidade e o desenho dos titulares. As opções são trocar a formação (o time é reescalado automaticamente), trocar o estilo, ajustar a ofensividade e a intensidade de 1 a 5, fazer a escalação automática, trocar um titular ou voltar com 0.
+
+    Args:
+        clube (dict): Dados do clube, cujo plano e titulares são alterados.
+    """
     mensagem = ""
     while True:
         titulo("PLANO DE JOGO")
@@ -279,6 +444,14 @@ def editar_plano(clube):
 
 
 def mostrar_classificacao(estado):
+    """
+    Exibe a tabela de classificação da liga.
+
+    Mostra pontos, jogos, vitórias, empates, derrotas, gols e saldo de cada clube. O líder aparece em verde, o G4 em azul, a zona de rebaixamento em vermelho e o clube do jogador em amarelo. Abaixo da tabela aparecem a legenda e os critérios de desempate. Espera o usuário pressionar Enter.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     titulo("CLASSIFICAÇÃO")
     tabela = Table(header_style="bold")
     for coluna in ("#", "Clube", "P", "J", "V", "E", "D", "GP", "GC", "SG"):
@@ -309,11 +482,25 @@ def mostrar_classificacao(estado):
 
 
 def mostrar_sumula(linhas):
+    """
+    Imprime os lances da súmula de uma partida, um por linha.
+
+    Args:
+        linhas (list | None): Lances registrados; se vazio ou None, mostra "Sem lances registrados.".
+    """
     for linha in linhas or ["Sem lances registrados."]:
         console.print(f"  {linha}")
 
 
 def mostrar_rodadas(estado):
+    """
+    Exibe a tela de rodadas e histórico até o usuário voltar.
+
+    Pede o número da rodada a consultar. Se a rodada já foi jogada, mostra os placares e a súmula do jogo do usuário; se ainda não foi, mostra apenas os confrontos. O jogo do clube do usuário é marcado com uma seta. Digitar 0 volta.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     while True:
         titulo("RODADAS E HISTÓRICO")
         console.print(f" Rodada atual: {estado['rodada']}/{TOTAL_RODADAS}")
@@ -339,6 +526,17 @@ def mostrar_rodadas(estado):
 
 
 def pre_jogo(estado):
+    """
+    Exibe a tela de pré-jogo e lê a opção escolhida.
+
+    Mostra o confronto, o local, a força dos dois clubes, o aviso de pênaltis em mata-mata, o plano de jogo do usuário e os titulares cansados. As opções são jogar lance a lance, simular assistindo, simular rápido, ver só o resultado, ver o adversário, ajustar o plano ou voltar com 0.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        int: Opção escolhida, de 0 a 6.
+    """
     clube = clube_do_jogador(estado)
     jogo = jogo_do_jogador(estado)
     adversario = estado["clubes"][adversario_de(jogo, clube["id"])]
@@ -360,6 +558,16 @@ def pre_jogo(estado):
 
 
 def texto_penaltis_resultado(estado, resultado):
+    """
+    Monta o placar da disputa de pênaltis de uma partida.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        resultado (dict): Resultado da partida.
+
+    Returns:
+        str: Texto no formato "pênaltis SIGLA n x n SIGLA", ou texto vazio se não houve pênaltis.
+    """
     if not resultado.get("penaltis"):
         return ""
     casa = estado["clubes"][resultado["mandante"]]["sigla"]
@@ -369,6 +577,15 @@ def texto_penaltis_resultado(estado, resultado):
 
 
 def mostrar_fim_de_jogo(estado, resultado):
+    """
+    Exibe a tela de fim de jogo.
+
+    Mostra o placar, o resultado dos pênaltis e quem avançou (quando houver), uma tabela com posse de bola, finalizações, chutes no alvo e faltas de cada clube, e a súmula da partida. Espera o usuário pressionar Enter.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        resultado (dict): Resultado da partida, com estatísticas e súmula.
+    """
     casa = estado["clubes"][resultado["mandante"]]
     fora = estado["clubes"][resultado["visitante"]]
     titulo("FIM DE JOGO")
@@ -392,6 +609,18 @@ def mostrar_fim_de_jogo(estado, resultado):
 
 
 def linha_de_resultado(estado, resultado):
+    """
+    Monta a linha de placar de uma partida para as listas de resultados.
+
+    Inclui o placar dos pênaltis entre parênteses, quando houver, e uma seta se o clube do usuário participou do jogo.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        resultado (dict): Resultado da partida.
+
+    Returns:
+        str: Linha com marcação do rich.
+    """
     casa = estado["clubes"][resultado["mandante"]]
     fora = estado["clubes"][resultado["visitante"]]
     destaque = " [yellow]◄[/]" if estado["clube_id"] in (casa["id"], fora["id"]) else ""
@@ -401,6 +630,18 @@ def linha_de_resultado(estado, resultado):
 
 
 def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
+    """
+    Exibe os resultados de uma rodada ou fase.
+
+    Mostra os placares e, conforme as informações recebidas, se o clube do usuário foi campeão, avançou ou foi eliminado da copa, a variação da confiança da diretoria, os desfalques substituídos na escalação e as notícias do mercado da bola. Espera o usuário pressionar Enter.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        titulo_tela (str): Título exibido no topo da tela.
+        resultados (list): Resultados das partidas.
+        informacao (dict): Dados do jogo do usuário, como "jogo", "letra", "variacao" e "trocados".
+        noticias (list): Notícias do mercado da bola.
+    """
     titulo(titulo_tela)
     for resultado in resultados:
         console.print(linha_de_resultado(estado, resultado))
@@ -426,6 +667,17 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
 
 
 def mostrar_evento(evento):
+    """
+    Exibe o evento da semana e, se houver opções, lê a escolha do usuário.
+
+    Mostra o texto do evento. Se ele não tiver opções, devolve o efeito direto; caso contrário, lista as opções numeradas a partir de 1.
+
+    Args:
+        evento (dict): Evento preparado, com texto, efeito e opções.
+
+    Returns:
+        str: Efeito do evento ou da opção escolhida.
+    """
     titulo("EVENTO DA SEMANA")
     console.print(f" {evento['texto']}\n")
     if not evento["opcoes"]:
@@ -436,11 +688,26 @@ def mostrar_evento(evento):
 
 
 def mostrar_mensagem(texto, estilo="bold"):
+    """
+    Exibe uma mensagem e espera o usuário pressionar Enter.
+
+    Args:
+        texto (str): Mensagem a exibir.
+        estilo (str): Estilo do rich aplicado à mensagem. Padrão: "bold".
+    """
     console.print(f"\n [{estilo}]{texto}[/]")
     pausar("Enter para continuar...")
 
 
 def mostrar_final(resumo):
+    """
+    Exibe a tela de fim da temporada ou de demissão.
+
+    Mostra se o técnico venceu ou perdeu e o desfecho, o clube, a meta, a posição final, os pontos, o saldo, o bônus de campeão da copa (quando houver) e a pontuação no ranking. Espera o usuário pressionar Enter.
+
+    Args:
+        resumo (dict): Resumo da temporada.
+    """
     titulo("FIM DA TEMPORADA" if "demitido" not in resumo["desfecho"] else "VOCÊ FOI DEMITIDO")
     cor = "green" if resumo["venceu"] else "red"
     console.print(f" [bold {cor}]{'VITÓRIA' if resumo['venceu'] else 'DERROTA'}: {resumo['desfecho']}[/]\n")
@@ -453,6 +720,14 @@ def mostrar_final(resumo):
 
 
 def mostrar_ranking(linhas):
+    """
+    Exibe o ranking de técnicos.
+
+    Mostra uma tabela com técnico, clube, posição, pontos, pontuação, desfecho e data de cada temporada registrada, ou um aviso se ninguém terminou uma temporada. Espera o usuário pressionar Enter.
+
+    Args:
+        linhas (list): Registros do ranking.
+    """
     titulo("RANKING DE TÉCNICOS")
     if not linhas:
         console.print(" Ninguém terminou uma temporada ainda.")
@@ -468,6 +743,17 @@ def mostrar_ranking(linhas):
 
 
 def escolher_save(saves):
+    """
+    Exibe a tela de carregar jogo e lê o save escolhido.
+
+    Mostra uma tabela com técnico, clube, rodada e data de cada jogo salvo. Se não houver saves, mostra um aviso. O usuário escolhe pelo número ou digita 0 para voltar.
+
+    Args:
+        saves (list): Jogos salvos disponíveis.
+
+    Returns:
+        pathlib.Path | None: Caminho do arquivo do save escolhido, ou None se não houver saves ou o usuário voltar.
+    """
     titulo("CARREGAR JOGO")
     if not saves:
         mostrar_mensagem("Nenhum jogo salvo encontrado.", "yellow")
@@ -485,6 +771,18 @@ def escolher_save(saves):
 
 
 def plano_provavel(estado, clube):
+    """
+    Indica o plano de jogo provável de um clube.
+
+    Para o clube do usuário, devolve o próprio plano; para os outros, calcula o plano da IA contra o clube do usuário, considerando se o clube joga em casa no próximo jogo do usuário.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Dados do clube.
+
+    Returns:
+        dict: Plano de jogo com formação, estilo, ofensividade e intensidade.
+    """
     if clube["id"] == estado["clube_id"]:
         return clube["plano"]
     jogo = jogo_do_jogador(estado)
@@ -493,6 +791,15 @@ def plano_provavel(estado, clube):
 
 
 def mostrar_clube(estado, clube_id):
+    """
+    Exibe a ficha de um clube até o usuário voltar.
+
+    Mostra o nível, a força, a posição e os pontos na liga, a situação na copa, o caixa, os últimos jogos, o plano provável, o desenho dos titulares, os três jogadores de maior qualidade, o artilheiro e os desfalques. O usuário pode abrir o elenco completo com 1 ou voltar com 0.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube_id (str): Identificador do clube a exibir.
+    """
     clube = estado["clubes"][clube_id]
     nivel = NIVEIS[clube["nivel"]]
     while True:
@@ -524,6 +831,14 @@ def mostrar_clube(estado, clube_id):
 
 
 def escolher_clube_para_ver(estado):
+    """
+    Lista os clubes na ordem da classificação para o usuário ver a ficha de um deles.
+
+    Mostra o nome e a força de cada clube, com destaque para o clube do usuário. Ao escolher um número, abre a ficha do clube; 0 volta.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     while True:
         titulo("CLUBES")
         ordenada = classificacao(estado)
@@ -539,6 +854,14 @@ def escolher_clube_para_ver(estado):
 
 
 def mostrar_copa(estado):
+    """
+    Exibe o chaveamento da copa.
+
+    Para cada fase, mostra os resultados com o clube que avançou, os confrontos ainda não jogados ou "a definir". Depois mostra o campeão (quando houver), a situação do clube do usuário e as regras da copa. Espera o usuário pressionar Enter.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+    """
     copa = estado["copa"]
     titulo("COPA PRANCHETA")
     for fase in FASES_COPA:
