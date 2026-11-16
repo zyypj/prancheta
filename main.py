@@ -262,7 +262,7 @@ def jogar_etapa(estado, recursos):
         titulo_tela = f"RESULTADOS — {descricao_etapa(etapa).upper()}"
     informacao["desafio"] = desafio
     informacao["objetivos"] = atualizar_objetivos(estado)
-    noticias = movimentar_mercado(estado)
+    noticias = movimentar_mercado(estado, recursos["nomes"])
     telas.mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias)
     avancar_etapa(estado)
     if not temporada_acabou(estado):

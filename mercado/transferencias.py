@@ -1,6 +1,6 @@
 import random
 
-from config import AGENTES_LIVRES, MAX_ELENCO, MINIMO_POR_POSICAO
+from config import AGENTES_LIVRES, COMPOSICAO_ELENCO, ELENCO_MINIMO, MAX_ELENCO, MAXIMO_LIVRES, MINIMO_POR_POSICAO
 from elenco.escalacao import (
     completar_titulares,
     criar_jogador,
@@ -13,7 +13,6 @@ from elenco.escalacao import (
 from liga.financas import lancar
 
 POSICOES_LIVRES = ("GOL", "DEF", "DEF", "MEI", "MEI", "ATA", "ATA")
-ELENCO_MINIMO = 16
 
 
 def dinheiro(valor):
@@ -33,25 +32,74 @@ def gerar_agentes_livres(banco, usados, quantidade=AGENTES_LIVRES):
     """
     Gera a lista de jogadores sem clube disponíveis no mercado.
 
-    Cada agente livre recebe uma posição sorteada em POSICOES_LIVRES, uma qualidade sorteada por distribuição
-    normal (média 64, desvio 7) limitada entre 45 e 82, e uma idade jovem (18 a 22 anos) ou veterana (29 a 35
-    anos). Os identificadores seguem o padrão "liv-01", "liv-02" e assim por diante.
+    Cada agente livre é criado por criar_agente_livre, e os identificadores seguem o padrão "liv-01", "liv-02"
+    e assim por diante.
 
     Args:
         banco (dict): Banco de nomes usado para sortear o nome dos jogadores.
         usados (set): Nomes já utilizados, atualizado a cada nome sorteado para evitar repetição.
-        quantidade (int): Número de agentes livres a gerar. Padrão: AGENTES_LIVRES (14).
+        quantidade (int): Número de agentes livres a gerar. Padrão: AGENTES_LIVRES (30).
 
     Returns:
         list: Lista de dicionários com os jogadores gerados.
     """
-    livres = []
-    for numero in range(1, quantidade + 1):
-        posicao = random.choice(POSICOES_LIVRES)
-        qualidade = limitar(round(random.gauss(64, 7)), 45, 82)
-        idade = random.choice((random.randint(18, 22), random.randint(29, 35)))
-        livres.append(criar_jogador(f"liv-{numero:02d}", sortear_nome(banco, usados), posicao, qualidade, idade))
-    return livres
+    return [criar_agente_livre(f"liv-{numero:02d}", banco, usados) for numero in range(1, quantidade + 1)]
+
+
+def criar_agente_livre(identificador, banco, usados):
+    """
+    Cria um jogador sem clube.
+
+    Recebe uma posição sorteada em POSICOES_LIVRES, uma qualidade sorteada por distribuição normal (média 61,
+    desvio 6) limitada entre 45 e 77, e uma idade jovem (18 a 22 anos) ou veterana (29 a 35 anos).
+
+    Args:
+        identificador (str): Identificador do jogador, no padrão "liv-NN".
+        banco (dict): Banco de nomes usado para sortear o nome.
+        usados (set): Nomes já utilizados, atualizado com o nome sorteado.
+
+    Returns:
+        dict: Jogador criado.
+    """
+    posicao = random.choice(POSICOES_LIVRES)
+    qualidade = limitar(round(random.gauss(61, 6)), 45, 77)
+    idade = random.choice((random.randint(18, 22), random.randint(29, 35)))
+    return criar_jogador(identificador, sortear_nome(banco, usados), posicao, qualidade, idade)
+
+
+def chegar_dispensados(estado, banco):
+    """
+    Traz ao mercado 1 ou 2 jogadores dispensados por clubes do exterior, enquanto houver vaga na lista de
+    livres.
+
+    Os nomes não repetem os de nenhum jogador da temporada, e os identificadores continuam a numeração "liv-"
+    a partir do maior já usado. Cada chegada vira notícia.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        banco (dict): Banco de nomes usado para sortear o nome.
+
+    Returns:
+        list[str]: Notícias das chegadas.
+    """
+    todos = [jogador for clube in estado["clubes"].values() for jogador in clube["elenco"]] + estado["livres"]
+    usados = {jogador["nome"] for jogador in todos}
+    numeros = [int(jogador["id"][4:]) for jogador in todos if jogador["id"].startswith("liv-")]
+    numero = max(numeros + [estado.get("ultimo_livre", 0)])
+    noticias = []
+    for _ in range(random.randint(1, 2)):
+        if len(estado["livres"]) >= MAXIMO_LIVRES:
+            break
+        numero += 1
+        jogador = criar_agente_livre(f"liv-{numero:02d}", banco, usados)
+        estado["livres"].append(jogador)
+        texto = (
+            f"{rotulo(jogador)} (qualidade {jogador['qualidade']}, {jogador['idade']} anos) foi dispensado por um "
+            "clube do exterior e está sem clube."
+        )
+        noticias.append(noticia(estado, texto))
+    estado["ultimo_livre"] = numero
+    return noticias
 
 
 def noticia(estado, texto):
@@ -89,7 +137,7 @@ def pode_sair(clube, jogador):
     """
     Verifica se o clube pode liberar um jogador sem desfalcar o elenco.
 
-    O jogador só pode sair se o elenco tiver mais de ELENCO_MINIMO (16) jogadores e se a posição dele
+    O jogador só pode sair se o elenco tiver mais de ELENCO_MINIMO (18) jogadores e se a posição dele
     continuar acima do mínimo definido em MINIMO_POR_POSICAO (2 goleiros, 5 defensores, 5 meias e 3
     atacantes).
 
@@ -222,7 +270,7 @@ def tentar_comprar(estado, jogador, vendedor, oferta):
     """
     Tenta comprar um jogador de outro clube com a oferta do técnico.
 
-    A proposta é recusada de imediato se o elenco do técnico já tiver MAX_ELENCO (25) jogadores, se a oferta
+    A proposta é recusada de imediato se o elenco do técnico já tiver MAX_ELENCO (28) jogadores, se a oferta
     for maior que o caixa ou se o vendedor não puder liberar o jogador. Caso contrário, a chance de aceitar
     cresce de forma linear com a razão entre oferta e preço pedido: é nula com 80% do pedido ou menos e certa
     a partir de 110%.
@@ -255,7 +303,7 @@ def contratar_livre(estado, jogador):
     """
     Contrata um jogador sem clube para o time do técnico.
 
-    A contratação é negada se o elenco já tiver MAX_ELENCO (25) jogadores ou se o caixa não cobrir as luvas.
+    A contratação é negada se o elenco já tiver MAX_ELENCO (28) jogadores ou se o caixa não cobrir as luvas.
     Quando aprovada, o jogador sai da lista de agentes livres, entra no elenco, as luvas são debitadas do
     caixa e a notícia é registrada.
 
@@ -408,15 +456,17 @@ def negociacao_entre_ia(estado):
     return transferir(estado, jogador, vendedor, comprador, preco_pedido(vendedor, jogador))
 
 
-def movimentar_mercado(estado):
+def movimentar_mercado(estado, banco=None):
     """
     Movimenta o mercado entre os clubes da IA.
 
     Há 45% de chance de tentar uma contratação de agente livre e 30% de chance de tentar uma negociação entre
-    clubes da IA, de forma independente.
+    clubes da IA, de forma independente. Com o banco de nomes, também chegam jogadores dispensados do exterior
+    à lista de livres.
 
     Args:
         estado (dict): Estado atual da temporada.
+        banco (dict | None): Banco de nomes para os dispensados; sem ele, ninguém chega. Padrão None.
 
     Returns:
         list: Textos das notícias geradas, sem as tentativas que não resultaram em negócio.
@@ -426,4 +476,105 @@ def movimentar_mercado(estado):
         noticias.append(contratacao_de_livre_ia(estado))
     if random.random() < 0.3:
         noticias.append(negociacao_entre_ia(estado))
+    if banco:
+        noticias.extend(chegar_dispensados(estado, banco))
     return [texto for texto in noticias if texto]
+
+
+def motivo_da_contratacao(jogador, titulares_da_posicao, reservas_da_posicao, quantidade_na_posicao, forca):
+    """
+    Avalia um jogador para o elenco do técnico e explica por que valeria contratá-lo.
+
+    Soma o ganho de qualidade sobre o titular mais fraco da posição (quando o jogador seria titular), 4 pontos
+    se a posição tem menos jogadores que a composição padrão do elenco (COMPOSICAO_ELENCO) e o jogador não é
+    muito mais fraco que o time, 2 pontos para jovens de até 21 anos com qualidade perto da força do clube e
+    1,5 ponto quando o jogador é pelo menos 6 pontos melhor que o reserva mais fraco da posição, reforçando o
+    banco. O motivo mostrado é o mais forte desses.
+
+    Args:
+        jogador (dict): Jogador avaliado.
+        titulares_da_posicao (list[dict]): Titulares do técnico na mesma posição.
+        reservas_da_posicao (list[dict]): Reservas do técnico na mesma posição.
+        quantidade_na_posicao (int): Quantos jogadores o técnico tem nessa posição.
+        forca (int): Força do clube do técnico.
+
+    Returns:
+        tuple: (pontuação, motivo), com motivo None quando o jogador não acrescenta nada.
+    """
+    pontos = 0.0
+    motivos = []
+    pior = min(titulares_da_posicao, key=lambda j: j["qualidade"], default=None)
+    if pior and jogador["qualidade"] >= pior["qualidade"] + 3:
+        ganho = jogador["qualidade"] - pior["qualidade"]
+        pontos += ganho
+        motivos.append(f"vira titular no lugar de {rotulo(pior)} (+{ganho} de qualidade)")
+    if quantidade_na_posicao < COMPOSICAO_ELENCO[jogador["pos"]] and jogador["qualidade"] >= forca - 8:
+        pontos += 4
+        motivos.append(f"a posição só tem {quantidade_na_posicao} jogadores")
+    if jogador.get("idade", 30) <= 21 and jogador["qualidade"] >= forca - 6:
+        pontos += 2
+        motivos.append(f"jovem promissor ({jogador['idade']} anos), vai valorizar")
+    reserva = min(reservas_da_posicao, key=lambda j: j["qualidade"], default=None)
+    if reserva and jogador["qualidade"] >= reserva["qualidade"] + 6 and jogador["qualidade"] >= forca - 6:
+        pontos += 1.5
+        motivos.append(f"reforça o banco: bem melhor que {rotulo(reserva)} ({reserva['qualidade']})")
+    return pontos, (motivos[0] if motivos else None)
+
+
+def sugerir_contratacoes(estado, maximo=6):
+    """
+    Monta as sugestões do olheiro para reforçar o elenco do técnico.
+
+    Considera os jogadores de outros clubes que podem ser liberados (pelo preço pedido) e os jogadores sem
+    clube (pelas luvas), desde que caibam no caixa. Cada um é avaliado por motivo_da_contratacao; jogadores
+    sem clube ganham 1,5 ponto por custarem só as luvas, e o custo tira pontos em proporção ao caixa (gastar o
+    caixa inteiro tira 4 pontos). Entram só os
+    que têm motivo e pontuação positiva, no máximo dois por posição, e nenhum se o elenco já estiver cheio.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        maximo (int): Quantidade máxima de sugestões. Padrão 6.
+
+    Returns:
+        list[dict]: Sugestões com o jogador, o clube vendedor (None se estiver sem clube), o custo e o motivo,
+            da melhor para a pior.
+    """
+    clube = estado["clubes"][estado["clube_id"]]
+    if len(clube["elenco"]) >= MAX_ELENCO:
+        return []
+    caixa = clube.get("caixa", 0)
+    por_id = {jogador["id"]: jogador for jogador in clube["elenco"]}
+    titulares = [por_id[i] for i in clube["titulares"] if i in por_id]
+    reservas = [jogador for jogador in clube["elenco"] if jogador["id"] not in clube["titulares"]]
+    candidatos = [
+        (jogador, vendedor, preco_pedido(vendedor, jogador))
+        for jogador, vendedor in jogadores_a_venda(estado)
+        if pode_sair(vendedor, jogador)
+    ]
+    candidatos += [(jogador, None, luvas(jogador)) for jogador in estado["livres"]]
+    avaliados = []
+    for jogador, vendedor, custo in candidatos:
+        if custo > caixa:
+            continue
+        mesma_posicao = [titular for titular in titulares if titular["pos"] == jogador["pos"]]
+        banco = [reserva for reserva in reservas if reserva["pos"] == jogador["pos"]]
+        pontos, motivo = motivo_da_contratacao(
+            jogador, mesma_posicao, banco, quantos_na_posicao(clube["elenco"], jogador["pos"]), clube["forca"]
+        )
+        if not motivo:
+            continue
+        pontos += (1.5 if vendedor is None else 0) - custo / max(caixa, 1) * 4
+        if pontos <= 0:
+            continue
+        avaliados.append({"jogador": jogador, "vendedor": vendedor, "custo": custo, "motivo": motivo, "pontos": pontos})
+    sugestoes = []
+    por_posicao = {}
+    for item in sorted(avaliados, key=lambda item: item["pontos"], reverse=True):
+        posicao = item["jogador"]["pos"]
+        if por_posicao.get(posicao, 0) >= 2:
+            continue
+        por_posicao[posicao] = por_posicao.get(posicao, 0) + 1
+        sugestoes.append(item)
+        if len(sugestoes) == maximo:
+            break
+    return sugestoes

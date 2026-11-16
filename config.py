@@ -27,7 +27,7 @@ ESTILOS = ("posse", "contra-ataque", "jogo direto")
 NOMES_ESTILOS = {"posse": "Posse de bola", "contra-ataque": "Contra-ataque", "jogo direto": "Jogo direto"}
 
 POSICOES = ("GOL", "DEF", "MEI", "ATA")
-COMPOSICAO_ELENCO = {"GOL": 2, "DEF": 6, "MEI": 6, "ATA": 4}
+COMPOSICAO_ELENCO = {"GOL": 3, "DEF": 7, "MEI": 7, "ATA": 5}
 
 NIVEIS = {
     "grande": {"nome": "Grande", "meta": "título", "multiplicador": 1.0, "posicao_meta": 1, "caixa": 60.0},
@@ -83,9 +83,11 @@ PREMIO_VITORIA = 0.8
 PREMIO_EMPATE = 0.3
 PREMIO_FASE_COPA = 2.0
 PREMIO_TITULO_COPA = 5.0
-MAX_ELENCO = 25
+MAX_ELENCO = 28
+ELENCO_MINIMO = 18
 MINIMO_POR_POSICAO = {"GOL": 2, "DEF": 5, "MEI": 5, "ATA": 3}
-AGENTES_LIVRES = 14
+AGENTES_LIVRES = 30
+MAXIMO_LIVRES = 40
 
 CLUBES_DO_EXTERIOR = (
     "Calcio Ventura (Itália)",
