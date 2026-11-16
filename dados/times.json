@@ -1,22 +1,142 @@
 [
-  {"id": "ser", "nome": "Real Serrano", "sigla": "SER", "cor": "red", "forca": 85, "nivel": "grande",
-   "plano": {"formacao": "4-3-3", "estilo": "posse", "ofensividade": 4, "intensidade": 3}},
-  {"id": "met", "nome": "Metropolitano FC", "sigla": "MET", "cor": "bright_white", "forca": 82, "nivel": "grande",
-   "plano": {"formacao": "4-4-2", "estilo": "posse", "ofensividade": 3, "intensidade": 4}},
-  {"id": "lit", "nome": "Litoral Atlético", "sigla": "LIT", "cor": "bright_yellow", "forca": 79, "nivel": "grande",
-   "plano": {"formacao": "4-3-3", "estilo": "contra-ataque", "ofensividade": 3, "intensidade": 3}},
-  {"id": "uni", "nome": "União do Vale", "sigla": "UNI", "cor": "green", "forca": 75, "nivel": "medio",
-   "plano": {"formacao": "4-4-2", "estilo": "posse", "ofensividade": 3, "intensidade": 3}},
-  {"id": "gav", "nome": "Gaviões de Canoas", "sigla": "GAV", "cor": "bright_red", "forca": 72, "nivel": "medio",
-   "plano": {"formacao": "4-3-3", "estilo": "contra-ataque", "ofensividade": 3, "intensidade": 4}},
-  {"id": "tro", "nome": "Tropeiros de Gravataí", "sigla": "TRO", "cor": "magenta", "forca": 70, "nivel": "medio",
-   "plano": {"formacao": "3-5-2", "estilo": "jogo direto", "ofensividade": 3, "intensidade": 4}},
-  {"id": "cox", "nome": "Coxilha FC", "sigla": "COX", "cor": "bright_green", "forca": 67, "nivel": "medio",
-   "plano": {"formacao": "4-5-1", "estilo": "contra-ataque", "ofensividade": 2, "intensidade": 3}},
-  {"id": "fer", "nome": "Ferroviário Sul", "sigla": "FER", "cor": "yellow", "forca": 64, "nivel": "pequeno",
-   "plano": {"formacao": "5-3-2", "estilo": "jogo direto", "ofensividade": 2, "intensidade": 4}},
-  {"id": "pam", "nome": "Pampa EC", "sigla": "PAM", "cor": "bright_magenta", "forca": 61, "nivel": "pequeno",
-   "plano": {"formacao": "4-5-1", "estilo": "contra-ataque", "ofensividade": 2, "intensidade": 3}},
-  {"id": "lag", "nome": "Lagoa Azul FC", "sigla": "LAG", "cor": "cyan", "forca": 58, "nivel": "pequeno",
-   "plano": {"formacao": "5-3-2", "estilo": "jogo direto", "ofensividade": 2, "intensidade": 3}}
+  {
+    "id": "ser",
+    "nome": "Real Serrano",
+    "sigla": "SER",
+    "cor": "red",
+    "forca": 85,
+    "nivel": "grande",
+    "plano": {
+      "formacao": "4-3-3",
+      "estilo": "posse",
+      "ofensividade": 4,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "met",
+    "nome": "Metropolitano FC",
+    "sigla": "MET",
+    "cor": "bright_white",
+    "forca": 82,
+    "nivel": "grande",
+    "plano": {
+      "formacao": "4-4-2",
+      "estilo": "posse",
+      "ofensividade": 3,
+      "intensidade": 4
+    }
+  },
+  {
+    "id": "lit",
+    "nome": "Litoral Atlético",
+    "sigla": "LIT",
+    "cor": "bright_yellow",
+    "forca": 79,
+    "nivel": "grande",
+    "plano": {
+      "formacao": "4-3-3",
+      "estilo": "contra-ataque",
+      "ofensividade": 3,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "uni",
+    "nome": "União do Vale",
+    "sigla": "UNI",
+    "cor": "green",
+    "forca": 75,
+    "nivel": "medio",
+    "plano": {
+      "formacao": "4-4-2",
+      "estilo": "posse",
+      "ofensividade": 3,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "gav",
+    "nome": "Gaviões de Canoas",
+    "sigla": "GAV",
+    "cor": "bright_red",
+    "forca": 72,
+    "nivel": "medio",
+    "plano": {
+      "formacao": "4-3-3",
+      "estilo": "contra-ataque",
+      "ofensividade": 3,
+      "intensidade": 4
+    }
+  },
+  {
+    "id": "tro",
+    "nome": "Tropeiros de Gravataí",
+    "sigla": "TRO",
+    "cor": "magenta",
+    "forca": 70,
+    "nivel": "medio",
+    "plano": {
+      "formacao": "3-5-2",
+      "estilo": "jogo direto",
+      "ofensividade": 3,
+      "intensidade": 4
+    }
+  },
+  {
+    "id": "cox",
+    "nome": "Coxilha FC",
+    "sigla": "COX",
+    "cor": "bright_green",
+    "forca": 67,
+    "nivel": "medio",
+    "plano": {
+      "formacao": "4-5-1",
+      "estilo": "contra-ataque",
+      "ofensividade": 2,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "fer",
+    "nome": "Ferroviário Sul",
+    "sigla": "FER",
+    "cor": "yellow",
+    "forca": 64,
+    "nivel": "pequeno",
+    "plano": {
+      "formacao": "5-3-2",
+      "estilo": "jogo direto",
+      "ofensividade": 2,
+      "intensidade": 4
+    }
+  },
+  {
+    "id": "pam",
+    "nome": "Pampa EC",
+    "sigla": "PAM",
+    "cor": "bright_magenta",
+    "forca": 61,
+    "nivel": "pequeno",
+    "plano": {
+      "formacao": "4-5-1",
+      "estilo": "contra-ataque",
+      "ofensividade": 2,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "lag",
+    "nome": "Lagoa Azul FC",
+    "sigla": "LAG",
+    "cor": "cyan",
+    "forca": 58,
+    "nivel": "pequeno",
+    "plano": {
+      "formacao": "5-3-2",
+      "estilo": "jogo direto",
+      "ofensividade": 2,
+      "intensidade": 3
+    }
+  }
 ]
