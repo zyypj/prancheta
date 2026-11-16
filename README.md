@@ -34,10 +34,13 @@ python main.py
 4. Em **Próximo jogo**, escolha entre jogar lance a lance, simular assistindo (Enter avança), simular rápido ou ir
    direto para o resultado. Também dá para ver o adversário: posição, últimos jogos, plano e formação prováveis,
    destaques e desfalques. A simulação segue o seu plano e para no intervalo, em lesões, expulsões e pênaltis.
-5. Durante a partida, todo lance começa na disputa de meio-campo e a jogada avança por três lugares: meio-campo, entrada
-   da área e dentro da área. Cada lugar tem suas ações:
+5. Durante a partida, todo lance começa na disputa de meio-campo. A posse pode começar no campo de defesa, no
+   meio-campo ou na intermediária, e a jogada avança por seis lugares, cada um com suas ações:
+    - Campo de defesa: tocar, conduzir, lançar ou inverter o jogo.
     - Meio-campo: tocar, enfiada, driblar, lançar ou abrir na ponta.
+    - Intermediária: tocar, enfiada, driblar, abrir na ponta ou chutar de muito longe.
     - Entrada da área: tocar, tabelar, driblar, cruzar ou chutar de fora.
+    - Linha de fundo: cruzar, cruzar rasteiro para trás, driblar ou chutar sem ângulo.
     - Dentro da área: chutar, driblar ou tocar.
 
    Ao driblar, escolha o drible (corte seco, caneta, chapéu ou arrancada). Ao chutar, escolha o tipo (colocado, forte ou
@@ -48,10 +51,16 @@ python main.py
    paradinha), ou para onde o goleiro pula. Enter avança cada lance; digite 0 ou P para pausar e fazer substituições ou
    mudar o plano.
 
-   Cerca de um quarto dos lances começa numa jogada especial, cada uma com as suas escolhas: tiro de meta, lateral no
-   ataque, contra-ataque de três contra dois, falta pelo lado, falta de longe, sobra na entrada da área, erro do
-   adversário na saída de bola, arrancada de um craque, pressão na saída do goleiro, escanteio conquistado e bola
-   pelo alto. Na defesa, você escolhe o que o goleiro faz no cara a cara (sair abafando, esperar ou fechar o ângulo) e
+   Cerca de 30% dos lances começam numa das 19 jogadas especiais, cada uma com as suas escolhas: tiro de meta,
+   lateral no ataque, contra-ataque de três contra dois, falta pelo lado, falta de longe, falta na meia-lua, sobra
+   na entrada da área, erro do adversário na saída de bola, arrancada de um craque, pressão na saída do goleiro,
+   escanteio conquistado, bola pelo alto, um contra um na linha de fundo, goleiro pressionado, virada de jogo,
+   dois contra um, levantamento da intermediária, pivô de costas e contra-ataque sofrido (aqui quem decide é
+   quem defende).
+
+   Em cada partida você tem **3 revelações**. Quando uma pergunta mostra a opção **R**, digite R e escolha uma
+   única opção para ver a chance dela dar certo; a porcentagem fica ao lado do nome e aí você decide. Nos chutes,
+   a porcentagem é a chance de gol. Na defesa, você escolhe o que o goleiro faz no cara a cara (sair abafando, esperar ou fechar o ângulo) e
    às vezes como bloquear um chute (carrinho, fechar o ângulo ou deixar para o goleiro). Ainda podem acontecer desvio,
    frango, bola tirada em cima da linha, VAR revisando pênalti, simulação, impedimento duvidoso, reclamação,
    confusão, paralisação e chuva no meio do jogo, com centenas de frases de narração diferentes.
