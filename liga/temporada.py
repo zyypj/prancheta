@@ -16,6 +16,7 @@ from elenco.escalacao import completar_titulares, escalar_automatico, gerar_elen
 from elenco.substituicoes import preparar_proxima_rodada
 from liga.calendario import gerar_calendario, jogo_do_clube
 from liga.tabela import criar_tabela, ordenar_tabela, posicao_do_clube, registrar_resultado, saldo
+from partida.simulacao import simular_partida
 
 
 def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
@@ -61,6 +62,15 @@ def jogo_do_jogador(estado):
 
 def adversario_de(jogo, clube_id):
     return jogo[1] if jogo[0] == clube_id else jogo[0]
+
+
+def simular_outros_jogos(estado, frases):
+    jogo = jogo_do_jogador(estado)
+    return [
+        simular_partida(estado["clubes"][casa], estado["clubes"][fora], frases)
+        for casa, fora in jogos_da_rodada(estado)
+        if (casa, fora) != jogo
+    ]
 
 
 def classificacao(estado):
