@@ -1,6 +1,6 @@
 import random
 
-from elenco.escalacao import limitar
+from elenco.escalacao import limitar, rotulo
 from elenco.substituicoes import melhor_substituto, pode_substituir
 from partida.lances import CANTOS, FORCAS_PENALTI, criar_partida, fazer_substituicao, goleiro_de, jogar_partida
 
@@ -64,7 +64,7 @@ def ia_lesao(partida, time_id, lesionado):
     if pode_substituir(time):
         entra = melhor_substituto(time, lesionado["pos"])
         if entra:
-            fazer_substituicao(partida, time_id, None, entra["id"], lesionado["nome"])
+            fazer_substituicao(partida, time_id, None, entra["id"], rotulo(lesionado))
 
 
 def ajustar_ofensividade(partida, time_id):
@@ -132,12 +132,13 @@ def plano_ia(clube, adversario, em_casa):
     return plano
 
 
-def simular_partida(clube_casa, clube_fora, frases):
+def simular_partida(clube_casa, clube_fora, frases, neutro=False, mata_mata=False):
     partida = criar_partida(
         clube_casa,
         clube_fora,
         frases,
-        plano_ia(clube_casa, clube_fora, True),
+        plano_ia(clube_casa, clube_fora, not neutro),
         plano_ia(clube_fora, clube_casa, False),
+        neutro,
     )
-    return jogar_partida(partida, {clube_casa["id"]: CONTROLE_IA, clube_fora["id"]: CONTROLE_IA})
+    return jogar_partida(partida, {clube_casa["id"]: CONTROLE_IA, clube_fora["id"]: CONTROLE_IA}, mata_mata=mata_mata)

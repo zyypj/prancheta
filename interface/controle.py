@@ -1,6 +1,7 @@
 from rich.table import Table
 
 from config import ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
+from elenco.escalacao import rotulo
 from interface.campo import barra, mostrar_partida
 from interface.entrada import console, ler_opcao, limpar, pausar
 from partida.lances import ACOES, CANTOS, DEFESAS, DESCRICAO_ZONAS, FORCAS_PENALTI, NOMES_ACOES, NOMES_DEFESAS, \
@@ -31,7 +32,7 @@ def humano_ataque(partida, time_id, zona, portador):
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     acoes = ACOES[zona]
     local = DESCRICAO_ZONAS[zona]
-    indice = escolher_no_campo(partida, time_id, f"{portador['nome']} está com a bola {local}. O que fazer?",
+    indice = escolher_no_campo(partida, time_id, f"{rotulo(portador)} está com a bola {local}. O que fazer?",
                                [NOMES_ACOES[a] for a in acoes])
     if indice is None:
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
@@ -66,8 +67,8 @@ def tela_penalti(partida, time_id, titulo):
 
 
 def humano_bater_penalti(partida, time_id, batedor, goleiro):
-    nome_goleiro = goleiro["nome"] if goleiro else "ninguém"
-    tela_penalti(partida, time_id, f"PÊNALTI A FAVOR! {batedor['nome']} contra {nome_goleiro}.")
+    nome_goleiro = rotulo(goleiro) if goleiro else "ninguém"
+    tela_penalti(partida, time_id, f"PÊNALTI A FAVOR! {rotulo(batedor)} contra {nome_goleiro}.")
     canto = CANTOS[ler_opcao(1, 3, " Canto (1-3) > ") - 1]
     console.print(" [bold]1[/] Colocado (quase nunca sai)   [bold]2[/] Forte (difícil de pegar, pode ir pra fora)")
     forca = FORCAS_PENALTI[ler_opcao(1, 2, " Força > ") - 1]
@@ -75,8 +76,8 @@ def humano_bater_penalti(partida, time_id, batedor, goleiro):
 
 
 def humano_defender_penalti(partida, time_id, batedor, goleiro):
-    nome_goleiro = goleiro["nome"] if goleiro else "o goleiro improvisado"
-    tela_penalti(partida, time_id, f"PÊNALTI CONTRA! {batedor['nome']} na bola. Para onde {nome_goleiro} pula?")
+    nome_goleiro = rotulo(goleiro) if goleiro else "o goleiro improvisado"
+    tela_penalti(partida, time_id, f"PÊNALTI CONTRA! {rotulo(batedor)} na bola. Para onde {nome_goleiro} pula?")
     return CANTOS[ler_opcao(1, 3, " Canto (1-3) > ") - 1]
 
 
@@ -104,12 +105,12 @@ def escolher_entrada(time, mensagem):
 
 def humano_lesao(partida, time_id, lesionado):
     time = partida["times"][time_id]
-    mostrar_partida(partida, time_id, pergunta=f"{lesionado['nome']} saiu de campo e não pode voltar.")
+    mostrar_partida(partida, time_id, pergunta=f"{rotulo(lesionado)} saiu de campo e não pode voltar.")
     pausado = partida.get("em_pausa", False)
     partida["em_pausa"] = True
-    entra = escolher_entrada(time, f"Quem entra no lugar de {lesionado['nome']}?")
+    entra = escolher_entrada(time, f"Quem entra no lugar de {rotulo(lesionado)}?")
     if entra:
-        fazer_substituicao(partida, time_id, None, entra["id"], lesionado["nome"])
+        fazer_substituicao(partida, time_id, None, entra["id"], rotulo(lesionado))
     partida["em_pausa"] = pausado
 
 
@@ -131,9 +132,9 @@ def menu_substituicao(partida, time_id):
         if not escolha:
             return
         sai = time["em_campo"][escolha - 1]
-        entra = escolher_entrada(time, f"Quem entra no lugar de {sai['nome']}?")
+        entra = escolher_entrada(time, f"Quem entra no lugar de {rotulo(sai)}?")
         if entra and fazer_substituicao(partida, time_id, sai["id"], entra["id"]):
-            mensagem = f"Saiu {sai['nome']}, entrou {entra['nome']} ({time['subs']}/{MAX_SUBSTITUICOES})."
+            mensagem = f"Saiu {rotulo(sai)}, entrou {rotulo(entra)} ({time['subs']}/{MAX_SUBSTITUICOES})."
         else:
             mensagem = ""
 

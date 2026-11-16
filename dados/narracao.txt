@@ -101,3 +101,8 @@ driblou_goleiro | {jogador} dribla o goleiro e entra com bola e tudo!
 goleiro_salva | {goleiro} sai bem e fica com a bola nos pés de {jogador}.
 dominar_erro | {jogador} demora para dominar e a zaga tira.
 barreira | A bola explode na barreira!
+disputa_inicio | Vai para os pênaltis! Os jogadores se reúnem no meio-campo.
+disputa_gol | {jogador} bate e marca. {placar}.
+disputa_gol | {jogador} desloca o goleiro e converte. {placar}.
+disputa_defesa | {goleiro} defende a cobrança de {jogador}! {placar}.
+disputa_fora | {jogador} manda pra fora! {placar}.

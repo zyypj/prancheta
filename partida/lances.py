@@ -1,7 +1,7 @@
 import random
 
 from config import ACRESCIMOS, MANDO_DE_CAMPO, MAX_SUBSTITUICOES, MINUTOS_POR_LANCE
-from elenco.escalacao import atributo_efetivo, disponivel, forca_setores, limitar
+from elenco.escalacao import atributo_efetivo, disponivel, forca_setores, limitar, rotulo
 from elenco.substituicoes import aplicar_desgaste, marcar_desfalques, registrar_amarelo, substituir
 from partida.narracao import narrar
 
@@ -108,12 +108,14 @@ def montar_time(clube, plano, em_casa):
     }
 
 
-def criar_partida(clube_casa, clube_fora, frases, plano_casa=None, plano_fora=None):
+def criar_partida(clube_casa, clube_fora, frases, plano_casa=None, plano_fora=None, neutro=False):
     return {
         "casa": clube_casa["id"],
         "fora": clube_fora["id"],
+        "neutro": neutro,
+        "penaltis": None,
         "times": {
-            clube_casa["id"]: montar_time(clube_casa, plano_casa or clube_casa["plano"], True),
+            clube_casa["id"]: montar_time(clube_casa, plano_casa or clube_casa["plano"], not neutro),
             clube_fora["id"]: montar_time(clube_fora, plano_fora or clube_fora["plano"], False),
         },
         "minuto": 0,
@@ -229,11 +231,11 @@ def fazer_substituicao(partida, time_id, sai_id, entra_id, nome_saida=None):
         troca = substituir(time, sai_id, entra_id)
         if troca is None:
             return False
-        nome_sai, entra = troca[0]["nome"], troca[1]
+        nome_sai, entra = rotulo(troca[0]), troca[1]
     invalidar_setores(partida)
-    registrar(partida, "substituicao", {"time": time["nome"], "sai": nome_sai, "entra": entra["nome"]},
+    registrar(partida, "substituicao", {"time": time["nome"], "sai": nome_sai, "entra": rotulo(entra)},
               tipo="substituicao", time_id=time_id)
-    anotar_sumula(partida, f"Substituição ({time['sigla']}): sai {nome_sai}, entra {entra['nome']}")
+    anotar_sumula(partida, f"Substituição ({time['sigla']}): sai {nome_sai}, entra {rotulo(entra)}")
     return True
 
 
@@ -250,8 +252,8 @@ def expulsar(partida, time_id, jogador, chave):
     time["vermelhos"] += 1
     jogador["suspenso"] = max(jogador["suspenso"], 1)
     invalidar_setores(partida)
-    registrar(partida, chave, {"jogador": jogador["nome"]}, tipo="vermelho", time_id=time_id)
-    anotar_sumula(partida, f"Vermelho — {jogador['nome']} ({time['sigla']})")
+    registrar(partida, chave, {"jogador": rotulo(jogador)}, tipo="vermelho", time_id=time_id)
+    anotar_sumula(partida, f"Vermelho — {rotulo(jogador)} ({time['sigla']})")
     pausar_todos(partida, "expulsao")
 
 
@@ -262,9 +264,9 @@ def amarelar(partida, time_id, jogador):
         return
     time["amarelados"].append(jogador["id"])
     suspenso = registrar_amarelo(jogador)
-    registrar(partida, "amarelo", {"jogador": jogador["nome"]}, tipo="amarelo", time_id=time_id)
+    registrar(partida, "amarelo", {"jogador": rotulo(jogador)}, tipo="amarelo", time_id=time_id)
     aviso = " (3º amarelo, suspenso na próxima rodada)" if suspenso else ""
-    anotar_sumula(partida, f"Amarelo — {jogador['nome']} ({time['sigla']}){aviso}")
+    anotar_sumula(partida, f"Amarelo — {rotulo(jogador)} ({time['sigla']}){aviso}")
 
 
 def tirar_de_campo(partida, time_id, jogador, chave, rodadas):
@@ -273,11 +275,11 @@ def tirar_de_campo(partida, time_id, jogador, chave, rodadas):
     time["em_campo"].remove(jogador)
     time["saiu"].append(jogador)
     invalidar_setores(partida)
-    registrar(partida, chave, {"jogador": jogador["nome"]}, tipo="lesao", time_id=time_id)
+    registrar(partida, chave, {"jogador": rotulo(jogador)}, tipo="lesao", time_id=time_id)
     if rodadas:
-        anotar_sumula(partida, f"Lesão — {jogador['nome']} ({time['sigla']}), fora por {rodadas} rodada(s)")
+        anotar_sumula(partida, f"Lesão — {rotulo(jogador)} ({time['sigla']}), fora por {rodadas} rodada(s)")
     else:
-        anotar_sumula(partida, f"Câimbra — {jogador['nome']} ({time['sigla']}) deixa o campo")
+        anotar_sumula(partida, f"Câimbra — {rotulo(jogador)} ({time['sigla']}) deixa o campo")
     partida["controles"][time_id]["lesao"](partida, time_id, jogador)
 
 
@@ -370,18 +372,18 @@ def marcar_gol(partida, atacante_id, autor, contra=False):
     time["gols"] += 1
     mover_bola(partida, atacante_id, "gol", 1)
     chave = "gol_contra" if contra else "gol"
-    registrar(partida, chave, {"jogador": autor["nome"], "time": time["nome"], "placar": placar(partida)}, tipo="gol",
+    registrar(partida, chave, {"jogador": rotulo(autor), "time": time["nome"], "placar": placar(partida)}, tipo="gol",
               time_id=atacante_id)
     if not contra and random.random() < 0.04:
         time["gols"] -= 1
         registrar(partida, "var", tipo="var", time_id=atacante_id)
-        anotar_sumula(partida, f"Gol anulado pelo VAR — {autor['nome']} ({time['sigla']})")
+        anotar_sumula(partida, f"Gol anulado pelo VAR — {rotulo(autor)} ({time['sigla']})")
         return False
     if contra:
-        anotar_sumula(partida, f"GOL CONTRA — {autor['nome']} (a favor do {time['sigla']})")
+        anotar_sumula(partida, f"GOL CONTRA — {rotulo(autor)} (a favor do {time['sigla']})")
     else:
         autor["gols"] += 1
-        anotar_sumula(partida, f"GOL — {autor['nome']} ({time['sigla']})")
+        anotar_sumula(partida, f"GOL — {rotulo(autor)} ({time['sigla']})")
     return True
 
 
@@ -394,7 +396,7 @@ def escolher_chute(partida, atacante_id, finalizador, local):
         if chave == "cavadinha" and local == "cara":
             peso += 2
         opcoes.append((chave, chute["nome"], peso))
-    return perguntar(partida, atacante_id, f"Como {finalizador['nome']} vai bater?", opcoes)
+    return perguntar(partida, atacante_id, f"Como {rotulo(finalizador)} vai bater?", opcoes)
 
 
 def finalizar(partida, atacante_id, finalizador, local, tipo="colocado", bonus=0.0, defesa="fechar", rebote=True,
@@ -405,7 +407,7 @@ def finalizar(partida, atacante_id, finalizador, local, tipo="colocado", bonus=0
     chute = CHUTES[tipo]
     partida["ultimo_local"] = local
     mover_bola(partida, atacante_id, "area" if local not in ("longe", "meio_campo", "falta") else "ataque")
-    registrar(partida, f"chute_{local}", {"jogador": finalizador["nome"], "tipo": chute["texto"]}, tipo="chute",
+    registrar(partida, f"chute_{local}", {"jogador": rotulo(finalizador), "tipo": chute["texto"]}, tipo="chute",
               time_id=atacante_id)
     finalizacao = atributo_efetivo(finalizador, "fin")
     if local == "cabeceio":
@@ -416,11 +418,11 @@ def finalizar(partida, atacante_id, finalizador, local, tipo="colocado", bonus=0
     atacante["chutes"] += 1
     if random.random() >= limitar(alvo, 0.1, 0.95):
         if random.random() < 0.12:
-            registrar(partida, "trave", {"jogador": finalizador["nome"]}, tipo="trave", time_id=atacante_id)
+            registrar(partida, "trave", {"jogador": rotulo(finalizador)}, tipo="trave", time_id=atacante_id)
             if rebote and random.random() < 0.4:
                 pegar_rebote(partida, atacante_id, defesa)
             return
-        registrar(partida, "fora", {"jogador": finalizador["nome"]}, tipo="fora", time_id=atacante_id)
+        registrar(partida, "fora", {"jogador": rotulo(finalizador)}, tipo="fora", time_id=atacante_id)
         return
     atacante["no_alvo"] += 1
     fator_goleiro = 0.45 if tipo == "cavadinha" and local == "cara" else chute["goleiro"]
@@ -432,7 +434,7 @@ def finalizar(partida, atacante_id, finalizador, local, tipo="colocado", bonus=0
     if random.random() < limitar(chance, 0.03, 0.9):
         marcar_gol(partida, atacante_id, finalizador)
         return
-    nome_goleiro = goleiro["nome"] if goleiro else "o zagueiro improvisado"
+    nome_goleiro = rotulo(goleiro) if goleiro else "o zagueiro improvisado"
     registrar(partida, "defesa", {"goleiro": nome_goleiro}, tipo="defesa", time_id=atacante_id)
     if rebote and random.random() < 0.22:
         pegar_rebote(partida, atacante_id, defesa)
@@ -444,15 +446,15 @@ def pegar_rebote(partida, atacante_id, defesa):
     time = partida["times"][atacante_id]
     jogador = escolher_jogador(time, PESOS_REBOTE)
     entregar_bola(partida, atacante_id, "area", 1, jogador)
-    registrar(partida, "rebote", {"jogador": jogador["nome"]}, tipo="oportunidade", time_id=atacante_id)
-    escolha = perguntar(partida, atacante_id, f"Rebote! {jogador['nome']} pega a sobra. E agora?", [
+    registrar(partida, "rebote", {"jogador": rotulo(jogador)}, tipo="oportunidade", time_id=atacante_id)
+    escolha = perguntar(partida, atacante_id, f"Rebote! {rotulo(jogador)} pega a sobra. E agora?", [
         ("primeira", "Chutar de primeira", 5),
         ("ajeitar", "Ajeitar e bater", 3),
     ])
     if escolha == "primeira":
         finalizar(partida, atacante_id, jogador, "rebote", "forte", defesa=defesa, rebote=False)
     elif random.random() < 0.45:
-        registrar(partida, "rebote_bloqueado", {"jogador": jogador["nome"]}, tipo="perda", time_id=atacante_id)
+        registrar(partida, "rebote_bloqueado", {"jogador": rotulo(jogador)}, tipo="perda", time_id=atacante_id)
     else:
         finalizar(partida, atacante_id, jogador, "area", "colocado", defesa=defesa, rebote=False)
 
@@ -464,7 +466,7 @@ def cobrar_escanteio(partida, atacante_id, defesa):
     registrar(partida, "escanteio", {"time": time["nome"]}, tipo="bola_parada", time_id=atacante_id)
     if random.random() < 0.004:
         partida["ultimo_local"] = "olimpico"
-        registrar(partida, "gol_olimpico", {"jogador": batedor["nome"]}, tipo="oportunidade", time_id=atacante_id)
+        registrar(partida, "gol_olimpico", {"jogador": rotulo(batedor)}, tipo="oportunidade", time_id=atacante_id)
         marcar_gol(partida, atacante_id, batedor)
         return
     escolha = perguntar(partida, atacante_id, "Escanteio! Como cobrar?", [
@@ -475,7 +477,7 @@ def cobrar_escanteio(partida, atacante_id, defesa):
     if escolha == "curto":
         if random.random() < 0.6:
             jogador = escolher_jogador(time, PESOS_PORTADOR["ataque"], excluir=batedor)
-            registrar(partida, "escanteio_curto", {"jogador": jogador["nome"]}, time_id=atacante_id)
+            registrar(partida, "escanteio_curto", {"jogador": rotulo(jogador)}, time_id=atacante_id)
             finalizar(partida, atacante_id, jogador, "longe", escolher_chute(partida, atacante_id, jogador, "longe"),
                       defesa=defesa, escanteio=False)
             return
@@ -492,7 +494,7 @@ def cobrar_falta(partida, atacante_id, defesa):
     batedor = melhor_batedor(time)
     mover_bola(partida, atacante_id, "ataque", 1)
     registrar(partida, "falta_perigosa", {"time": time["nome"]}, tipo="bola_parada", time_id=atacante_id)
-    escolha = perguntar(partida, atacante_id, f"Falta perigosa! {batedor['nome']} na bola. Como cobrar?", [
+    escolha = perguntar(partida, atacante_id, f"Falta perigosa! {rotulo(batedor)} na bola. Como cobrar?", [
         ("barreira", "Por cima da barreira", 4),
         ("rasteiro", "Rasteiro, por baixo", 2),
         ("forte", "Bomba no canto", 2),
@@ -509,41 +511,51 @@ def cobrar_falta(partida, atacante_id, defesa):
     finalizar(partida, atacante_id, batedor, "falta", tipo, bonus, defesa)
 
 
+def resolver_cobranca(partida, atacante_id, batedor, goleiro):
+    defensor_id = outro(partida, atacante_id)
+    canto, forca = partida["controles"][atacante_id]["bater_penalti"](partida, atacante_id, batedor, goleiro)
+    pulo = partida["controles"][defensor_id]["defender_penalti"](partida, defensor_id, batedor, goleiro)
+    partida["ultimo_penalti"] = {"time": atacante_id, "canto": canto, "forca": forca, "pulo": pulo}
+    finalizacao = atributo_efetivo(batedor, "fin")
+    chance_fora = (0.04 if forca == "colocado" else 0.14) + max(0, 70 - finalizacao) * 0.002
+    if random.random() < chance_fora:
+        return "fora"
+    if canto == pulo:
+        defende = 0.80 if canto == "meio" else (0.55 if forca == "colocado" else 0.30)
+        reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
+        defende += (reflexo - finalizacao) * 0.004
+        if random.random() < limitar(defende, 0.1, 0.9):
+            return "defesa"
+    return "gol"
+
+
 def cobrar_penalti(partida, atacante_id):
     defensor_id = outro(partida, atacante_id)
     atacante = partida["times"][atacante_id]
     goleiro = goleiro_de(partida["times"][defensor_id])
     batedor = melhor_batedor(atacante)
     entregar_bola(partida, atacante_id, "area", 1, batedor)
-    registrar(partida, "penalti", {"time": atacante["nome"], "jogador": batedor["nome"]}, tipo="penalti",
+    registrar(partida, "penalti", {"time": atacante["nome"], "jogador": rotulo(batedor)}, tipo="penalti",
               time_id=atacante_id)
-    canto, forca = partida["controles"][atacante_id]["bater_penalti"](partida, atacante_id, batedor, goleiro)
-    pulo = partida["controles"][defensor_id]["defender_penalti"](partida, defensor_id, batedor, goleiro)
-    partida["ultimo_penalti"] = {"time": atacante_id, "canto": canto, "forca": forca, "pulo": pulo}
     partida["ultimo_local"] = "penalti"
-    finalizacao = atributo_efetivo(batedor, "fin")
-    chance_fora = (0.04 if forca == "colocado" else 0.14) + max(0, 70 - finalizacao) * 0.002
+    desfecho = resolver_cobranca(partida, atacante_id, batedor, goleiro)
     atacante["chutes"] += 1
-    if random.random() < chance_fora:
-        registrar(partida, "penalti_fora", {"jogador": batedor["nome"]}, tipo="penalti_fim", time_id=atacante_id)
-        anotar_sumula(partida, f"Pênalti perdido — {batedor['nome']} ({atacante['sigla']})")
+    if desfecho == "fora":
+        registrar(partida, "penalti_fora", {"jogador": rotulo(batedor)}, tipo="penalti_fim", time_id=atacante_id)
+        anotar_sumula(partida, f"Pênalti perdido — {rotulo(batedor)} ({atacante['sigla']})")
         return
     atacante["no_alvo"] += 1
-    if canto == pulo:
-        defende = 0.80 if canto == "meio" else (0.55 if forca == "colocado" else 0.30)
-        reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
-        defende += (reflexo - finalizacao) * 0.004
-        if random.random() < limitar(defende, 0.1, 0.9):
-            nome_goleiro = goleiro["nome"] if goleiro else "o goleiro improvisado"
-            registrar(partida, "penalti_defesa", {"goleiro": nome_goleiro}, tipo="penalti_fim", time_id=atacante_id)
-            anotar_sumula(partida, f"Pênalti defendido — {nome_goleiro}")
-            return
+    if desfecho == "defesa":
+        nome_goleiro = rotulo(goleiro) if goleiro else "o goleiro improvisado"
+        registrar(partida, "penalti_defesa", {"goleiro": nome_goleiro}, tipo="penalti_fim", time_id=atacante_id)
+        anotar_sumula(partida, f"Pênalti defendido — {nome_goleiro}")
+        return
     atacante["gols"] += 1
     batedor["gols"] += 1
     mover_bola(partida, atacante_id, "gol", 1)
-    registrar(partida, "penalti_gol", {"jogador": batedor["nome"], "placar": placar(partida)}, tipo="gol",
+    registrar(partida, "penalti_gol", {"jogador": rotulo(batedor), "placar": placar(partida)}, tipo="gol",
               time_id=atacante_id)
-    anotar_sumula(partida, f"GOL (pênalti) — {batedor['nome']} ({atacante['sigla']})")
+    anotar_sumula(partida, f"GOL (pênalti) — {rotulo(batedor)} ({atacante['sigla']})")
 
 
 def cartao_na_falta(partida, defensor_id, marcador, chance_amarelo):
@@ -557,7 +569,7 @@ def cartao_na_falta(partida, defensor_id, marcador, chance_amarelo):
 def cometer_falta(partida, atacante_id, zona, portador, marcador, defesa):
     defensor_id = outro(partida, atacante_id)
     partida["times"][defensor_id]["faltas"] += 1
-    registrar(partida, "falta", {"marcador": marcador["nome"], "jogador": portador["nome"]}, tipo="falta",
+    registrar(partida, "falta", {"marcador": rotulo(marcador), "jogador": rotulo(portador)}, tipo="falta",
               time_id=defensor_id)
     cartao_na_falta(partida, defensor_id, marcador, 0.22 + (0.08 if defesa == "bote" else 0))
     if zona == "area":
@@ -571,7 +583,7 @@ def falta_tatica(partida, atacante_id, zona, portador, defesa):
     defensor_id = outro(partida, atacante_id)
     marcador = escolher_jogador(partida["times"][defensor_id], PESOS_MARCADOR[zona])
     partida["times"][defensor_id]["faltas"] += 1
-    registrar(partida, "falta_tatica", {"marcador": marcador["nome"], "jogador": portador["nome"]}, tipo="falta",
+    registrar(partida, "falta_tatica", {"marcador": rotulo(marcador), "jogador": rotulo(portador)}, tipo="falta",
               time_id=defensor_id)
     cartao_na_falta(partida, defensor_id, marcador, 0.45)
     if zona == "ataque":
@@ -582,8 +594,8 @@ def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
     defensor = partida["times"][outro(partida, atacante_id)]
     goleiro = goleiro_de(defensor)
     entregar_bola(partida, atacante_id, "area", 1, jogador)
-    registrar(partida, "cara", {"jogador": jogador["nome"]}, tipo="oportunidade", time_id=atacante_id)
-    escolha = perguntar(partida, atacante_id, f"{jogador['nome']} está cara a cara com o goleiro!", [
+    registrar(partida, "cara", {"jogador": rotulo(jogador)}, tipo="oportunidade", time_id=atacante_id)
+    escolha = perguntar(partida, atacante_id, f"{rotulo(jogador)} está cara a cara com o goleiro!", [
         ("colocado", "Tocar no canto", 4),
         ("forte", "Encher o pé", 3),
         ("cavadinha", "Cavadinha", 2),
@@ -594,15 +606,15 @@ def cara_a_cara(partida, atacante_id, jogador, bonus, defesa):
         return
     reflexo = atributo_efetivo(goleiro, "ref") if goleiro else 30
     tecnica = (atributo_efetivo(jogador, "fin") + atributo_efetivo(jogador, "fis")) / 2
-    nome_goleiro = goleiro["nome"] if goleiro else "o zagueiro"
+    nome_goleiro = rotulo(goleiro) if goleiro else "o zagueiro"
     if random.random() < limitar(0.5 + (tecnica - reflexo) * 0.005 + bonus, 0.15, 0.85):
-        registrar(partida, "driblou_goleiro", {"jogador": jogador["nome"]}, time_id=atacante_id)
+        registrar(partida, "driblou_goleiro", {"jogador": rotulo(jogador)}, time_id=atacante_id)
         partida["times"][atacante_id]["chutes"] += 1
         partida["times"][atacante_id]["no_alvo"] += 1
         partida["ultimo_local"] = "gol_vazio"
         marcar_gol(partida, atacante_id, jogador)
         return
-    registrar(partida, "goleiro_salva", {"goleiro": nome_goleiro, "jogador": jogador["nome"]}, tipo="defesa",
+    registrar(partida, "goleiro_salva", {"goleiro": nome_goleiro, "jogador": rotulo(jogador)}, tipo="defesa",
               time_id=atacante_id)
 
 
@@ -610,7 +622,7 @@ def cruzamento(partida, atacante_id, cruzador, bonus, defesa):
     time = partida["times"][atacante_id]
     receptor = escolher_jogador(time, PESOS_CABECEIO, excluir=cruzador)
     entregar_bola(partida, atacante_id, "area", 1, receptor)
-    escolha = perguntar(partida, atacante_id, f"A bola vem na área para {receptor['nome']}!", [
+    escolha = perguntar(partida, atacante_id, f"A bola vem na área para {rotulo(receptor)}!", [
         ("cabecear", "Cabecear", 5),
         ("voleio", "Bater de voleio", 2),
         ("dominar", "Dominar e chutar", 3),
@@ -620,7 +632,7 @@ def cruzamento(partida, atacante_id, cruzador, bonus, defesa):
     elif escolha == "voleio":
         finalizar(partida, atacante_id, receptor, "voleio", "forte", bonus, defesa)
     elif random.random() < 0.4:
-        registrar(partida, "dominar_erro", {"jogador": receptor["nome"]}, tipo="perda", time_id=atacante_id)
+        registrar(partida, "dominar_erro", {"jogador": rotulo(receptor)}, tipo="perda", time_id=atacante_id)
     else:
         finalizar(partida, atacante_id, receptor, "area", escolher_chute(partida, atacante_id, receptor, "area"), bonus,
                   defesa)
@@ -628,10 +640,10 @@ def cruzamento(partida, atacante_id, cruzador, bonus, defesa):
 
 def oportunidade_do_meio(partida, atacante_id, portador, defesa):
     goleiro = goleiro_de(partida["times"][outro(partida, atacante_id)])
-    nome_goleiro = goleiro["nome"] if goleiro else "O goleiro"
+    nome_goleiro = rotulo(goleiro) if goleiro else "O goleiro"
     registrar(partida, "goleiro_adiantado", {"goleiro": nome_goleiro}, tipo="oportunidade", time_id=atacante_id)
     escolha = perguntar(partida, atacante_id,
-                        f"{nome_goleiro} está adiantado! {portador['nome']} arrisca do meio-campo?", [
+                        f"{nome_goleiro} está adiantado! {rotulo(portador)} arrisca do meio-campo?", [
                             ("arriscar", "Chutar do meio-campo", 1),
                             ("seguir", "Seguir a jogada", 4),
                         ])
@@ -672,7 +684,7 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
         entregar_bola(partida, atacante_id, zona, faixa, portador)
         trocar_portador = False
         if contra_ataque and passo == 0:
-            registrar(partida, "contra_ataque", {"time": atacante["nome"], "jogador": portador["nome"]},
+            registrar(partida, "contra_ataque", {"time": atacante["nome"], "jogador": rotulo(portador)},
                       time_id=atacante_id)
         if zona == "meio" and random.random() < 0.025 and oportunidade_do_meio(partida, atacante_id, portador, defesa):
             return None
@@ -699,10 +711,10 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
             continue
         drible = None
         if acao == "driblar":
-            drible = perguntar(partida, atacante_id, f"Que drible {portador['nome']} vai tentar?", [
+            drible = perguntar(partida, atacante_id, f"Que drible {rotulo(portador)} vai tentar?", [
                 (chave, dados_drible["nome"], dados_drible["peso"]) for chave, dados_drible in DRIBLES.items()
             ])
-        dados = {"jogador": portador["nome"], "marcador": marcador["nome"], "time": atacante["nome"]}
+        dados = {"jogador": rotulo(portador), "marcador": rotulo(marcador), "time": atacante["nome"]}
         if random.random() < chance_da_acao(partida, atacante_id, zona, faixa, acao, portador, marcador, defesa, bonus,
                                             drible):
             if defesa == "pressao" and zona == "meio":
@@ -760,13 +772,13 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None):
             return None
         if random.random() < 0.5:
             registrar(partida, f"{'bote' if defesa == 'falta' else defesa}_ok",
-                      {"marcador": marcador["nome"], "time": defensor["nome"]}, tipo="recuperacao", time_id=defensor_id)
+                      {"marcador": rotulo(marcador), "time": defensor["nome"]}, tipo="recuperacao", time_id=defensor_id)
         contra = defensor["plano"]["estilo"] == "contra-ataque" and atacante["plano"][
             "ofensividade"] >= 4 and random.random() < 0.5
         if contra or random.random() < 0.10 or (defesa == "pressao" and zona == "meio" and random.random() < 0.25):
             return defensor_id, marcador
         return None
-    registrar(partida, "tocar_erro", {"jogador": partida["portador"]["nome"], "marcador": "a defesa"}, tipo="perda",
+    registrar(partida, "tocar_erro", {"jogador": rotulo(partida["portador"]), "marcador": "a defesa"}, tipo="perda",
               time_id=atacante_id)
     return None
 
@@ -785,11 +797,68 @@ def jogar_lance(partida):
         return
     portador = escolher_jogador(partida["times"][vencedor], PESOS_PORTADOR["meio"])
     entregar_bola(partida, vencedor, "meio", None, portador)
-    registrar(partida, "meio_ganhou", {"time": partida["times"][vencedor]["nome"], "jogador": portador["nome"]},
+    registrar(partida, "meio_ganhou", {"time": partida["times"][vencedor]["nome"], "jogador": rotulo(portador)},
               tipo="meio", time_id=vencedor)
     proximo = jogar_posse(partida, vencedor, portador=portador)
     if proximo:
         jogar_posse(partida, proximo[0], contra_ataque=True, portador=proximo[1])
+
+
+def texto_penaltis(partida):
+    casa = partida["times"][partida["casa"]]
+    fora = partida["times"][partida["fora"]]
+    placar_penaltis = partida["penaltis"]
+    return f"Pênaltis: {casa['sigla']} {placar_penaltis[casa['id']]} x {placar_penaltis[fora['id']]} {fora['sigla']}"
+
+
+def disputa_decidida(placar_penaltis, cobrancas, primeiro, segundo):
+    if cobrancas[primeiro] <= 5 and cobrancas[segundo] <= 5:
+        restam_primeiro = 5 - cobrancas[primeiro]
+        restam_segundo = 5 - cobrancas[segundo]
+        return (placar_penaltis[primeiro] + restam_primeiro < placar_penaltis[segundo]
+                or placar_penaltis[segundo] + restam_segundo < placar_penaltis[primeiro])
+    return cobrancas[primeiro] == cobrancas[segundo] and placar_penaltis[primeiro] != placar_penaltis[segundo]
+
+
+def disputa_de_penaltis(partida):
+    ordem = (partida["casa"], partida["fora"])
+    partida["penaltis"] = {time_id: 0 for time_id in ordem}
+    cobrancas = {time_id: 0 for time_id in ordem}
+    batedores = {}
+    for time_id in ordem:
+        linha = [j for j in partida["times"][time_id]["em_campo"] if j["pos"] != "GOL"] or partida["times"][time_id]["em_campo"]
+        batedores[time_id] = sorted(linha, key=lambda jogador: atributo_efetivo(jogador, "fin"), reverse=True)
+    registrar(partida, "disputa_inicio", tipo="intervalo")
+    for _ in range(40):
+        for time_id in ordem:
+            fila = batedores[time_id]
+            batedor = fila[cobrancas[time_id] % len(fila)]
+            cobrancas[time_id] += 1
+            goleiro = goleiro_de(partida["times"][outro(partida, time_id)])
+            entregar_bola(partida, time_id, "area", 1, batedor)
+            desfecho = resolver_cobranca(partida, time_id, batedor, goleiro)
+            if desfecho == "gol":
+                partida["penaltis"][time_id] += 1
+            dados = {
+                "jogador": rotulo(batedor),
+                "goleiro": rotulo(goleiro) if goleiro else "o goleiro",
+                "placar": texto_penaltis(partida),
+            }
+            registrar(partida, f"disputa_{desfecho}", dados, tipo="penalti_fim", time_id=time_id)
+            if disputa_decidida(partida["penaltis"], cobrancas, *ordem):
+                anotar_sumula(partida, texto_penaltis(partida))
+                return
+    anotar_sumula(partida, texto_penaltis(partida))
+
+
+def vencedor_da_partida(partida):
+    casa = partida["times"][partida["casa"]]
+    fora = partida["times"][partida["fora"]]
+    if casa["gols"] != fora["gols"]:
+        return casa["id"] if casa["gols"] > fora["gols"] else fora["id"]
+    if partida["penaltis"]:
+        return casa["id"] if partida["penaltis"][casa["id"]] > partida["penaltis"][fora["id"]] else fora["id"]
+    return None
 
 
 def resultado_da_partida(partida):
@@ -799,6 +868,8 @@ def resultado_da_partida(partida):
     return {
         "mandante": partida["casa"],
         "visitante": partida["fora"],
+        "penaltis": dict(partida["penaltis"]) if partida["penaltis"] else None,
+        "vencedor": vencedor_da_partida(partida),
         "gm": casa["gols"],
         "gv": fora["gols"],
         "vm": casa["vermelhos"],
@@ -816,7 +887,7 @@ def resultado_da_partida(partida):
     }
 
 
-def jogar_partida(partida, controles, exibir=None):
+def jogar_partida(partida, controles, exibir=None, mata_mata=False):
     partida["controles"] = controles
     partida["exibir"] = exibir
     casa = partida["times"][partida["casa"]]
@@ -840,6 +911,8 @@ def jogar_partida(partida, controles, exibir=None):
         if tempo == 1:
             registrar(partida, "intervalo", {"placar": placar(partida)}, tipo="intervalo")
             pausar_todos(partida, "intervalo")
-    partida["encerrada"] = True
     registrar(partida, "fim", {"placar": placar(partida)}, tipo="fim")
+    if mata_mata and partida["times"][partida["casa"]]["gols"] == partida["times"][partida["fora"]]["gols"]:
+        disputa_de_penaltis(partida)
+    partida["encerrada"] = True
     return resultado_da_partida(partida)

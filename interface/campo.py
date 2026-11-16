@@ -3,7 +3,7 @@ import time
 from rich.text import Text
 
 from config import NOMES_ESTILOS, PAUSA_RAPIDA
-from elenco.escalacao import limitar
+from elenco.escalacao import limitar, rotulo
 from interface.entrada import TERMINAL_REAL, console, desenhar_no_lugar, limpar
 from partida.lances import minuto_texto
 
@@ -119,7 +119,7 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
     if portador and partida["bola"]["time"]:
         dono = partida["times"][partida["bola"]["time"]]
         console.print(
-            f"\n Bola com: [bold {dono['cor']}]{portador['nome']}[/] ({portador['pos']} {portador['qualidade']})"
+            f"\n Bola com: [bold {dono['cor']}]{rotulo(portador)}[/] (qualidade {portador['qualidade']})"
             f"   Energia {barra(portador['energia'])}"
         )
     if destaque:
