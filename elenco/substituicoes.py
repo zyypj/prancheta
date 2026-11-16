@@ -42,6 +42,7 @@ def substituir(time, sai_id, entra_id):
     time["em_campo"][time["em_campo"].index(sai)] = entra
     time["banco"].remove(entra)
     time["saiu"].append(sai)
+    time.setdefault("entraram", []).append(entra["id"])
     time["subs"] += 1
     return sai, entra
 
@@ -141,3 +142,72 @@ def preparar_proxima_rodada(elenco):
         if jogador.get("insatisfeito", 0) > 0:
             jogador["insatisfeito"] -= 1
         jogador["energia"] = min(100, round(jogador["energia"] + RECUPERACAO_ENERGIA, 1))
+
+
+def sugerir_substituicoes(time, minuto, diferenca, maximo=3):
+    """
+    Monta as sugestões de substituição do auxiliar técnico, cada uma com o motivo.
+
+    Olha, nesta ordem: jogadores cansados (energia abaixo de 45%, os mais cansados primeiro); pendurados com
+    amarelo, a partir do segundo tempo; insatisfeitos; o placar (perdendo a partir dos 60 minutos, sai o
+    zagueiro mais fraco e entra o melhor atacante do banco; vencendo a partir dos 70, sai o atacante mais
+    fraco e entra o melhor zagueiro); e reservas pelo menos 5 pontos de qualidade melhores que o titular da
+    posição. Cada jogador aparece em uma sugestão só; o goleiro e quem já entrou no jogo nunca
+    são sugeridos para sair. Nunca sugere mais trocas do que as que ainda restam.
+
+    Args:
+        time (dict): Time da partida, com jogadores em campo, banco, amarelados e substituições feitas.
+        minuto (int): Minuto atual da partida.
+        diferenca (int): Gols do time menos gols do adversário.
+        maximo (int): Quantidade máxima de sugestões. Padrão 3.
+
+    Returns:
+        list[dict]: Sugestões com o jogador que sai ("sai"), o que entra ("entra") e o motivo ("motivo").
+    """
+    restantes = MAX_SUBSTITUICOES - time["subs"]
+    if restantes <= 0 or not time["banco"]:
+        return []
+    sugestoes = []
+    saem = set()
+    entram = set()
+
+    def reserva_para(posicao):
+        candidatos = [j for j in time["banco"] if j["id"] not in entram and j["pos"] == posicao]
+        return max(candidatos, key=valor_para_escalar, default=None)
+
+    def sugerir(sai, entra, motivo):
+        if sai and entra and sai["id"] not in saem and entra["id"] not in entram:
+            sugestoes.append({"sai": sai, "entra": entra, "motivo": motivo})
+            saem.add(sai["id"])
+            entram.add(entra["id"])
+
+    linha = [
+        jogador
+        for jogador in time["em_campo"]
+        if jogador["pos"] != "GOL" and jogador["id"] not in time.get("entraram", [])
+    ]
+    for jogador in sorted(linha, key=lambda j: j["energia"]):
+        if jogador["energia"] < 45:
+            sugerir(jogador, reserva_para(jogador["pos"]), f"cansado ({round(jogador['energia'])}% de energia)")
+    if minuto > 45:
+        for jogador in linha:
+            if jogador["id"] in time["amarelados"]:
+                sugerir(jogador, reserva_para(jogador["pos"]), "pendurado com amarelo")
+    for jogador in linha:
+        if jogador.get("insatisfeito", 0) > 0:
+            sugerir(jogador, reserva_para(jogador["pos"]), "insatisfeito, rendendo menos")
+    if minuto >= 60 and diferenca < 0:
+        defensores = sorted((j for j in linha if j["pos"] == "DEF" and j["id"] not in saem), key=valor_para_escalar)
+        if defensores:
+            sugerir(defensores[0], reserva_para("ATA"), "perdendo: mais um atacante")
+    if minuto >= 70 and diferenca > 0:
+        atacantes = sorted((j for j in linha if j["pos"] == "ATA" and j["id"] not in saem), key=valor_para_escalar)
+        if atacantes:
+            sugerir(atacantes[0], reserva_para("DEF"), "vencendo: reforçar a defesa")
+    for jogador in sorted(linha, key=valor_para_escalar):
+        reserva = reserva_para(jogador["pos"])
+        if reserva and reserva["qualidade"] >= jogador["qualidade"] + 5:
+            sugerir(
+                jogador, reserva, f"reserva melhor (qualidade {reserva['qualidade']} contra {jogador['qualidade']})"
+            )
+    return sugestoes[: min(maximo, restantes)]

@@ -2,6 +2,7 @@ from rich.table import Table
 
 from config import ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
 from elenco.escalacao import rotulo
+from elenco.substituicoes import sugerir_substituicoes
 from interface.campo import barra, mostrar_partida
 from interface.entrada import console, ler_opcao, ler_opcao_ou_letra, limpar, pausar
 from partida.lances import (
@@ -312,6 +313,35 @@ def humano_lesao(partida, time_id, lesionado):
     partida["em_pausa"] = pausado
 
 
+def sugestoes_da_partida(partida, time_id):
+    """
+    Pede ao auxiliar as sugestões de substituição para o momento da partida.
+
+    Args:
+        partida (dict): Estado da partida em andamento.
+        time_id (str): Identificador do clube do jogador.
+
+    Returns:
+        list[dict]: Sugestões, como em sugerir_substituicoes.
+    """
+    time = partida["times"][time_id]
+    diferenca = time["gols"] - partida["times"][outro(partida, time_id)]["gols"]
+    return sugerir_substituicoes(time, partida["minuto"], diferenca)
+
+
+def texto_sugestao(sugestao):
+    """
+    Monta a linha de uma sugestão de substituição.
+
+    Args:
+        sugestao (dict): Sugestão com quem sai, quem entra e o motivo.
+
+    Returns:
+        str: Linha com marcação do rich.
+    """
+    return f"sai {rotulo(sugestao['sai'])}, entra {rotulo(sugestao['entra'])} [dim]— {sugestao['motivo']}[/]"
+
+
 def menu_substituicao(partida, time_id):
     """
     Abre o menu de substituições durante a pausa.
@@ -337,8 +367,21 @@ def menu_substituicao(partida, time_id):
         console.print(
             tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)")
         )
-        console.print(" [bold]0[/] Voltar à pausa")
-        escolha = ler_opcao(0, len(time["em_campo"]), " Quem sai? > ")
+        sugestoes = sugestoes_da_partida(partida, time_id)
+        letras = "abc"[: len(sugestoes)]
+        if sugestoes:
+            console.print("\n [bold]Sugestões do auxiliar:[/]")
+            for letra, sugestao in zip(letras, sugestoes):
+                console.print(f"  [bold]{letra.upper()}[/] {texto_sugestao(sugestao)}")
+        console.print("\n [bold]0[/] Voltar à pausa")
+        rotulo_pergunta = " Quem sai? (número, ou a letra de uma sugestão) > " if sugestoes else " Quem sai? > "
+        escolha = ler_opcao_ou_letra(0, len(time["em_campo"]), tuple(letras), rotulo_pergunta)
+        if escolha in tuple(letras):
+            sugestao = sugestoes[letras.index(escolha)]
+            sai, entra = sugestao["sai"], sugestao["entra"]
+            if fazer_substituicao(partida, time_id, sai["id"], entra["id"]):
+                mensagem = f"Saiu {rotulo(sai)}, entrou {rotulo(entra)} ({time['subs']}/{MAX_SUBSTITUICOES})."
+            continue
         if not escolha:
             return
         sai = time["em_campo"][escolha - 1]
@@ -440,6 +483,11 @@ def opcoes_da_pausa(partida, time_id, motivo):
         mostrar_partida(partida, time_id, pergunta=titulos.get(motivo, "JOGO PAUSADO"))
         if motivo == "intervalo":
             mostrar_estatisticas(partida)
+        sugestoes = sugestoes_da_partida(partida, time_id)
+        if sugestoes:
+            console.print(f" [yellow]Auxiliar sugere:[/] {texto_sugestao(sugestoes[0])}")
+            if len(sugestoes) > 1:
+                console.print(f" [dim]Mais {len(sugestoes) - 1} sugestão(ões) em Substituição.[/]")
         outro_modo = "Simular o resto" if partida["modo"] == "jogar" else "Assumir o controle (lance a lance)"
         velocidade = "automático rápido" if partida["velocidade"] == "normal" else "manual (Enter)"
         console.print(
