@@ -17,6 +17,7 @@ from config import (
     ZONA_REBAIXAMENTO,
 )
 from elenco.escalacao import disponivel, escalar_automatico, rotulo, valor_de_mercado
+from elenco.treino import pode_treinar
 from interface.campo import barra
 from interface.entrada import console, ler_opcao, limpar, pausar
 from liga.copa import situacao_do_clube
@@ -637,14 +638,14 @@ def pre_jogo(estado):
 
     Mostra o confronto, o local, a força dos dois clubes, o aviso de pênaltis em mata-mata, o plano de jogo do
     usuário, os titulares cansados ou insatisfeitos e o desafio da diretoria. As opções são jogar lance a
-    lance, simular assistindo, simular rápido, ver só o resultado, ver o adversário, ajustar o plano ou voltar
-    com 0.
+    lance, simular assistindo, simular rápido, ver só o resultado, ver o adversário, ajustar o plano, treinar
+    (uma vez por semana) ou voltar com 0.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        int: Opção escolhida, de 0 a 6.
+        int: Opção escolhida, de 0 a 7.
     """
     clube = clube_do_jogador(estado)
     jogo = jogo_do_jogador(estado)
@@ -668,8 +669,9 @@ def pre_jogo(estado):
         console.print(f" [magenta]Titulares insatisfeitos (rendem menos): {', '.join(insatisfeitos)}[/]")
     console.print(f" {texto_desafio(desafio_da_etapa(estado))}")
     console.print("\n 1 - Jogar lance a lance   2 - Simular assistindo (Enter avança)   3 - Simular rápido")
-    console.print(" 4 - Só o resultado   5 - Ver adversário   6 - Ajustar plano   0 - Voltar")
-    return ler_opcao(0, 6)
+    treino = "7 - Treinar" if pode_treinar(estado) else "[dim]7 - Treinar (já treinou)[/]"
+    console.print(f" 4 - Só o resultado   5 - Ver adversário   6 - Ajustar plano   {treino}   0 - Voltar")
+    return ler_opcao(0, 7)
 
 
 def texto_penaltis_resultado(estado, resultado):

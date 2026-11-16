@@ -15,6 +15,7 @@ from interface.campo import criar_exibidor
 from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
 from interface.mercado import tela_mercado, tela_proposta
+from interface.treino import tela_treino
 from liga.bastidores import aplicar_bastidor, cobrar_promessa, sortear_bastidor, sortear_entrevista
 from liga.desafios import atualizar_objetivos, avaliar_desafio
 from liga.eventos import aplicar_efeito, escolher_evento
@@ -211,8 +212,8 @@ def escolher_como_jogar(estado):
     """
     Mostra a tela de pré-jogo até o usuário decidir como disputar a partida.
 
-    As opções de ver o adversário e de ajustar o plano de jogo abrem suas telas e voltam para o pré-jogo, sem
-    iniciar a partida.
+    As opções de ver o adversário, ajustar o plano de jogo e treinar o elenco abrem suas telas e voltam para o
+    pré-jogo, sem iniciar a partida.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -227,6 +228,8 @@ def escolher_como_jogar(estado):
             telas.mostrar_clube(estado, adversario_de(jogo_do_jogador(estado), estado["clube_id"]))
         elif escolha == 6:
             telas.editar_plano(clube_do_jogador(estado))
+        elif escolha == 7:
+            tela_treino(estado)
         else:
             return escolha
 
