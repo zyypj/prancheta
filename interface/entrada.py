@@ -12,7 +12,8 @@ def limpar():
     """
     Limpa a tela do terminal.
 
-    Em terminal real apaga a tela; quando a saída não é um terminal, como no console de uma IDE, imprime uma linha divisória no lugar.
+    Em terminal real apaga a tela; quando a saída não é um terminal, como no console de uma IDE, imprime uma
+    linha divisória no lugar.
     """
     if TERMINAL_REAL:
         console.clear()
@@ -24,7 +25,9 @@ def desenhar_no_lugar(desenhar):
     """
     Redesenha a tela por cima do quadro anterior, sem limpar e sem piscar.
 
-    Fora de um terminal real apenas chama a função de desenho. Em terminal real, captura o que seria impresso, volta o cursor ao topo da tela, escreve cada linha apagando o resto dela e apaga o que sobrou abaixo do novo quadro.
+    Fora de um terminal real apenas chama a função de desenho. Em terminal real, captura o que seria impresso,
+    volta o cursor ao topo da tela, escreve cada linha apagando o resto dela e apaga o que sobrou abaixo do
+    novo quadro.
 
     Args:
         desenhar (callable): Função sem parâmetros que imprime o quadro.
@@ -66,7 +69,8 @@ def ler_valor(rotulo, minimo, maximo):
     """
     Lê do usuário um valor decimal dentro de um intervalo, aceitando 0 para cancelar.
 
-    Aceita vírgula ou ponto como separador decimal e arredonda o valor para uma casa. Repete a pergunta, com uma mensagem de erro, até o valor ser 0 ou estar entre o mínimo e o máximo.
+    Aceita vírgula ou ponto como separador decimal e arredonda o valor para uma casa. Repete a pergunta, com
+    uma mensagem de erro, até o valor ser 0 ou estar entre o mínimo e o máximo.
 
     Args:
         rotulo (str): Texto mostrado antes da digitação.
@@ -91,7 +95,8 @@ def ler_texto(rotulo, minimo=2, maximo=20):
     """
     Lê do usuário um texto curto, como um nome, aceitando 0 para voltar.
 
-    Junta os espaços repetidos e exige um tamanho dentro do limite e pelo menos uma letra, repetindo a pergunta até receber um texto válido. O texto aceito volta com a inicial de cada palavra em maiúscula.
+    Junta os espaços repetidos e exige um tamanho dentro do limite e pelo menos uma letra, repetindo a
+    pergunta até receber um texto válido. O texto aceito volta com a inicial de cada palavra em maiúscula.
 
     Args:
         rotulo (str): Texto mostrado antes da digitação.
@@ -114,7 +119,8 @@ def confirmar(pergunta):
     """
     Faz uma pergunta de sim ou não ao usuário.
 
-    Aceita s, sim, n, nao ou não, sem diferenciar maiúsculas, e repete a pergunta para qualquer outra resposta.
+    Aceita s, sim, n, nao ou não, sem diferenciar maiúsculas, e repete a pergunta para qualquer outra
+    resposta.
 
     Args:
         pergunta (str): Texto da pergunta.

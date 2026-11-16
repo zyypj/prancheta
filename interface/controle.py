@@ -4,8 +4,17 @@ from config import ESTILOS, MAX_SUBSTITUICOES, NOMES_ESTILOS
 from elenco.escalacao import rotulo
 from interface.campo import barra, mostrar_partida
 from interface.entrada import console, ler_opcao, limpar, pausar
-from partida.lances import ACOES, CANTOS, DEFESAS, DESCRICAO_ZONAS, FORCAS_PENALTI, NOMES_ACOES, NOMES_DEFESAS, \
-    fazer_substituicao, outro
+from partida.lances import (
+    ACOES,
+    CANTOS,
+    DEFESAS,
+    DESCRICAO_ZONAS,
+    FORCAS_PENALTI,
+    NOMES_ACOES,
+    NOMES_DEFESAS,
+    fazer_substituicao,
+    outro,
+)
 from partida.simulacao import CONTROLE_IA
 
 DESENHO_GOL = (
@@ -20,7 +29,8 @@ def escolher_no_campo(partida, time_id, pergunta, nomes):
     """
     Pergunta ao jogador uma opção com o campo da partida na tela.
 
-    Mostra o campo com a pergunta e as opções numeradas. Se o usuário digitar 0, abre o menu de pausa; ao voltar, se ele tiver passado a partida para simulação, desiste da pergunta, e senão pergunta de novo.
+    Mostra o campo com a pergunta e as opções numeradas. Se o usuário digitar 0, abre o menu de pausa; ao
+    voltar, se ele tiver passado a partida para simulação, desiste da pergunta, e senão pergunta de novo.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -45,7 +55,9 @@ def humano_ataque(partida, time_id, zona, portador):
     """
     Deixa o jogador escolher a jogada de ataque de quem está com a bola.
 
-    Mostra as ações possíveis na zona em que a bola está, como tocar, driblar, cruzar ou chutar. Quando a partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o controle da IA.
+    Mostra as ações possíveis na zona em que a bola está, como tocar, driblar, cruzar ou chutar. Quando a
+    partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o
+    controle da IA.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -60,8 +72,9 @@ def humano_ataque(partida, time_id, zona, portador):
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     acoes = ACOES[zona]
     local = DESCRICAO_ZONAS[zona]
-    indice = escolher_no_campo(partida, time_id, f"{rotulo(portador)} está com a bola {local}. O que fazer?",
-                               [NOMES_ACOES[a] for a in acoes])
+    indice = escolher_no_campo(
+        partida, time_id, f"{rotulo(portador)} está com a bola {local}. O que fazer?", [NOMES_ACOES[a] for a in acoes]
+    )
     if indice is None:
         return CONTROLE_IA["ataque"](partida, time_id, zona, portador)
     return acoes[indice]
@@ -71,7 +84,8 @@ def humano_defesa(partida, time_id):
     """
     Deixa o jogador escolher como defender o próximo ataque do adversário.
 
-    Mostra as defesas possíveis, como dar o bote, pressão alta ou recuar. Quando a partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o controle da IA.
+    Mostra as defesas possíveis, como dar o bote, pressão alta ou recuar. Quando a partida está sendo
+    simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o controle da IA.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -83,8 +97,9 @@ def humano_defesa(partida, time_id):
     if partida["modo"] == "simular":
         return CONTROLE_IA["defesa"](partida, time_id)
     adversario = partida["times"][outro(partida, time_id)]
-    indice = escolher_no_campo(partida, time_id, f"O {adversario['nome']} vai atacar. Como defender?",
-                               [NOMES_DEFESAS[d] for d in DEFESAS])
+    indice = escolher_no_campo(
+        partida, time_id, f"O {adversario['nome']} vai atacar. Como defender?", [NOMES_DEFESAS[d] for d in DEFESAS]
+    )
     if indice is None:
         return CONTROLE_IA["defesa"](partida, time_id)
     return DEFESAS[indice]
@@ -94,7 +109,8 @@ def humano_escolha(partida, time_id, pergunta, opcoes):
     """
     Deixa o jogador responder a uma pergunta genérica do lance.
 
-    Mostra os nomes das opções no campo. Quando a partida está sendo simulada, ou o jogador passa a simular durante a pergunta, a decisão fica com o controle da IA, que sorteia pelos pesos.
+    Mostra os nomes das opções no campo. Quando a partida está sendo simulada, ou o jogador passa a simular
+    durante a pergunta, a decisão fica com o controle da IA, que sorteia pelos pesos.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -134,7 +150,8 @@ def humano_bater_penalti(partida, time_id, batedor, goleiro):
     """
     Deixa o jogador cobrar um pênalti a favor.
 
-    Mostra a tela do pênalti e pede o canto (esquerda, meio ou direita) e a força da batida: colocado, que quase nunca sai, ou forte, que é difícil de pegar mas pode ir para fora.
+    Mostra a tela do pênalti e pede o canto (esquerda, meio ou direita) e a força da batida: colocado, que
+    quase nunca sai, ou forte, que é difícil de pegar mas pode ir para fora.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -190,8 +207,9 @@ def tabela_jogadores(jogadores, titulo):
     for coluna in ("#", "Jogador", "Pos", "Qual", "Energia"):
         tabela.add_column(coluna)
     for numero, jogador in enumerate(jogadores, start=1):
-        tabela.add_row(str(numero), jogador["nome"], jogador["pos"], str(jogador["qualidade"]),
-                       barra(jogador["energia"]))
+        tabela.add_row(
+            str(numero), jogador["nome"], jogador["pos"], str(jogador["qualidade"]), barra(jogador["energia"])
+        )
     return tabela
 
 
@@ -199,7 +217,8 @@ def escolher_entrada(time, mensagem):
     """
     Pede ao jogador o reserva que vai entrar em campo.
 
-    Se o banco estiver vazio ou o limite de substituições já tiver sido atingido, avisa e espera o Enter. Caso contrário, mostra a tabela do banco e deixa escolher um jogador ou cancelar com 0.
+    Se o banco estiver vazio ou o limite de substituições já tiver sido atingido, avisa e espera o Enter. Caso
+    contrário, mostra a tabela do banco e deixa escolher um jogador ou cancelar com 0.
 
     Args:
         time (dict): Time do jogador na partida.
@@ -223,7 +242,9 @@ def humano_lesao(partida, time_id, lesionado):
     """
     Deixa o jogador repor um atleta que se lesionou.
 
-    Avisa que o jogador saiu de campo e pede quem entra no lugar dele; se alguém for escolhido, faz a substituição. Enquanto isso a partida fica marcada como em pausa, e depois volta ao estado de pausa que tinha antes.
+    Avisa que o jogador saiu de campo e pede quem entra no lugar dele; se alguém for escolhido, faz a
+    substituição. Enquanto isso a partida fica marcada como em pausa, e depois volta ao estado de pausa que
+    tinha antes.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -244,7 +265,9 @@ def menu_substituicao(partida, time_id):
     """
     Abre o menu de substituições durante a pausa.
 
-    Mostra os jogadores em campo e o número de substituições feitas, pede quem sai e depois quem entra, e faz a troca. Repete até o usuário voltar com 0 ou até não haver mais substituições possíveis, mostrando o resultado da última troca no topo.
+    Mostra os jogadores em campo e o número de substituições feitas, pede quem sai e depois quem entra, e faz
+    a troca. Repete até o usuário voltar com 0 ou até não haver mais substituições possíveis, mostrando o
+    resultado da última troca no topo.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -261,7 +284,8 @@ def menu_substituicao(partida, time_id):
             pausar("Enter para voltar à pausa...")
             return
         console.print(
-            tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)"))
+            tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)")
+        )
         console.print(" [bold]0[/] Voltar à pausa")
         escolha = ler_opcao(0, len(time["em_campo"]), " Quem sai? > ")
         if not escolha:
@@ -278,7 +302,8 @@ def menu_plano_partida(partida, time_id):
     """
     Deixa o jogador mudar o plano de jogo durante a partida.
 
-    O usuário escolhe mudar o estilo, a ofensividade ou a intensidade. O estilo vem de uma lista numerada, e a ofensividade e a intensidade vão de 1 a 5; digitar 0 mantém o valor atual.
+    O usuário escolhe mudar o estilo, a ofensividade ou a intensidade. O estilo vem de uma lista numerada, e a
+    ofensividade e a intensidade vão de 1 a 5; digitar 0 mantém o valor atual.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -288,14 +313,18 @@ def menu_plano_partida(partida, time_id):
     console.print(" [bold]1[/] Estilo   [bold]2[/] Ofensividade   [bold]3[/] Intensidade   [bold]0[/] Voltar")
     escolha = ler_opcao(0, 3)
     if escolha == 1:
-        console.print(" " + "   ".join(
-            f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1)) + "   [bold]0[/] Voltar")
+        console.print(
+            " "
+            + "   ".join(f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1))
+            + "   [bold]0[/] Voltar"
+        )
         novo = ler_opcao(0, len(ESTILOS))
         if novo:
             plano["estilo"] = ESTILOS[novo - 1]
     elif escolha == 2:
-        plano["ofensividade"] = ler_opcao(0, 5, " Ofensividade (1 retranca a 5 tudo ao ataque, 0 mantém) > ") or plano[
-            "ofensividade"]
+        plano["ofensividade"] = (
+            ler_opcao(0, 5, " Ofensividade (1 retranca a 5 tudo ao ataque, 0 mantém) > ") or plano["ofensividade"]
+        )
     elif escolha == 3:
         plano["intensidade"] = ler_opcao(0, 5, " Intensidade (1 a 5, 0 mantém) > ") or plano["intensidade"]
 
@@ -304,7 +333,8 @@ def mostrar_estatisticas(partida):
     """
     Exibe as estatísticas da partida dos dois times.
 
-    Mostra uma tabela com a posse de bola em porcentagem, as finalizações, as finalizações no alvo e as faltas de cada time.
+    Mostra uma tabela com a posse de bola em porcentagem, as finalizações, as finalizações no alvo e as faltas
+    de cada time.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -345,7 +375,9 @@ def opcoes_da_pausa(partida, time_id, motivo):
     """
     Mostra o menu da pausa até o jogador decidir continuar.
 
-    Exibe o campo com o título conforme o motivo e, no intervalo, as estatísticas. O usuário pode continuar, fazer substituição, mudar o plano, alternar entre jogar lance a lance e simular o resto, e alternar o avanço entre manual (Enter) e automático rápido.
+    Exibe o campo com o título conforme o motivo e, no intervalo, as estatísticas. O usuário pode continuar,
+    fazer substituição, mudar o plano, alternar entre jogar lance a lance e simular o resto, e alternar o
+    avanço entre manual (Enter) e automático rápido.
 
     Args:
         partida (dict): Estado da partida em andamento.

@@ -1,8 +1,8 @@
 import random
 
 from elenco.escalacao import criar_jogador, limitar, rotulo, sortear_nome, valor_de_mercado, valor_para_escalar
-from mercado.transferencias import dinheiro
 from liga.temporada import ajustar_confianca, clube_do_jogador
+from mercado.transferencias import dinheiro
 
 
 def sortear_evento(eventos):
@@ -22,7 +22,8 @@ def escolher_alvo(clube, alvo):
     """
     Escolhe o jogador envolvido em um evento.
 
-    Com o alvo "titular", sorteia um dos titulares que ainda estão no elenco; com o alvo "melhor", pega o jogador de linha (sem goleiros) de maior qualidade. Qualquer outro alvo não envolve jogador.
+    Com o alvo "titular", sorteia um dos titulares que ainda estão no elenco; com o alvo "melhor", pega o
+    jogador de linha (sem goleiros) de maior qualidade. Qualquer outro alvo não envolve jogador.
 
     Args:
         clube (dict): Clube do jogador.
@@ -45,14 +46,16 @@ def preparar_evento(evento, clube):
     """
     Monta o evento que será mostrado ao jogador.
 
-    Escolhe o jogador alvo e troca a marcação {jogador} pelo nome dele, com a posição, no texto do evento e no texto de cada opção.
+    Escolhe o jogador alvo e troca a marcação {jogador} pelo nome dele, com a posição, no texto do evento e no
+    texto de cada opção.
 
     Args:
         evento (dict): Evento sorteado, como lido de eventos.json.
         clube (dict): Clube do jogador.
 
     Returns:
-        dict: Evento com identificador, texto pronto, identificador do jogador alvo (ou None), efeito direto e opções de escolha.
+        dict: Evento com identificador, texto pronto, identificador do jogador alvo (ou None), efeito direto e
+            opções de escolha.
     """
     jogador = escolher_alvo(clube, evento.get("alvo", "nenhum"))
     nome = rotulo(jogador) if jogador else ""
@@ -85,7 +88,10 @@ def novo_garoto(estado, clube, banco, qualidade, posicao):
     """
     Cria um jogador vindo das categorias de base.
 
-    O identificador usa o prefixo do clube e o maior número já usado com esse prefixo mais um, olhando todos os elencos, os jogadores sem clube e o contador do clube. Assim um garoto nunca herda o identificador de um jogador vendido ou transferido. O contador fica guardado no clube, e o nome é sorteado entre os que ainda não estão em uso. O jogador é criado, mas não é adicionado ao elenco.
+    O identificador usa o prefixo do clube e o maior número já usado com esse prefixo mais um, olhando todos
+    os elencos, os jogadores sem clube e o contador do clube. Assim um garoto nunca herda o identificador de
+    um jogador vendido ou transferido. O contador fica guardado no clube, e o nome é sorteado entre os que
+    ainda não estão em uso. O jogador é criado, mas não é adicionado ao elenco.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -99,7 +105,7 @@ def novo_garoto(estado, clube, banco, qualidade, posicao):
     """
     prefixo = f"{clube['id']}-"
     todos = [jogador for outro in estado["clubes"].values() for jogador in outro["elenco"]] + estado.get("livres", [])
-    usados = [int(jogador["id"][len(prefixo):]) for jogador in todos if jogador["id"].startswith(prefixo)]
+    usados = [int(jogador["id"][len(prefixo) :]) for jogador in todos if jogador["id"].startswith(prefixo)]
     numero = max(usados + [clube.get("ultimo_id", 0)]) + 1
     clube["ultimo_id"] = numero
     nome = sortear_nome(banco, nomes_em_uso(estado))
@@ -110,7 +116,15 @@ def aplicar_efeito(estado, efeito, jogador_id, banco):
     """
     Aplica o efeito de um evento ao clube do jogador.
 
-    Cada efeito altera o estado de um jeito: "grande_fase" dá ao alvo 2 rodadas de bônus de qualidade; "lesao_treino" deixa o alvo lesionado por 1 a 3 rodadas; "reuniao" soma 2 de confiança; "afastar" suspende o alvo por pelo menos 1 rodada e soma 5 de confiança; "vender" tira o alvo do elenco, credita no caixa 1,2 vez o valor de mercado dele, sobe da base um garoto da mesma posição com 12 de qualidade a menos (entre 40 e 92) e soma 6 de confiança; "segurar" dá ao alvo pelo menos 1 rodada de bônus e tira 3 de confiança; "base" troca o jogador de linha com menor valor para escalar por um garoto da mesma posição, com qualidade sorteada entre 6 abaixo e 4 acima da força do clube (entre 40 e 92); "protesto" tira 5 de confiança; "descanso" recupera 15 de energia de todo o elenco, até 100. Os efeitos que dependem de alvo não fazem nada se ele não existir.
+    Cada efeito altera o estado de um jeito: "grande_fase" dá ao alvo 2 rodadas de bônus de qualidade;
+    "lesao_treino" deixa o alvo lesionado por 1 a 3 rodadas; "reuniao" soma 2 de confiança; "afastar" suspende
+    o alvo por pelo menos 1 rodada e soma 5 de confiança; "vender" tira o alvo do elenco, credita no caixa 1,2
+    vez o valor de mercado dele, sobe da base um garoto da mesma posição com 12 de qualidade a menos (entre 40
+    e 92) e soma 6 de confiança; "segurar" dá ao alvo pelo menos 1 rodada de bônus e tira 3 de confiança;
+    "base" troca o jogador de linha com menor valor para escalar por um garoto da mesma posição, com qualidade
+    sorteada entre 6 abaixo e 4 acima da força do clube (entre 40 e 92); "protesto" tira 5 de confiança;
+    "descanso" recupera 15 de energia de todo o elenco, até 100. Os efeitos que dependem de alvo não fazem
+    nada se ele não existir.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -145,7 +159,10 @@ def aplicar_efeito(estado, efeito, jogador_id, banco):
         valor = round(valor_de_mercado(jogador) * 1.2, 1)
         clube["caixa"] = round(clube.get("caixa", 0) + valor, 1)
         ajustar_confianca(estado, 6)
-        return f"{rotulo(jogador)} foi vendido por {dinheiro(valor)}. {rotulo(garoto)} sobe da base no lugar. Confiança +6."
+        return (
+            f"{rotulo(jogador)} foi vendido por {dinheiro(valor)}. "
+            f"{rotulo(garoto)} sobe da base no lugar. Confiança +6."
+        )
     if efeito == "segurar" and jogador:
         jogador["fase"] = max(jogador["fase"], 1)
         ajustar_confianca(estado, -3)

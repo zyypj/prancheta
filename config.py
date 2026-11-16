@@ -37,7 +37,12 @@ NIVEIS = {
 
 TOTAL_RODADAS = 9
 FASES_COPA = ("preliminar", "quartas", "semifinal", "final")
-NOMES_FASES = {"preliminar": "Fase preliminar", "quartas": "Quartas de final", "semifinal": "Semifinal", "final": "Final"}
+NOMES_FASES = {
+    "preliminar": "Fase preliminar",
+    "quartas": "Quartas de final",
+    "semifinal": "Semifinal",
+    "final": "Final",
+}
 CLASSIFICADOS_DIRETO_COPA = 6
 AGENDA = (
     ("liga", 1),

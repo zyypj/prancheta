@@ -37,9 +37,11 @@ def carregar_recursos():
     """
     Carrega os arquivos de dados necessários para o funcionamento do jogo.
 
-    Realiza a leitura das informações dos clubes, eventos, nomes de jogadores e frases utilizadas na narração das partidas.
+    Realiza a leitura das informações dos clubes, eventos, nomes de jogadores e frases utilizadas na narração
+    das partidas.
 
-    Verifica se os dados obrigatórios foram carregados corretamente, encerrando a execução caso algum recurso esteja ausente ou inválido.
+    Verifica se os dados obrigatórios foram carregados corretamente, encerrando a execução caso algum recurso
+    esteja ausente ou inválido.
 
     Returns:
         dict: Dicionário contendo clubes, eventos, nomes e frases de narração.
@@ -53,7 +55,8 @@ def carregar_recursos():
     faltando = [nome for nome, valor in recursos.items() if not valor]
     if faltando or not all(recursos["nomes"].values()):
         console.print(
-            f"[red]Arquivos de dados ausentes ou inválidos na pasta dados/: {', '.join(faltando) or 'nomes'}[/]")
+            f"[red]Arquivos de dados ausentes ou inválidos na pasta dados/: {', '.join(faltando) or 'nomes'}[/]"
+        )
         sys.exit(1)
     return recursos
 
@@ -84,7 +87,8 @@ def montar_partida(estado, recursos, modo, velocidade):
     """
     Prepara uma partida a partir do estado atual da temporada.
 
-    Identifica os clubes participantes, define os planos táticos, configura a inteligência artificial e estabelece o modo e a velocidade de execução da partida.
+    Identifica os clubes participantes, define os planos táticos, configura a inteligência artificial e
+    estabelece o modo e a velocidade de execução da partida.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -113,7 +117,8 @@ def registrar_sumula(estado, resultado, chave, titulo_jogo):
     """
     Registra a súmula de uma partida disputada.
 
-    Armazena os acontecimentos no histórico da temporada e adiciona o resultado e os lances ao arquivo de texto correspondente ao técnico.
+    Armazena os acontecimentos no histórico da temporada e adiciona o resultado e os lances ao arquivo de
+    texto correspondente ao técnico.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -133,7 +138,8 @@ def evento_da_semana(estado, recursos):
     """
     Executa um evento aleatório após uma rodada.
 
-    Sorteia um acontecimento, apresenta suas opções ao usuário, aplica o efeito escolhido e atualiza a escalação do clube.
+    Sorteia um acontecimento, apresenta suas opções ao usuário, aplica o efeito escolhido e atualiza a
+    escalação do clube.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -151,13 +157,15 @@ def escolher_como_jogar(estado):
     """
     Mostra a tela de pré-jogo até o usuário decidir como disputar a partida.
 
-    As opções de ver o adversário e de ajustar o plano de jogo abrem suas telas e voltam para o pré-jogo, sem iniciar a partida.
+    As opções de ver o adversário e de ajustar o plano de jogo abrem suas telas e voltam para o pré-jogo, sem
+    iniciar a partida.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        int: 1 para jogar, 2 para simular assistindo, 3 para simular rápido, 4 para ir direto ao resultado ou 0 para voltar.
+        int: 1 para jogar, 2 para simular assistindo, 3 para simular rápido, 4 para ir direto ao resultado ou
+            0 para voltar.
     """
     while True:
         escolha = telas.pre_jogo(estado)
@@ -173,7 +181,9 @@ def jogar_partida_do_jogador(estado, recursos, escolha):
     """
     Disputa a partida do clube do jogador no modo escolhido.
 
-    Completa os titulares desfalcados, monta a partida e define quem controla cada time. No modo "só o resultado" os dois times ficam com a IA e nada é exibido; nos outros modos o jogador controla o próprio time e a partida é desenhada no campo. Em jogos de mata-mata o empate vai para os pênaltis.
+    Completa os titulares desfalcados, monta a partida e define quem controla cada time. No modo "só o
+    resultado" os dois times ficam com a IA e nada é exibido; nos outros modos o jogador controla o próprio
+    time e a partida é desenhada no campo. Em jogos de mata-mata o empate vai para os pênaltis.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -204,7 +214,9 @@ def jogar_etapa(estado, recursos):
     """
     Disputa a etapa atual da temporada, seja uma rodada da liga ou uma fase da copa.
 
-    Joga a partida do clube do jogador (se ele estiver na etapa), simula os outros jogos, registra a súmula e fecha a rodada ou a fase. Depois movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento da semana e salva o jogo automaticamente.
+    Joga a partida do clube do jogador (se ele estiver na etapa), simula os outros jogos, registra a súmula e
+    fecha a rodada ou a fase. Depois movimenta o mercado dos outros clubes, mostra os resultados, avança para
+    a próxima etapa, sorteia o evento da semana e salva o jogo automaticamente.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -242,7 +254,8 @@ def encerrar_temporada(estado):
     """
     Encerra a temporada e mostra o resumo final.
 
-    Calcula a pontuação do técnico e grava no ranking uma única vez, mesmo que o save seja aberto de novo depois do fim.
+    Calcula a pontuação do técnico e grava no ranking uma única vez, mesmo que o save seja aberto de novo
+    depois do fim.
 
     Args:
         estado (dict): Estado da temporada encerrada.
@@ -258,7 +271,9 @@ def central(estado, recursos):
     """
     Mantém o usuário na central do clube durante a temporada.
 
-    Mostra a central e executa a opção escolhida: próximo jogo, elenco, plano de jogo, classificação, copa, rodadas, mercado, clubes ou salvar. Ao voltar, pergunta se deve salvar. Quando a temporada acaba, encerra e sai.
+    Mostra a central e executa a opção escolhida: próximo jogo, elenco, plano de jogo, classificação, copa,
+    rodadas, mercado, clubes ou salvar. Ao voltar, pergunta se deve salvar. Quando a temporada acaba, encerra
+    e sai.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -337,7 +352,8 @@ def main():
     """
     Ponto de entrada do jogo.
 
-    Carrega os recursos e repete o menu inicial até o usuário escolher sair. Qualquer erro inesperado numa opção é mostrado na tela e o jogo volta ao menu em vez de fechar.
+    Carrega os recursos e repete o menu inicial até o usuário escolher sair. Qualquer erro inesperado numa
+    opção é mostrado na tela e o jogo volta ao menu em vez de fechar.
     """
     recursos = carregar_recursos()
     while True:

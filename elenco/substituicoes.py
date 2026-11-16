@@ -21,7 +21,9 @@ def substituir(time, sai_id, entra_id):
     """
     Troca um jogador em campo por um do banco.
 
-    O jogador que entra ocupa a mesma posição na lista de quem está em campo, sai do banco, e o que sai vai para a lista dos que deixaram o jogo. O contador de substituições do time aumenta em um. Nada muda se o limite de substituições já foi atingido ou se algum dos jogadores não for encontrado.
+    O jogador que entra ocupa a mesma posição na lista de quem está em campo, sai do banco, e o que sai vai
+    para a lista dos que deixaram o jogo. O contador de substituições do time aumenta em um. Nada muda se o
+    limite de substituições já foi atingido ou se algum dos jogadores não for encontrado.
 
     Args:
         time (dict): Time na partida.
@@ -48,7 +50,9 @@ def melhor_substituto(time, posicao):
     """
     Escolhe o melhor reserva do banco para uma posição.
 
-    Dá preferência aos reservas da mesma posição. Se não houver nenhum, considera os reservas de linha, deixando os goleiros de fora. Entre os candidatos, vence o de maior valor para escalar, que leva em conta qualidade, grande fase e energia.
+    Dá preferência aos reservas da mesma posição. Se não houver nenhum, considera os reservas de linha,
+    deixando os goleiros de fora. Entre os candidatos, vence o de maior valor para escalar, que leva em conta
+    qualidade, grande fase e energia.
 
     Args:
         time (dict): Time na partida.
@@ -68,7 +72,9 @@ def aplicar_desgaste(time):
     """
     Reduz a energia dos jogadores em campo após um lance.
 
-    Cada jogador perde 1,6 ponto de energia, mais 0,5 por nível de intensidade do plano acima de 3 (ou menos, abaixo de 3), mais um acréscimo aleatório de até 0,8. Goleiros perdem só 30% desse valor. A energia não fica abaixo de zero e é arredondada em uma casa decimal.
+    Cada jogador perde 1,6 ponto de energia, mais 0,5 por nível de intensidade do plano acima de 3 (ou menos,
+    abaixo de 3), mais um acréscimo aleatório de até 0,8. Goleiros perdem só 30% desse valor. A energia não
+    fica abaixo de zero e é arredondada em uma casa decimal.
 
     Args:
         time (dict): Time na partida.
@@ -116,7 +122,9 @@ def preparar_proxima_rodada(elenco):
     """
     Atualiza o elenco para a rodada seguinte.
 
-    Jogadores marcados como desfalque cumprem uma rodada de suspensão e de lesão, e a marca de desfalque é retirada de todos. A grande fase diminui em uma rodada e a energia de cada jogador recupera um valor fixo, sem passar de 100.
+    Jogadores marcados como desfalque cumprem uma rodada de suspensão e de lesão, e a marca de desfalque é
+    retirada de todos. A grande fase diminui em uma rodada e a energia de cada jogador recupera um valor fixo,
+    sem passar de 100.
 
     Args:
         elenco (list[dict]): Jogadores do clube.

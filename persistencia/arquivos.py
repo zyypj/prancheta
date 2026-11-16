@@ -6,7 +6,8 @@ def ler_json(caminho, padrao=None):
     """
     Lê e interpreta um arquivo JSON.
 
-    O arquivo é aberto em UTF-8 dentro de um try/except: se ele não existir, não puder ser lido ou tiver JSON inválido, a função não interrompe o jogo e devolve o valor padrão.
+    O arquivo é aberto em UTF-8 dentro de um try/except: se ele não existir, não puder ser lido ou tiver JSON
+    inválido, a função não interrompe o jogo e devolve o valor padrão.
 
     Args:
         caminho (str | Path): Caminho do arquivo JSON.
@@ -26,7 +27,9 @@ def gravar_json(caminho, dados):
     """
     Grava dados em um arquivo JSON.
 
-    Cria a pasta de destino se ela não existir e escreve o arquivo em UTF-8, com acentos preservados e indentação de 2 espaços. Erros de sistema de arquivos ou dados que não podem ser convertidos para JSON são capturados por try/except e indicados no retorno.
+    Cria a pasta de destino se ela não existir e escreve o arquivo em UTF-8, com acentos preservados e
+    indentação de 2 espaços. Erros de sistema de arquivos ou dados que não podem ser convertidos para JSON são
+    capturados por try/except e indicados no retorno.
 
     Args:
         caminho (str | Path): Caminho do arquivo JSON.
@@ -48,7 +51,8 @@ def ler_linhas_txt(caminho):
     """
     Lê as linhas de um arquivo de texto.
 
-    Remove os espaços das pontas de cada linha e descarta as linhas vazias. Se o arquivo não puder ser aberto, o erro é capturado por try/except e a função devolve uma lista vazia.
+    Remove os espaços das pontas de cada linha e descarta as linhas vazias. Se o arquivo não puder ser aberto,
+    o erro é capturado por try/except e a função devolve uma lista vazia.
 
     Args:
         caminho (str | Path): Caminho do arquivo de texto.
@@ -67,7 +71,9 @@ def anexar_txt(caminho, texto):
     """
     Acrescenta um texto ao final de um arquivo de texto.
 
-    Cria a pasta de destino se ela não existir, remove os espaços e quebras de linha do fim do texto e grava em UTF-8 seguido de uma única quebra de linha. Erros de sistema de arquivos são capturados por try/except e indicados no retorno.
+    Cria a pasta de destino se ela não existir, remove os espaços e quebras de linha do fim do texto e grava
+    em UTF-8 seguido de uma única quebra de linha. Erros de sistema de arquivos são capturados por try/except
+    e indicados no retorno.
 
     Args:
         caminho (str | Path): Caminho do arquivo de texto.

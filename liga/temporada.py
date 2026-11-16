@@ -35,7 +35,9 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
     """
     Cria o estado inicial de uma nova temporada.
 
-    Copia cada clube base, define o caixa inicial conforme o nível do clube, gera o elenco com nomes que não se repetem e escala os titulares automaticamente. Em seguida monta o calendário da liga, a copa, os agentes livres e a tabela zerada, começando com a confiança da diretoria em CONFIANCA_INICIAL.
+    Copia cada clube base, define o caixa inicial conforme o nível do clube, gera o elenco com nomes que não
+    se repetem e escala os titulares automaticamente. Em seguida monta o calendário da liga, a copa, os
+    agentes livres e a tabela zerada, começando com a confiança da diretoria em CONFIANCA_INICIAL.
 
     Args:
         tecnico (str): Nome do técnico.
@@ -322,7 +324,8 @@ def diferenca_de_forca(estado, adversario_id):
         adversario_id (str): Identificador do adversário.
 
     Returns:
-        int: Força do clube do jogador menos a força do adversário; valor positivo indica que o jogador é o favorito.
+        int: Força do clube do jogador menos a força do adversário; valor positivo indica que o jogador é o
+            favorito.
     """
     return clube_do_jogador(estado)["forca"] - estado["clubes"][adversario_id]["forca"]
 
@@ -331,7 +334,9 @@ def variacao_de_confianca(estado, resultado):
     """
     Calcula quanto a confiança da diretoria muda após um jogo da liga.
 
-    A vitória vale CONFIANCA_VITORIA (+6), o empate CONFIANCA_EMPATE (0) e a derrota CONFIANCA_DERROTA (-8). Quando a diferença de força passa de DIFERENCA_FAVORITISMO (5), há zebra: vencer um adversário mais forte rende CONFIANCA_ZEBRA (4) a mais, e perder para um mais fraco custa CONFIANCA_ZEBRA a mais.
+    A vitória vale CONFIANCA_VITORIA (+6), o empate CONFIANCA_EMPATE (0) e a derrota CONFIANCA_DERROTA (-8).
+    Quando a diferença de força passa de DIFERENCA_FAVORITISMO (5), há zebra: vencer um adversário mais forte
+    rende CONFIANCA_ZEBRA (4) a mais, e perder para um mais fraco custa CONFIANCA_ZEBRA a mais.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -371,7 +376,8 @@ def pagar_premios(estado, resultado):
     """
     Paga a premiação de um jogo da liga aos dois clubes.
 
-    Cada clube recebe no caixa PREMIO_VITORIA (0,8) pela vitória, PREMIO_EMPATE (0,3) pelo empate e nada pela derrota.
+    Cada clube recebe no caixa PREMIO_VITORIA (0,8) pela vitória, PREMIO_EMPATE (0,3) pelo empate e nada pela
+    derrota.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -388,7 +394,8 @@ def preparar_elencos(estado):
     """
     Prepara os elencos de todos os clubes para o próximo jogo.
 
-    Atualiza suspensões, lesões, grande fase e energia de cada jogador. No clube do jogador, completa os titulares que ficaram indisponíveis; nos demais clubes, refaz a escalação automaticamente.
+    Atualiza suspensões, lesões, grande fase e energia de cada jogador. No clube do jogador, completa os
+    titulares que ficaram indisponíveis; nos demais clubes, refaz a escalação automaticamente.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -410,7 +417,9 @@ def fechar_rodada(estado, resultados):
     """
     Encerra uma rodada da liga.
 
-    Registra cada resultado na tabela, paga os prêmios e guarda a rodada no histórico. Depois calcula a variação de confiança pelo jogo do clube do jogador, atualiza a sequência dos últimos 5 resultados, aplica a confiança, prepara os elencos e avança o número da rodada.
+    Registra cada resultado na tabela, paga os prêmios e guarda a rodada no histórico. Depois calcula a
+    variação de confiança pelo jogo do clube do jogador, atualiza a sequência dos últimos 5 resultados, aplica
+    a confiança, prepara os elencos e avança o número da rodada.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -426,7 +435,8 @@ def fechar_rodada(estado, resultados):
         rodada.append({chave: resultado[chave] for chave in ("mandante", "visitante", "gm", "gv")})
     estado["historico"].append(rodada)
     do_jogador = next(
-        resultado for resultado in resultados if estado["clube_id"] in (resultado["mandante"], resultado["visitante"]))
+        resultado for resultado in resultados if estado["clube_id"] in (resultado["mandante"], resultado["visitante"])
+    )
     letra, variacao = variacao_de_confianca(estado, do_jogador)
     estado["ultimos"] = (estado["ultimos"] + [letra])[-5:]
     ajustar_confianca(estado, variacao)
@@ -439,14 +449,18 @@ def fechar_fase_copa(estado, resultados):
     """
     Encerra uma fase da copa.
 
-    Registra os resultados da fase. Se o clube do jogador jogou, avançar conta como "V" e soma CONFIANCA_AVANCO_COPA (3), ou CONFIANCA_TITULO_COPA (10) na final; ser eliminado conta como "D" e aplica CONFIANCA_QUEDA_COPA (-4), com CONFIANCA_ZEBRA (4) a menos se o adversário era mais fraco por mais de DIFERENCA_FAVORITISMO (5). Por fim, prepara os elencos.
+    Registra os resultados da fase. Se o clube do jogador jogou, avançar conta como "V" e soma
+    CONFIANCA_AVANCO_COPA (3), ou CONFIANCA_TITULO_COPA (10) na final; ser eliminado conta como "D" e aplica
+    CONFIANCA_QUEDA_COPA (-4), com CONFIANCA_ZEBRA (4) a menos se o adversário era mais fraco por mais de
+    DIFERENCA_FAVORITISMO (5). Por fim, prepara os elencos.
 
     Args:
         estado (dict): Estado atual da temporada.
         resultados (list[dict]): Resultados de todos os jogos da fase.
 
     Returns:
-        dict: Letra do resultado do jogador (ou None se ele não jogou), variação da confiança, titulares trocados e o jogo do jogador.
+        dict: Letra do resultado do jogador (ou None se ele não jogou), variação da confiança, titulares
+            trocados e o jogo do jogador.
     """
     fase = etapa_atual(estado)[1]
     jogo = registrar_fase(estado, fase, resultados)
@@ -472,7 +486,8 @@ def avancar_etapa(estado):
     """
     Avança para a próxima etapa da agenda.
 
-    Se a agenda acabou, marca a temporada como encerrada; se a próxima etapa for da copa, já monta os confrontos da fase.
+    Se a agenda acabou, marca a temporada como encerrada; se a próxima etapa for da copa, já monta os
+    confrontos da fase.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -502,7 +517,8 @@ def meta_cumprida(estado, posicao):
     """
     Verifica se a posição alcança a meta do nível do clube do jogador.
 
-    A meta é terminar na posição definida para o nível ou acima dela: 1º para clube grande, 4º para médio e 8º para pequeno.
+    A meta é terminar na posição definida para o nível ou acima dela: 1º para clube grande, 4º para médio e 8º
+    para pequeno.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -519,13 +535,18 @@ def resumo_final(estado):
     """
     Monta o resumo da temporada do técnico, usado na tela final e no ranking.
 
-    A pontuação é (pontos × 10 + saldo × 2 + bônus) multiplicada pelo multiplicador do nível do clube, nunca abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta, BONUS_TITULO (200) pelo título da liga e BONUS_COPA (250) pelo título da copa; técnico demitido não recebe os bônus de meta e de título da liga. O desfecho informa a demissão (com a etapa em que aconteceu), o título (feito histórico se o clube não for grande), a meta cumprida ou não, e acrescenta o título da copa quando houver.
+    A pontuação é (pontos × 10 + saldo × 2 + bônus) multiplicada pelo multiplicador do nível do clube, nunca
+    abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta, BONUS_TITULO (200) pelo título da liga e
+    BONUS_COPA (250) pelo título da copa; técnico demitido não recebe os bônus de meta e de título da liga. O
+    desfecho informa a demissão (com a etapa em que aconteceu), o título (feito histórico se o clube não for
+    grande), a meta cumprida ou não, e acrescenta o título da copa quando houver.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        dict: Técnico, clube, posição, pontos, saldo, pontuação, desfecho, se a meta foi cumprida, a meta, se ganhou a copa e a data.
+        dict: Técnico, clube, posição, pontos, saldo, pontuação, desfecho, se a meta foi cumprida, a meta, se
+            ganhou a copa e a data.
     """
     clube = clube_do_jogador(estado)
     nivel = NIVEIS[clube["nivel"]]

@@ -31,7 +31,9 @@ def ler_banco_de_nomes(linhas):
     """
     Organiza as linhas do arquivo de nomes por tipo.
 
-    Cada linha deve seguir o formato "tipo:texto", em que o tipo é N (prenome), S (sobrenome) ou A (apelido), sem diferenciar maiúsculas de minúsculas. Linhas sem o separador ":", com tipo desconhecido ou com texto vazio são ignoradas.
+    Cada linha deve seguir o formato "tipo:texto", em que o tipo é N (prenome), S (sobrenome) ou A (apelido),
+    sem diferenciar maiúsculas de minúsculas. Linhas sem o separador ":", com tipo desconhecido ou com texto
+    vazio são ignoradas.
 
     Args:
         linhas (list[str]): Linhas lidas do arquivo de nomes.
@@ -52,7 +54,9 @@ def sortear_nome(banco, usados):
     """
     Sorteia um nome de jogador que ainda não foi usado.
 
-    Faz até 80 tentativas. Em cada uma, há 25% de chance de usar um apelido (quando existe algum) e, no restante, combina um prenome com um sobrenome. Se todas as tentativas repetirem nomes, usa um prenome seguido de um número. O nome escolhido é adicionado ao conjunto de usados.
+    Faz até 80 tentativas. Em cada uma, há 25% de chance de usar um apelido (quando existe algum) e, no
+    restante, combina um prenome com um sobrenome. Se todas as tentativas repetirem nomes, usa um prenome
+    seguido de um número. O nome escolhido é adicionado ao conjunto de usados.
 
     Args:
         banco (dict): Banco de nomes com as listas "N", "S" e "A".
@@ -91,7 +95,9 @@ def valor_de_mercado(jogador):
     """
     Calcula o valor de mercado do jogador, em milhões de reais.
 
-    O valor cresce com o cubo da qualidade acima de 40: (qualidade - 40) / 10, elevado ao cubo e multiplicado por 0,5. Jogadores com 23 anos ou menos valem 30% a mais, e os com 31 anos ou mais valem 40% a menos; sem idade registrada, considera 26 anos. O resultado tem no mínimo 0,1 e é arredondado em uma casa decimal.
+    O valor cresce com o cubo da qualidade acima de 40: (qualidade - 40) / 10, elevado ao cubo e multiplicado
+    por 0,5. Jogadores com 23 anos ou menos valem 30% a mais, e os com 31 anos ou mais valem 40% a menos; sem
+    idade registrada, considera 26 anos. O resultado tem no mínimo 0,1 e é arredondado em uma casa decimal.
 
     Args:
         jogador (dict): Jogador avaliado.
@@ -100,7 +106,7 @@ def valor_de_mercado(jogador):
         float: Valor de mercado em milhões.
     """
     base = (max(jogador["qualidade"], 41) - 40) / 10
-    valor = base ** 3 * 0.5
+    valor = base**3 * 0.5
     idade = jogador.get("idade", 26)
     if idade <= 23:
         valor *= 1.3
@@ -123,7 +129,9 @@ def criar_jogador(identificador, nome, posicao, qualidade, idade=None):
     """
     Cria um jogador novo com energia cheia e sem cartões, lesões ou gols.
 
-    Os atributos de finalização, passe, desarme, físico e reflexo partem da qualidade, recebem o ajuste típico da posição e uma variação aleatória de -5 a 5, e ficam entre 5 e 99. Sem idade informada, a idade é sorteada.
+    Os atributos de finalização, passe, desarme, físico e reflexo partem da qualidade, recebem o ajuste típico
+    da posição e uma variação aleatória de -5 a 5, e ficam entre 5 e 99. Sem idade informada, a idade é
+    sorteada.
 
     Args:
         identificador (str): Identificador único do jogador.
@@ -158,7 +166,8 @@ def sortear_qualidade(forca, titular):
     """
     Sorteia a qualidade de um jogador a partir da força do clube.
 
-    Usa uma distribuição normal com desvio padrão 4, centrada em força + 2 para titulares e em força - 6 para reservas. O resultado é arredondado e fica entre 40 e 92.
+    Usa uma distribuição normal com desvio padrão 4, centrada em força + 2 para titulares e em força - 6 para
+    reservas. O resultado é arredondado e fica entre 40 e 92.
 
     Args:
         forca (int): Força do clube.
@@ -175,7 +184,10 @@ def gerar_elenco(clube, banco, usados):
     """
     Gera o elenco completo de um clube.
 
-    Cria a quantidade de jogadores definida para cada posição, numerando os identificadores a partir do id do clube. Os primeiros de cada posição, até o número de titulares dela, recebem qualidade de titular e os demais, de reserva. Um jogador de linha é sorteado como craque e ganha 7 pontos de qualidade e de finalização, passe, desarme e físico.
+    Cria a quantidade de jogadores definida para cada posição, numerando os identificadores a partir do id do
+    clube. Os primeiros de cada posição, até o número de titulares dela, recebem qualidade de titular e os
+    demais, de reserva. Um jogador de linha é sorteado como craque e ganha 7 pontos de qualidade e de
+    finalização, passe, desarme e físico.
 
     Args:
         clube (dict): Clube dono do elenco.
@@ -217,7 +229,8 @@ def fator_energia(energia):
     """
     Calcula quanto o cansaço reduz o rendimento do jogador.
 
-    A partir do nível de energia sem perda o rendimento é integral. Abaixo dele, o fator cai de forma linear até 0,7 com energia zero.
+    A partir do nível de energia sem perda o rendimento é integral. Abaixo dele, o fator cai de forma linear
+    até 0,7 com energia zero.
 
     Args:
         energia (float): Energia atual do jogador, de 0 a 100.
@@ -263,7 +276,9 @@ def escalar_automatico(elenco, formacao):
     """
     Monta automaticamente os 11 titulares para uma formação.
 
-    Considera só os jogadores disponíveis, ordenados pelo valor para escalar. Preenche primeiro um goleiro e as vagas de defensores, meias e atacantes da formação com os melhores de cada posição. Se ainda faltarem jogadores, completa com os melhores de linha restantes, de qualquer posição.
+    Considera só os jogadores disponíveis, ordenados pelo valor para escalar. Preenche primeiro um goleiro e
+    as vagas de defensores, meias e atacantes da formação com os melhores de cada posição. Se ainda faltarem
+    jogadores, completa com os melhores de linha restantes, de qualquer posição.
 
     Args:
         elenco (list[dict]): Jogadores do clube.
@@ -289,23 +304,32 @@ def completar_titulares(clube):
     """
     Garante que o clube tenha 11 titulares disponíveis.
 
-    Mantém os titulares atuais que ainda estão no elenco e disponíveis. Se sobrarem 11, nada mais muda. Caso contrário, completa as vagas com os jogadores da escalação automática para a formação do clube, na ordem sugerida, e atualiza a lista de titulares.
+    Mantém os titulares atuais que ainda estão no elenco e disponíveis. Se sobrarem 11, nada mais muda. Caso
+    contrário, completa as vagas com os jogadores da escalação automática para a formação do clube, na ordem
+    sugerida, e atualiza a lista de titulares.
 
     Args:
         clube (dict): Clube cujos titulares serão conferidos.
 
     Returns:
-        list[str]: Rótulos dos titulares que saíram por estarem indisponíveis, ou lista vazia se não houve troca.
+        list[str]: Rótulos dos titulares que saíram por estarem indisponíveis, ou lista vazia se não houve
+            troca.
     """
     por_id = {jogador["id"]: jogador for jogador in clube["elenco"]}
-    validos = [identificador for identificador in clube["titulares"] if
-               identificador in por_id and disponivel(por_id[identificador])]
+    validos = [
+        identificador
+        for identificador in clube["titulares"]
+        if identificador in por_id and disponivel(por_id[identificador])
+    ]
     if len(validos) == 11:
         clube["titulares"] = validos
         return []
     sugestao = escalar_automatico(clube["elenco"], clube["plano"]["formacao"])
-    trocados = [rotulo(por_id[identificador]) for identificador in clube["titulares"] if
-                identificador not in validos and identificador in por_id]
+    trocados = [
+        rotulo(por_id[identificador])
+        for identificador in clube["titulares"]
+        if identificador not in validos and identificador in por_id
+    ]
     for identificador in sugestao:
         if len(validos) >= 11:
             break
@@ -349,7 +373,13 @@ def forca_setores(em_campo):
     """
     Calcula a força de defesa, meio, ataque e goleiro dos jogadores em campo.
 
-    Cada setor é a média de uma combinação ponderada dos atributos efetivos dos jogadores da posição: defesa usa desarme (80%) e físico (20%); meio usa passe (60%), desarme (20%) e físico (20%); ataque usa finalização (70%) e físico (30%) e depois recebe 25% de peso do passe dos meias. Setor sem jogadores vale 35, e o goleiro vale o maior reflexo entre os goleiros, ou 30 se não houver goleiro. Cada defensor ou meia acima de 4 soma 2,5 ao respectivo setor e cada atacante acima de 2 soma 3 ao ataque; abaixo dessas quantidades, os mesmos valores são subtraídos. Para cada jogador a menos que 11, defesa e meio perdem 3 e ataque perde 2.
+    Cada setor é a média de uma combinação ponderada dos atributos efetivos dos jogadores da posição: defesa
+    usa desarme (80%) e físico (20%); meio usa passe (60%), desarme (20%) e físico (20%); ataque usa
+    finalização (70%) e físico (30%) e depois recebe 25% de peso do passe dos meias. Setor sem jogadores vale
+    35, e o goleiro vale o maior reflexo entre os goleiros, ou 30 se não houver goleiro. Cada defensor ou meia
+    acima de 4 soma 2,5 ao respectivo setor e cada atacante acima de 2 soma 3 ao ataque; abaixo dessas
+    quantidades, os mesmos valores são subtraídos. Para cada jogador a menos que 11, defesa e meio perdem 3 e
+    ataque perde 2.
 
     Args:
         em_campo (list[dict]): Jogadores atualmente em campo.
@@ -357,16 +387,24 @@ def forca_setores(em_campo):
     Returns:
         dict: Força de cada setor, com as chaves "defesa", "meio", "ataque" e "goleiro".
     """
-    por_posicao = {posicao: [jogador for jogador in em_campo if jogador["pos"] == posicao] for posicao in
-                   ("GOL", "DEF", "MEI", "ATA")}
+    por_posicao = {
+        posicao: [jogador for jogador in em_campo if jogador["pos"] == posicao]
+        for posicao in ("GOL", "DEF", "MEI", "ATA")
+    }
     contagem = contar_posicoes(em_campo)
-    defesa = media([atributo_efetivo(j, "des") * 0.8 + atributo_efetivo(j, "fis") * 0.2 for j in por_posicao["DEF"]],
-                   35)
+    defesa = media(
+        [atributo_efetivo(j, "des") * 0.8 + atributo_efetivo(j, "fis") * 0.2 for j in por_posicao["DEF"]], 35
+    )
     meio = media(
-        [atributo_efetivo(j, "pas") * 0.6 + atributo_efetivo(j, "des") * 0.2 + atributo_efetivo(j, "fis") * 0.2 for j in
-         por_posicao["MEI"]], 35)
-    ataque = media([atributo_efetivo(j, "fin") * 0.7 + atributo_efetivo(j, "fis") * 0.3 for j in por_posicao["ATA"]],
-                   35)
+        [
+            atributo_efetivo(j, "pas") * 0.6 + atributo_efetivo(j, "des") * 0.2 + atributo_efetivo(j, "fis") * 0.2
+            for j in por_posicao["MEI"]
+        ],
+        35,
+    )
+    ataque = media(
+        [atributo_efetivo(j, "fin") * 0.7 + atributo_efetivo(j, "fis") * 0.3 for j in por_posicao["ATA"]], 35
+    )
     ataque = ataque * 0.75 + media([atributo_efetivo(j, "pas") for j in por_posicao["MEI"]], 35) * 0.25
     goleiro = max([atributo_efetivo(j, "ref") for j in por_posicao["GOL"]], default=30)
     defesa += (contagem["DEF"] - 4) * 2.5

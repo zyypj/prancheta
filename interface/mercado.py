@@ -30,7 +30,9 @@ def cabecalho_mercado(estado, subtitulo="MERCADO DA BOLA"):
     """
     clube = clube_do_jogador(estado)
     titulo(subtitulo)
-    console.print(f" Caixa: [bold]{dinheiro(clube.get('caixa', 0))}[/]   Elenco: {len(clube['elenco'])}/{MAX_ELENCO} jogadores\n")
+    console.print(
+        f" Caixa: [bold]{dinheiro(clube.get('caixa', 0))}[/]   Elenco: {len(clube['elenco'])}/{MAX_ELENCO} jogadores\n"
+    )
 
 
 def escolher_posicao():
@@ -40,7 +42,8 @@ def escolher_posicao():
     As opções são goleiro, defensor, meia, atacante, todas as posições ou voltar.
 
     Returns:
-        tuple: Par (seguir, posicao): seguir é False se o usuário escolheu voltar, e posicao é a sigla escolhida ou None para todas.
+        tuple: Par (seguir, posicao): seguir é False se o usuário escolheu voltar, e posicao é a sigla
+            escolhida ou None para todas.
     """
     console.print(" Posição: 1 GOL   2 DEF   3 MEI   4 ATA   5 Todas   0 Voltar")
     escolha = ler_opcao(0, 5)
@@ -53,7 +56,9 @@ def comprar_de_clubes(estado):
     """
     Conduz a compra de um jogador de outro clube.
 
-    O usuário filtra por posição e vê os 15 primeiros jogadores à venda, com clube, qualidade, idade, valor de mercado e preço pedido. Depois escolhe um jogador e digita uma proposta em milhões, ou 0 para cancelar, e vê se a compra foi aceita.
+    O usuário filtra por posição e vê os 15 primeiros jogadores à venda, com clube, qualidade, idade, valor de
+    mercado e preço pedido. Depois escolhe um jogador e digita uma proposta em milhões, ou 0 para cancelar, e
+    vê se a compra foi aceita.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -69,8 +74,14 @@ def comprar_de_clubes(estado):
         tabela.add_column(coluna)
     for numero, (jogador, clube) in enumerate(opcoes, start=1):
         tabela.add_row(
-            str(numero), jogador["nome"], jogador["pos"], clube["nome"], str(jogador["qualidade"]), str(jogador.get("idade", "-")),
-            dinheiro(valor_de_mercado(jogador)), dinheiro(preco_pedido(clube, jogador)),
+            str(numero),
+            jogador["nome"],
+            jogador["pos"],
+            clube["nome"],
+            str(jogador["qualidade"]),
+            str(jogador.get("idade", "-")),
+            dinheiro(valor_de_mercado(jogador)),
+            dinheiro(preco_pedido(clube, jogador)),
         )
     console.print(tabela)
     console.print(" [bold]0[/] Voltar")
@@ -90,7 +101,8 @@ def contratar_sem_clube(estado):
     """
     Conduz a contratação de um jogador sem clube.
 
-    Lista os jogadores livres da maior para a menor qualidade, com posição, idade e luvas. O usuário escolhe um deles ou volta com 0, e vê se a contratação deu certo. Se não houver jogadores livres, apenas avisa.
+    Lista os jogadores livres da maior para a menor qualidade, com posição, idade e luvas. O usuário escolhe
+    um deles ou volta com 0, e vê se a contratação deu certo. Se não houver jogadores livres, apenas avisa.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -104,7 +116,14 @@ def contratar_sem_clube(estado):
     for coluna in ("#", "Jogador", "Pos", "Qual", "Idade", "Luvas"):
         tabela.add_column(coluna)
     for numero, jogador in enumerate(livres, start=1):
-        tabela.add_row(str(numero), jogador["nome"], jogador["pos"], str(jogador["qualidade"]), str(jogador.get("idade", "-")), dinheiro(luvas(jogador)))
+        tabela.add_row(
+            str(numero),
+            jogador["nome"],
+            jogador["pos"],
+            str(jogador["qualidade"]),
+            str(jogador.get("idade", "-")),
+            dinheiro(luvas(jogador)),
+        )
     console.print(tabela)
     console.print(" [bold]0[/] Voltar")
     escolha = ler_opcao(0, len(livres))
@@ -117,7 +136,9 @@ def vender_jogador(estado):
     """
     Conduz a venda de um jogador do elenco para outro clube.
 
-    Lista o elenco ordenado por posição e qualidade, indicando os titulares. Se o jogador escolhido puder sair sem deixar o elenco ou a posição abaixo do mínimo e algum clube fizer proposta, mostra as ofertas e deixa o usuário aceitar uma delas ou recusar todas.
+    Lista o elenco ordenado por posição e qualidade, indicando os titulares. Se o jogador escolhido puder sair
+    sem deixar o elenco ou a posição abaixo do mínimo e algum clube fizer proposta, mostra as ofertas e deixa
+    o usuário aceitar uma delas ou recusar todas.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -131,7 +152,15 @@ def vender_jogador(estado):
         tabela.add_column(coluna)
     for numero, jogador in enumerate(elenco, start=1):
         titular = "sim" if jogador["id"] in clube["titulares"] else ""
-        tabela.add_row(str(numero), jogador["nome"], jogador["pos"], str(jogador["qualidade"]), str(jogador.get("idade", "-")), dinheiro(valor_de_mercado(jogador)), titular)
+        tabela.add_row(
+            str(numero),
+            jogador["nome"],
+            jogador["pos"],
+            str(jogador["qualidade"]),
+            str(jogador.get("idade", "-")),
+            dinheiro(valor_de_mercado(jogador)),
+            titular,
+        )
     console.print(tabela)
     console.print(" [bold]0[/] Voltar")
     escolha = ler_opcao(0, len(elenco))
@@ -145,7 +174,9 @@ def vender_jogador(estado):
     if not ofertas:
         mostrar_mensagem("Nenhum clube fez proposta por esse jogador agora.", "yellow")
         return
-    console.print(f"\n Propostas por {jogador['pos']} {jogador['nome']} (valor de mercado {dinheiro(valor_de_mercado(jogador))}):")
+    console.print(
+        f"\n Propostas por {jogador['pos']} {jogador['nome']} (valor de mercado {dinheiro(valor_de_mercado(jogador))}):"
+    )
     for numero, (comprador, valor) in enumerate(ofertas, start=1):
         console.print(f" {numero} - {comprador['nome']}: [bold]{dinheiro(valor)}[/]")
     console.print(" 0 - Recusar todas")
@@ -159,7 +190,8 @@ def tela_mercado(estado):
     """
     Mostra o menu principal do mercado da bola.
 
-    Exibe as cinco últimas notícias e deixa o usuário comprar de outros clubes, contratar jogadores sem clube ou vender um jogador, até escolher voltar.
+    Exibe as cinco últimas notícias e deixa o usuário comprar de outros clubes, contratar jogadores sem clube
+    ou vender um jogador, até escolher voltar.
 
     Args:
         estado (dict): Estado atual da temporada.

@@ -28,7 +28,9 @@ def barra(valor, tamanho=10):
     """
     Monta uma barra de progresso colorida para um valor percentual.
 
-    A parte cheia é proporcional ao valor, limitado entre 0 e 100, e fica verde a partir de 60, amarela a partir de 35 e vermelha abaixo disso. Ao lado da barra aparece o valor arredondado com o símbolo de porcentagem.
+    A parte cheia é proporcional ao valor, limitado entre 0 e 100, e fica verde a partir de 60, amarela a
+    partir de 35 e vermelha abaixo disso. Ao lado da barra aparece o valor arredondado com o símbolo de
+    porcentagem.
 
     Args:
         valor (float): Valor percentual a representar, como a energia de um jogador.
@@ -46,7 +48,9 @@ def posicao_alvo(partida, clube_jogador):
     """
     Calcula onde a bola deve aparecer no desenho do campo.
 
-    A coluna vem da zona da bola (meio, ataque, área ou gol), usando o meio-campo quando nenhum time tem a posse, e a linha vem da faixa do campo. Como o campo é desenhado com o clube do jogador atacando para a direita, a coluna é espelhada quando a bola está com o adversário.
+    A coluna vem da zona da bola (meio, ataque, área ou gol), usando o meio-campo quando nenhum time tem a
+    posse, e a linha vem da faixa do campo. Como o campo é desenhado com o clube do jogador atacando para a
+    direita, a coluna é espelhada quando a bola está com o adversário.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -74,7 +78,8 @@ def gramado_vazio():
     """
     Cria a grade de caracteres do campo sem a bola.
 
-    Desenha as divisórias entre as zonas, as traves nas duas pontas, as grandes áreas, as marcas de pênalti e a marca do centro do campo.
+    Desenha as divisórias entre as zonas, as traves nas duas pontas, as grandes áreas, as marcas de pênalti e
+    a marca do centro do campo.
 
     Returns:
         list: Lista de linhas, cada uma uma lista de caracteres do gramado.
@@ -107,7 +112,8 @@ def desenhar_campo(coluna, linha):
     """
     Monta o desenho completo do campo com a bola na posição indicada.
 
-    Coloca a moldura superior e inferior, pinta o gramado de verde, troca o caractere da posição informada pela bola e acrescenta embaixo os rótulos das zonas de defesa, meio e ataque.
+    Coloca a moldura superior e inferior, pinta o gramado de verde, troca o caractere da posição informada
+    pela bola e acrescenta embaixo os rótulos das zonas de defesa, meio e ataque.
 
     Args:
         coluna (int): Coluna da bola na grade do campo.
@@ -137,7 +143,9 @@ def cabecalho(partida, clube_jogador):
     """
     Exibe o placar e o resumo do plano de jogo no topo da tela da partida.
 
-    A primeira linha mostra os clubes nas suas cores, o placar, o tempo, o minuto e o aviso de chuva forte quando houver. A segunda mostra a formação, o estilo, a ofensividade, a intensidade, as substituições feitas pelo jogador e se a partida está sendo jogada lance a lance ou simulada.
+    A primeira linha mostra os clubes nas suas cores, o placar, o tempo, o minuto e o aviso de chuva forte
+    quando houver. A segunda mostra a formação, o estilo, a ofensividade, a intensidade, as substituições
+    feitas pelo jogador e se a partida está sendo jogada lance a lance ou simulada.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -148,7 +156,8 @@ def cabecalho(partida, clube_jogador):
     tempo = "1º TEMPO" if partida["tempo"] == 1 else "2º TEMPO"
     clima = "  [cyan]chuva forte[/]" if partida["chuva"] else ""
     console.print(
-        f" [bold {casa['cor']}]{casa['nome']}[/] [bold]{casa['gols']} x {fora['gols']}[/] [bold {fora['cor']}]{fora['nome']}[/]"
+        f" [bold {casa['cor']}]{casa['nome']}[/] [bold]{casa['gols']} x {fora['gols']}[/]"
+        f" [bold {fora['cor']}]{fora['nome']}[/]"
         f"   [dim]{tempo}[/] [bold]{minuto_texto(partida)}[/]{clima}"
     )
     meu = partida["times"][clube_jogador]
@@ -165,7 +174,9 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
     """
     Imprime um quadro completo da tela da partida.
 
-    Mostra o cabeçalho, o campo com a bola, as últimas linhas da narração com a mais recente em destaque e, quando algum time tem a posse, quem está com a bola, sua qualidade e sua energia. Por fim, mostra o destaque, a pergunta e as opções numeradas, sempre com a opção 0 para pausar.
+    Mostra o cabeçalho, o campo com a bola, as últimas linhas da narração com a mais recente em destaque e,
+    quando algum time tem a posse, quem está com a bola, sua qualidade e sua energia. Por fim, mostra o
+    destaque, a pergunta e as opções numeradas, sempre com a opção 0 para pausar.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -194,15 +205,21 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
     if pergunta:
         console.print(f"\n [bold yellow]{pergunta}[/]")
     if opcoes:
-        console.print(" " + "   ".join(
-            f"[bold]{numero}[/] {texto}" for numero, texto in enumerate(opcoes, start=1)) + "   [bold]0[/] Pausar")
+        console.print(
+            " "
+            + "   ".join(f"[bold]{numero}[/] {texto}" for numero, texto in enumerate(opcoes, start=1))
+            + "   [bold]0[/] Pausar"
+        )
 
 
 def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=False, destaque=None):
     """
     Atualiza a tela da partida, levando a bola até a posição atual.
 
-    Na primeira chamada limpa a tela e guarda a posição da bola em partida["tela"]. Com animação ligada, em terminal real e na velocidade normal, a bola anda de três em três colunas até o destino, e os quadros intermediários são desenhados sem pergunta, opções nem destaque. Cada quadro é redesenhado no mesmo lugar da tela e, ao final, a posição guardada é atualizada.
+    Na primeira chamada limpa a tela e guarda a posição da bola em partida["tela"]. Com animação ligada, em
+    terminal real e na velocidade normal, a bola anda de três em três colunas até o destino, e os quadros
+    intermediários são desenhados sem pergunta, opções nem destaque. Cada quadro é redesenhado no mesmo lugar
+    da tela e, ao final, a posição guardada é atualizada.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -226,9 +243,11 @@ def mostrar_partida(partida, clube_jogador, pergunta=None, opcoes=None, animar=F
     passos.append(alvo)
     for coluna, linha in passos:
         intermediario = (coluna, linha) != alvo
-        desenhar_no_lugar(lambda c=coluna, l=linha, i=intermediario: desenhar_quadro(
-            partida, clube_jogador, c, l, None if i else pergunta, None if i else opcoes, None if i else destaque
-        ))
+        desenhar_no_lugar(
+            lambda c=coluna, lin=linha, i=intermediario: desenhar_quadro(
+                partida, clube_jogador, c, lin, None if i else pergunta, None if i else opcoes, None if i else destaque
+            )
+        )
         if intermediario:
             time.sleep(0.03)
     atual["coluna"], atual["linha"] = alvo
@@ -255,20 +274,26 @@ def criar_exibidor(clube_jogador, ao_pausar=None):
     """
     Cria a função que mostra cada evento da partida na tela.
 
-    A função criada guarda o clube do jogador e a ação de pausa, e é chamada pelo motor da partida a cada evento.
+    A função criada guarda o clube do jogador e a ação de pausa, e é chamada pelo motor da partida a cada
+    evento.
 
     Args:
         clube_jogador (str): Identificador do clube controlado pelo jogador.
-        ao_pausar (callable | None): Função chamada com a partida e o clube do jogador quando o usuário pede pausa. Padrão None.
+        ao_pausar (callable | None): Função chamada com a partida e o clube do jogador quando o usuário pede
+            pausa. Padrão None.
 
     Returns:
         callable: Função exibir(partida, evento).
     """
+
     def exibir(partida, evento):
         """
         Mostra um evento da partida e espera o ritmo escolhido.
 
-        Não faz nada se a partida estiver em pausa. Em terminal real redesenha a tela com animação; fora dele apenas imprime a última linha da narração e o destaque. Na velocidade rápida espera um tempo curto, três vezes maior em eventos importantes como gol, expulsão e intervalo. Na velocidade normal espera o Enter: P abre a pausa e R passa a simular o resto da partida em velocidade rápida.
+        Não faz nada se a partida estiver em pausa. Em terminal real redesenha a tela com animação; fora dele
+        apenas imprime a última linha da narração e o destaque. Na velocidade rápida espera um tempo curto,
+        três vezes maior em eventos importantes como gol, expulsão e intervalo. Na velocidade normal espera o
+        Enter: P abre a pausa e R passa a simular o resto da partida em velocidade rápida.
 
         Args:
             partida (dict): Estado da partida em andamento.

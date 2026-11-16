@@ -5,7 +5,9 @@ def gerar_calendario(ids):
     """
     Gera o calendário da liga em turno único, no sistema de todos contra todos.
 
-    Embaralha os clubes e aplica o método do círculo: o primeiro clube fica fixo e os demais giram a cada rodada. Com número ímpar de clubes, um espaço vazio é incluído e quem cair contra ele folga na rodada. O mando de campo alterna conforme a soma do número da rodada com a posição do confronto.
+    Embaralha os clubes e aplica o método do círculo: o primeiro clube fica fixo e os demais giram a cada
+    rodada. Com número ímpar de clubes, um espaço vazio é incluído e quem cair contra ele folga na rodada. O
+    mando de campo alterna conforme a soma do número da rodada com a posição do confronto.
 
     Args:
         ids (Iterable[str]): Identificadores dos clubes participantes.

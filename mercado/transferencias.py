@@ -32,7 +32,9 @@ def gerar_agentes_livres(banco, usados, quantidade=AGENTES_LIVRES):
     """
     Gera a lista de jogadores sem clube disponíveis no mercado.
 
-    Cada agente livre recebe uma posição sorteada em POSICOES_LIVRES, uma qualidade sorteada por distribuição normal (média 64, desvio 7) limitada entre 45 e 82, e uma idade jovem (18 a 22 anos) ou veterana (29 a 35 anos). Os identificadores seguem o padrão "liv-01", "liv-02" e assim por diante.
+    Cada agente livre recebe uma posição sorteada em POSICOES_LIVRES, uma qualidade sorteada por distribuição
+    normal (média 64, desvio 7) limitada entre 45 e 82, e uma idade jovem (18 a 22 anos) ou veterana (29 a 35
+    anos). Os identificadores seguem o padrão "liv-01", "liv-02" e assim por diante.
 
     Args:
         banco (dict): Banco de nomes usado para sortear o nome dos jogadores.
@@ -86,7 +88,9 @@ def pode_sair(clube, jogador):
     """
     Verifica se o clube pode liberar um jogador sem desfalcar o elenco.
 
-    O jogador só pode sair se o elenco tiver mais de ELENCO_MINIMO (16) jogadores e se a posição dele continuar acima do mínimo definido em MINIMO_POR_POSICAO (2 goleiros, 5 defensores, 5 meias e 3 atacantes).
+    O jogador só pode sair se o elenco tiver mais de ELENCO_MINIMO (16) jogadores e se a posição dele
+    continuar acima do mínimo definido em MINIMO_POR_POSICAO (2 goleiros, 5 defensores, 5 meias e 3
+    atacantes).
 
     Args:
         clube (dict): Clube dono do jogador.
@@ -95,14 +99,18 @@ def pode_sair(clube, jogador):
     Returns:
         bool: True se a saída é permitida, False caso contrário.
     """
-    return len(clube["elenco"]) > ELENCO_MINIMO and quantos_na_posicao(clube["elenco"], jogador["pos"]) > MINIMO_POR_POSICAO[jogador["pos"]]
+    return (
+        len(clube["elenco"]) > ELENCO_MINIMO
+        and quantos_na_posicao(clube["elenco"], jogador["pos"]) > MINIMO_POR_POSICAO[jogador["pos"]]
+    )
 
 
 def preco_pedido(clube, jogador):
     """
     Calcula o preço que um clube pede para vender um jogador.
 
-    Parte do valor de mercado do jogador, acrescenta 30% se ele for titular e mais 15% se o clube for de nível grande. O resultado é arredondado para uma casa decimal.
+    Parte do valor de mercado do jogador, acrescenta 30% se ele for titular e mais 15% se o clube for de nível
+    grande. O resultado é arredondado para uma casa decimal.
 
     Args:
         clube (dict): Clube vendedor.
@@ -123,7 +131,8 @@ def luvas(jogador):
     """
     Calcula o valor das luvas para contratar um jogador sem clube.
 
-    As luvas correspondem a 15% do valor de mercado do jogador, com mínimo de 0,2 milhão, arredondadas para uma casa decimal.
+    As luvas correspondem a 15% do valor de mercado do jogador, com mínimo de 0,2 milhão, arredondadas para
+    uma casa decimal.
 
     Args:
         jogador (dict): Jogador sem clube.
@@ -138,7 +147,8 @@ def jogadores_a_venda(estado, posicao=None):
     """
     Lista os jogadores dos outros clubes que podem receber proposta.
 
-    Inclui todos os jogadores de todos os clubes, exceto o do técnico, opcionalmente filtrados por posição, ordenados da maior para a menor qualidade.
+    Inclui todos os jogadores de todos os clubes, exceto o do técnico, opcionalmente filtrados por posição,
+    ordenados da maior para a menor qualidade.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -161,7 +171,9 @@ def reorganizar(estado, clube):
     """
     Ajusta a escalação de um clube depois de uma mudança no elenco.
 
-    No clube do técnico, apenas completa os titulares que faltam, preservando as escolhas do jogador. Nos clubes controlados pela IA, refaz a escalação inteira de forma automática conforme a formação do plano tático.
+    No clube do técnico, apenas completa os titulares que faltam, preservando as escolhas do jogador. Nos
+    clubes controlados pela IA, refaz a escalação inteira de forma automática conforme a formação do plano
+    tático.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -177,7 +189,9 @@ def transferir(estado, jogador, vendedor, comprador, valor):
     """
     Efetiva a transferência de um jogador entre dois clubes.
 
-    Remove o jogador do elenco e dos titulares do vendedor, inclui no elenco do comprador, credita o valor no caixa do vendedor e debita do comprador. Em seguida reorganiza a escalação do vendedor e, se o comprador não for o clube do técnico, também a dele. Por fim registra a notícia da negociação.
+    Remove o jogador do elenco e dos titulares do vendedor, inclui no elenco do comprador, credita o valor no
+    caixa do vendedor e debita do comprador. Em seguida reorganiza a escalação do vendedor e, se o comprador
+    não for o clube do técnico, também a dele. Por fim registra a notícia da negociação.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -198,14 +212,19 @@ def transferir(estado, jogador, vendedor, comprador, valor):
     reorganizar(estado, vendedor)
     if comprador["id"] != estado["clube_id"]:
         reorganizar(estado, comprador)
-    return noticia(estado, f"{comprador['nome']} contrata {rotulo(jogador)} do {vendedor['nome']} por {dinheiro(valor)}.")
+    return noticia(
+        estado, f"{comprador['nome']} contrata {rotulo(jogador)} do {vendedor['nome']} por {dinheiro(valor)}."
+    )
 
 
 def tentar_comprar(estado, jogador, vendedor, oferta):
     """
     Tenta comprar um jogador de outro clube com a oferta do técnico.
 
-    A proposta é recusada de imediato se o elenco do técnico já tiver MAX_ELENCO (25) jogadores, se a oferta for maior que o caixa ou se o vendedor não puder liberar o jogador. Caso contrário, a chance de aceitar cresce de forma linear com a razão entre oferta e preço pedido: é nula com 80% do pedido ou menos e certa a partir de 110%.
+    A proposta é recusada de imediato se o elenco do técnico já tiver MAX_ELENCO (25) jogadores, se a oferta
+    for maior que o caixa ou se o vendedor não puder liberar o jogador. Caso contrário, a chance de aceitar
+    cresce de forma linear com a razão entre oferta e preço pedido: é nula com 80% do pedido ou menos e certa
+    a partir de 110%.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -235,7 +254,9 @@ def contratar_livre(estado, jogador):
     """
     Contrata um jogador sem clube para o time do técnico.
 
-    A contratação é negada se o elenco já tiver MAX_ELENCO (25) jogadores ou se o caixa não cobrir as luvas. Quando aprovada, o jogador sai da lista de agentes livres, entra no elenco, as luvas são debitadas do caixa e a notícia é registrada.
+    A contratação é negada se o elenco já tiver MAX_ELENCO (25) jogadores ou se o caixa não cobrir as luvas.
+    Quando aprovada, o jogador sai da lista de agentes livres, entra no elenco, as luvas são debitadas do
+    caixa e a notícia é registrada.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -261,7 +282,9 @@ def ofertas_por(estado, jogador):
     """
     Gera as propostas de outros clubes por um jogador do técnico.
 
-    São interessados os clubes da IA com vaga no elenco e caixa de pelo menos 70% do valor de mercado do jogador. Até três deles, sorteados, fazem uma oferta entre 75% e 120% do valor de mercado, limitada ao caixa de cada clube.
+    São interessados os clubes da IA com vaga no elenco e caixa de pelo menos 70% do valor de mercado do
+    jogador. Até três deles, sorteados, fazem uma oferta entre 75% e 120% do valor de mercado, limitada ao
+    caixa de cada clube.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -272,8 +295,11 @@ def ofertas_por(estado, jogador):
     """
     valor = valor_de_mercado(jogador)
     interessados = [
-        clube for clube in estado["clubes"].values()
-        if clube["id"] != estado["clube_id"] and len(clube["elenco"]) < MAX_ELENCO and clube.get("caixa", 0) >= valor * 0.7
+        clube
+        for clube in estado["clubes"].values()
+        if clube["id"] != estado["clube_id"]
+        and len(clube["elenco"]) < MAX_ELENCO
+        and clube.get("caixa", 0) >= valor * 0.7
     ]
     random.shuffle(interessados)
     ofertas = []
@@ -320,7 +346,9 @@ def contratacao_de_livre_ia(estado):
     """
     Faz um clube da IA contratar um jogador sem clube, se valer a pena.
 
-    Sorteia um clube da IA com vaga no elenco e percorre os agentes livres do melhor para o pior. Contrata o primeiro que supere em mais de 2 pontos de qualidade o pior jogador do clube na mesma posição e cujas luvas caibam no caixa, reorganizando a escalação em seguida.
+    Sorteia um clube da IA com vaga no elenco e percorre os agentes livres do melhor para o pior. Contrata o
+    primeiro que supere em mais de 2 pontos de qualidade o pior jogador do clube na mesma posição e cujas
+    luvas caibam no caixa, reorganizando a escalação em seguida.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -348,7 +376,10 @@ def negociacao_entre_ia(estado):
     """
     Simula uma transferência entre dois clubes controlados pela IA.
 
-    Sorteia um comprador com vaga no elenco e um vendedor diferente. São candidatos os jogadores que o vendedor pode liberar, cujo preço pedido cabe no caixa do comprador e que superam em mais de 3 pontos de qualidade o pior jogador do comprador na mesma posição. Um candidato é sorteado e transferido pelo preço pedido.
+    Sorteia um comprador com vaga no elenco e um vendedor diferente. São candidatos os jogadores que o
+    vendedor pode liberar, cujo preço pedido cabe no caixa do comprador e que superam em mais de 3 pontos de
+    qualidade o pior jogador do comprador na mesma posição. Um candidato é sorteado e transferido pelo preço
+    pedido.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -363,7 +394,8 @@ def negociacao_entre_ia(estado):
     vendedores = [c for c in clubes if c is not comprador]
     vendedor = random.choice(vendedores)
     candidatos = [
-        jogador for jogador in vendedor["elenco"]
+        jogador
+        for jogador in vendedor["elenco"]
         if pode_sair(vendedor, jogador)
         and preco_pedido(vendedor, jogador) <= comprador.get("caixa", 0)
         and pior_da_posicao(comprador, jogador["pos"])
@@ -379,7 +411,8 @@ def movimentar_mercado(estado):
     """
     Movimenta o mercado entre os clubes da IA.
 
-    Há 45% de chance de tentar uma contratação de agente livre e 30% de chance de tentar uma negociação entre clubes da IA, de forma independente.
+    Há 45% de chance de tentar uma contratação de agente livre e 30% de chance de tentar uma negociação entre
+    clubes da IA, de forma independente.
 
     Args:
         estado (dict): Estado atual da temporada.

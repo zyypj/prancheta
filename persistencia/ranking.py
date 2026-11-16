@@ -8,7 +8,9 @@ def registrar_ranking(linha, caminho=ARQUIVO_RANKING):
     """
     Registra o resultado de uma temporada no ranking em CSV.
 
-    O arquivo usa as colunas de CAMPOS_RANKING (tecnico, clube, posicao, pontos, pontuacao, desfecho e data). O cabeçalho é escrito apenas quando o arquivo ainda não existe ou está vazio, e campos ausentes na linha ficam em branco. Erros de sistema de arquivos são capturados por try/except e indicados no retorno.
+    O arquivo usa as colunas de CAMPOS_RANKING (tecnico, clube, posicao, pontos, pontuacao, desfecho e data).
+    O cabeçalho é escrito apenas quando o arquivo ainda não existe ou está vazio, e campos ausentes na linha
+    ficam em branco. Erros de sistema de arquivos são capturados por try/except e indicados no retorno.
 
     Args:
         linha (dict): Dados da temporada, com chaves iguais às colunas do ranking.
@@ -51,7 +53,8 @@ def ler_ranking(limite=10, caminho=ARQUIVO_RANKING):
     """
     Lê as melhores campanhas registradas no ranking em CSV.
 
-    As linhas são ordenadas pela pontuação, da maior para a menor. Se o arquivo não puder ser aberto, o erro é capturado por try/except e a função devolve uma lista vazia.
+    As linhas são ordenadas pela pontuação, da maior para a menor. Se o arquivo não puder ser aberto, o erro é
+    capturado por try/except e a função devolve uma lista vazia.
 
     Args:
         limite (int): Quantidade máxima de linhas devolvidas. Padrão: 10.

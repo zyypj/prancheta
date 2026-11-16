@@ -49,7 +49,8 @@ def aplicar_placar(linha, feitos, sofridos, vermelhos):
     """
     Atualiza a linha de um clube na tabela com o placar de um jogo.
 
-    Soma o jogo, os gols marcados e sofridos e os cartões vermelhos, e conta vitória (PONTOS_VITORIA pontos), empate (PONTOS_EMPATE ponto) ou derrota (nenhum ponto).
+    Soma o jogo, os gols marcados e sofridos e os cartões vermelhos, e conta vitória (PONTOS_VITORIA pontos),
+    empate (PONTOS_EMPATE ponto) ou derrota (nenhum ponto).
 
     Args:
         linha (dict): Linha do clube na tabela.
@@ -77,7 +78,8 @@ def registrar_resultado(tabela, resultado):
 
     Args:
         tabela (dict): Tabela de classificação da liga.
-        resultado (dict): Resultado da partida, com placar e, se houver, os vermelhos de cada lado (zero quando ausentes).
+        resultado (dict): Resultado da partida, com placar e, se houver, os vermelhos de cada lado (zero
+            quando ausentes).
     """
     aplicar_placar(tabela[resultado["mandante"]], resultado["gm"], resultado["gv"], resultado.get("vm", 0))
     aplicar_placar(tabela[resultado["visitante"]], resultado["gv"], resultado["gm"], resultado.get("vv", 0))
@@ -102,7 +104,8 @@ def pontos_no_confronto(historico, grupo):
     """
     Calcula os pontos de cada clube apenas nos jogos entre os clubes do grupo.
 
-    Usado no desempate por confronto direto: só contam os jogos do histórico em que mandante e visitante pertencem ao grupo.
+    Usado no desempate por confronto direto: só contam os jogos do histórico em que mandante e visitante
+    pertencem ao grupo.
 
     Args:
         historico (list[list[dict]]): Resultados da liga, rodada a rodada.
@@ -131,7 +134,9 @@ def ordenar_tabela(tabela, historico):
     """
     Ordena a tabela de classificação da liga.
 
-    Ordena por pontos, vitórias, saldo e gols marcados. Clubes que empatam em todos esses critérios são desempatados, nessa ordem, pelos pontos no confronto direto entre eles, pelo menor número de cartões vermelhos e pelo número sorteado na criação da tabela.
+    Ordena por pontos, vitórias, saldo e gols marcados. Clubes que empatam em todos esses critérios são
+    desempatados, nessa ordem, pelos pontos no confronto direto entre eles, pelo menor número de cartões
+    vermelhos e pelo número sorteado na criação da tabela.
 
     Args:
         tabela (dict): Tabela de classificação da liga.
