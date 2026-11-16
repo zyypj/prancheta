@@ -1,0 +1,228 @@
+[
+  {
+    "id": "gripe",
+    "momento": "pre",
+    "peso": 2,
+    "alvo": "titular",
+    "texto": "{jogador} acordou gripado no dia do jogo.",
+    "opcoes": [
+      {
+        "texto": "Escalar mesmo assim (ele começa cansado)",
+        "efeito": "arriscar_doente"
+      },
+      {
+        "texto": "Poupar e escalar outro no lugar",
+        "efeito": "poupar_jogador"
+      }
+    ]
+  },
+  {
+    "id": "provocacao",
+    "momento": "pre",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "O técnico do {adversario} provocou o seu time na imprensa.",
+    "opcoes": [
+      {
+        "texto": "Responder à altura (elenco motivado, diretoria não gosta)",
+        "efeito": "responder_provocacao"
+      },
+      {
+        "texto": "Ignorar e focar no jogo",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "onibus",
+    "momento": "pre",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "O ônibus do time atrasou no trânsito e o aquecimento foi encurtado.",
+    "efeito": "cansar_pouco"
+  },
+  {
+    "id": "prelecao",
+    "momento": "pre",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Antes do jogo contra o {adversario}, o elenco espera uma palavra do técnico.",
+    "opcoes": [
+      {
+        "texto": "Discurso inflamado",
+        "efeito": "motivar_titulares"
+      },
+      {
+        "texto": "Conversa tática, com calma",
+        "efeito": "confianca_mais_1"
+      }
+    ]
+  },
+  {
+    "id": "mosaico",
+    "momento": "pre",
+    "condicao": "casa",
+    "torcida": true,
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "A torcida organizada prepara um mosaico gigante para o jogo contra o {adversario}.",
+    "efeito": "festa_no_estadio"
+  },
+  {
+    "id": "hotel",
+    "momento": "pre",
+    "condicao": "fora",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A organizada do {adversario} fez barulho a noite inteira na frente do hotel do time.",
+    "efeito": "cansar_medio"
+  },
+  {
+    "id": "faixas",
+    "momento": "pre",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Faixas da organizada no treino cobram vitória contra o {adversario}: \"hoje é obrigação!\"",
+    "opcoes": [
+      {
+        "texto": "Usar a pressão a favor e motivar o elenco",
+        "efeito": "motivar_titulares"
+      },
+      {
+        "texto": "Pedir calma à torcida",
+        "efeito": "confianca_mais_1"
+      }
+    ]
+  },
+  {
+    "id": "balada",
+    "momento": "pos",
+    "condicao": "vitoria",
+    "peso": 2,
+    "alvo": "titular",
+    "texto": "Depois da vitória, {jogador} e outros jogadores foram vistos numa festa até de madrugada.",
+    "opcoes": [
+      {
+        "texto": "Multar os envolvidos",
+        "efeito": "multar_balada"
+      },
+      {
+        "texto": "Deixar passar (elenco cansado, diretoria reclama)",
+        "efeito": "deixar_passar"
+      }
+    ]
+  },
+  {
+    "id": "bicho",
+    "momento": "pos",
+    "condicao": "vitoria",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "A diretoria sugere pagar um bicho extra pela vitória.",
+    "opcoes": [
+      {
+        "texto": "Pagar R$ 1,0 mi (três titulares motivados)",
+        "efeito": "pagar_bicho"
+      },
+      {
+        "texto": "Guardar o dinheiro",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "arbitragem",
+    "momento": "pos",
+    "condicao": "derrota",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "O time saiu revoltado com a arbitragem contra o {adversario}.",
+    "opcoes": [
+      {
+        "texto": "Reclamar publicamente (multa de R$ 0,5 mi, diretoria apoia)",
+        "efeito": "reclamar_arbitragem"
+      },
+      {
+        "texto": "Ficar quieto",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "melhor_em_campo",
+    "momento": "pos",
+    "condicao": "vitoria",
+    "peso": 1,
+    "alvo": "artilheiro",
+    "texto": "A imprensa elegeu {jogador} o melhor em campo.",
+    "efeito": "motivar_jogador"
+  },
+  {
+    "id": "aeroporto",
+    "momento": "pos",
+    "condicao": "derrota",
+    "torcida": true,
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "A torcida organizada foi ao aeroporto protestar contra o time.",
+    "opcoes": [
+      {
+        "texto": "Conversar com os líderes da organizada",
+        "efeito": "dialogar_organizada"
+      },
+      {
+        "texto": "Sair pelos fundos e evitar a torcida",
+        "efeito": "confianca_menos_2"
+      }
+    ]
+  },
+  {
+    "id": "treino_invadido",
+    "momento": "pos",
+    "condicao": "derrota",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Integrantes da organizada entraram no CT para cobrar os jogadores.",
+    "opcoes": [
+      {
+        "texto": "Conversar e acalmar os ânimos",
+        "efeito": "dialogar_organizada"
+      },
+      {
+        "texto": "Chamar a segurança e fechar os treinos",
+        "efeito": "confianca_menos_1"
+      }
+    ]
+  },
+  {
+    "id": "desembarque",
+    "momento": "pos",
+    "condicao": "vitoria",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A organizada fez festa no desembarque do time, com bandeiras e música.",
+    "efeito": "festa_desembarque"
+  },
+  {
+    "id": "homenagem",
+    "momento": "pos",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "melhor",
+    "texto": "A organizada homenageou {jogador} com uma faixa gigante no treino.",
+    "efeito": "motivar_jogador"
+  },
+  {
+    "id": "briga_organizadas",
+    "momento": "pos",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Uma briga entre organizadas depois do jogo rendeu punição ao clube.",
+    "efeito": "punicao_briga"
+  }
+]

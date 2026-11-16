@@ -1,0 +1,137 @@
+{
+  "veiculos": [
+    "Rádio Coxilha",
+    "Jornal do Vale",
+    "Portal Arquibancada",
+    "TV Litoral",
+    "Rádio Pampeira",
+    "Revista Prancheta"
+  ],
+  "pre": [
+    {
+      "pergunta": "Qual a sua expectativa para o jogo contra o {adversario}?",
+      "respostas": [
+        {
+          "texto": "Vamos vencer, não tem outro resultado.",
+          "efeito": "prometer_vitoria"
+        },
+        {
+          "texto": "Respeito muito o adversário.",
+          "efeito": "nada"
+        },
+        {
+          "texto": "Quem decide são os jogadores, confio neles.",
+          "efeito": "elogiar_jogadores"
+        }
+      ]
+    },
+    {
+      "pergunta": "{jogador} vem sendo questionado. Ele começa jogando?",
+      "respostas": [
+        {
+          "texto": "É peça-chave e joga, sim.",
+          "efeito": "motivar_jogador"
+        },
+        {
+          "texto": "Não falo de escalação antes do jogo.",
+          "efeito": "nada"
+        },
+        {
+          "texto": "Ele precisa render mais.",
+          "efeito": "cobrar_jogador"
+        }
+      ]
+    }
+  ],
+  "vitoria": [
+    {
+      "pergunta": "Depois dessa vitória, o time está pronto para brigar pelo título?",
+      "respostas": [
+        {
+          "texto": "Vamos brigar por tudo!",
+          "efeito": "prometer_vitoria"
+        },
+        {
+          "texto": "Um jogo de cada vez.",
+          "efeito": "confianca_mais_1"
+        },
+        {
+          "texto": "O mérito é todo dos jogadores.",
+          "efeito": "elogiar_jogadores"
+        }
+      ]
+    },
+    {
+      "pergunta": "{jogador} foi o destaque. Ele merece ser chamado para a seleção?",
+      "respostas": [
+        {
+          "texto": "Sem dúvida, é o melhor do campeonato.",
+          "efeito": "motivar_jogador"
+        },
+        {
+          "texto": "O time inteiro jogou bem.",
+          "efeito": "elogiar_jogadores"
+        },
+        {
+          "texto": "Ainda pode render mais.",
+          "efeito": "cobrar_jogador"
+        }
+      ]
+    }
+  ],
+  "empate": [
+    {
+      "pergunta": "O empate contra o {adversario} foi justo?",
+      "respostas": [
+        {
+          "texto": "Merecíamos vencer, criamos mais.",
+          "efeito": "confianca_mais_1"
+        },
+        {
+          "texto": "Foi um resultado justo.",
+          "efeito": "nada"
+        },
+        {
+          "texto": "Esse resultado não serve para nós.",
+          "efeito": "cobrar_jogadores"
+        }
+      ]
+    }
+  ],
+  "derrota": [
+    {
+      "pergunta": "Depois dessa derrota, a sua cadeira está ameaçada?",
+      "respostas": [
+        {
+          "texto": "Assumo a responsabilidade pela derrota.",
+          "efeito": "confianca_mais_2"
+        },
+        {
+          "texto": "A arbitragem decidiu o jogo.",
+          "efeito": "reclamar_arbitragem"
+        },
+        {
+          "texto": "Faltou atitude de alguns jogadores.",
+          "efeito": "cobrar_jogadores"
+        }
+      ]
+    },
+    {
+      "pergunta": "O que faltou hoje contra o {adversario}?",
+      "respostas": [
+        {
+          "texto": "Faltou pontaria, criamos bastante.",
+          "efeito": "nada"
+        },
+        {
+          "texto": "Vamos treinar dobrado esta semana.",
+          "efeito": "treinar_dobrado"
+        },
+        {
+          "texto": "O elenco é curto, precisamos de reforços.",
+          "efeito": "pedir_reforco"
+        }
+      ]
+    }
+  ]
+}

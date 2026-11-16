@@ -1,12 +1,21 @@
 import sys
 
-from config import ARQUIVO_EVENTOS, ARQUIVO_NARRACAO, ARQUIVO_NOMES, ARQUIVO_TIMES, PASTA_SUMULAS
+from config import (
+    ARQUIVO_BASTIDORES,
+    ARQUIVO_ENTREVISTAS,
+    ARQUIVO_EVENTOS,
+    ARQUIVO_NARRACAO,
+    ARQUIVO_NOMES,
+    ARQUIVO_TIMES,
+    PASTA_SUMULAS,
+)
 from elenco.escalacao import completar_titulares, ler_banco_de_nomes
 from interface import telas
 from interface.campo import criar_exibidor
 from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
 from interface.mercado import tela_mercado, tela_proposta
+from liga.bastidores import aplicar_bastidor, cobrar_promessa, sortear_bastidor, sortear_entrevista
 from liga.desafios import atualizar_objetivos, avaliar_desafio
 from liga.eventos import aplicar_efeito, escolher_evento
 from liga.temporada import (
@@ -52,6 +61,8 @@ def carregar_recursos():
     recursos = {
         "clubes": ler_json(ARQUIVO_TIMES, []),
         "eventos": ler_json(ARQUIVO_EVENTOS, []),
+        "bastidores": ler_json(ARQUIVO_BASTIDORES, []),
+        "entrevistas": ler_json(ARQUIVO_ENTREVISTAS, {}),
         "nomes": ler_banco_de_nomes(ler_linhas_txt(ARQUIVO_NOMES)),
         "frases": carregar_frases(ler_linhas_txt(ARQUIVO_NARRACAO)),
     }
@@ -90,7 +101,8 @@ def montar_partida(estado, recursos, modo, velocidade):
     """
     Prepara uma partida a partir do estado atual da temporada.
 
-    Identifica os clubes participantes, define os planos táticos, configura a inteligência artificial e
+    Identifica os clubes participantes, define os planos táticos, aplica a festa da torcida preparada num
+    bastidor (só quando o técnico joga em casa), configura a inteligência artificial e
     estabelece o modo e a velocidade de execução da partida.
 
     Args:
@@ -111,6 +123,9 @@ def montar_partida(estado, recursos, modo, velocidade):
         fora_id: fora["plano"] if fora_id == estado["clube_id"] else plano_ia(fora, casa, False),
     }
     partida = criar_partida(casa, fora, recursos["frases"], planos[casa_id], planos[fora_id], neutro)
+    torcida_extra = estado.pop("torcida_extra", 0)
+    if casa_id == estado["clube_id"] and not neutro:
+        partida["torcida"] = torcida_extra
     partida["modo"] = modo
     partida["velocidade"] = velocidade
     return partida
@@ -135,6 +150,31 @@ def registrar_sumula(estado, resultado, chave, titulo_jogo):
     cabecalho = f"{titulo_jogo}: {casa} {resultado['gm']} x {resultado['gv']} {fora}"
     texto = [cabecalho] + [f"  {linha}" for linha in resultado["sumula"]]
     anexar_txt(PASTA_SUMULAS / f"{nome_do_arquivo(estado['tecnico'])}.txt", "\n".join(texto) + "\n")
+
+
+def bastidores_do_jogo(estado, recursos, resultado=None):
+    """
+    Mostra, de vez em quando, uma entrevista ou um bastidor antes ou depois do jogo do técnico.
+
+    Depois do jogo, primeiro cobra a promessa de vitória feita numa entrevista, se houver. Em seguida tenta
+    uma entrevista (mais comum em clubes grandes) e, se não houver, um bastidor (eventos do dia do jogo e da
+    torcida organizada). No máximo um dos dois aparece em cada momento, para não interromper demais.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Recursos carregados, com bastidores e entrevistas.
+        resultado (dict | None): Resultado do jogo do técnico, ou None antes do jogo. Padrão None.
+    """
+    aviso = cobrar_promessa(estado, resultado)
+    if aviso:
+        telas.mostrar_mensagem(aviso, "bold")
+    tela = sortear_entrevista(estado, recursos["entrevistas"], resultado) or sortear_bastidor(
+        estado, recursos["bastidores"], resultado
+    )
+    if not tela:
+        return
+    efeito = telas.mostrar_evento(tela, tela["titulo"])
+    telas.mostrar_mensagem(aplicar_bastidor(estado, efeito, tela["jogador_id"]))
 
 
 def evento_da_semana(estado, recursos, resultado=None):
@@ -228,7 +268,8 @@ def jogar_etapa(estado, recursos):
     """
     Disputa a etapa atual da temporada, seja uma rodada da liga ou uma fase da copa.
 
-    Joga a partida do clube do jogador (se ele estiver na etapa), avalia o desafio da diretoria, simula os
+    Joga a partida do clube do jogador (se ele estiver na etapa), com os bastidores de antes e depois do
+    jogo, avalia o desafio da diretoria, simula os
     outros jogos, registra a súmula, fecha a rodada ou a fase e confere os objetivos da temporada. Depois
     movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento
     da semana e salva o jogo automaticamente.
@@ -245,7 +286,9 @@ def jogar_etapa(estado, recursos):
         if escolha == 0:
             return
         estado["extrato_etapa"] = []
+        bastidores_do_jogo(estado, recursos)
         resultado = jogar_partida_do_jogador(estado, recursos, escolha)
+        bastidores_do_jogo(estado, recursos, resultado)
     else:
         estado["extrato_etapa"] = []
     desafio = avaliar_desafio(estado, resultado)
