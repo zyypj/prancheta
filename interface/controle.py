@@ -88,8 +88,9 @@ def tabela_jogadores(jogadores, titulo):
 def escolher_entrada(time, mensagem):
     if not time["banco"] or time["subs"] >= MAX_SUBSTITUICOES:
         console.print(" [red]Sem substituições disponíveis.[/]")
-        pausar()
+        pausar("Enter para continuar...")
         return None
+    limpar()
     console.print(tabela_jogadores(time["banco"], mensagem))
     console.print(" [bold]0[/] Cancelar")
     escolha = ler_opcao(0, len(time["banco"]))
@@ -108,7 +109,7 @@ def menu_substituicao(partida, time_id):
     time = partida["times"][time_id]
     if time["subs"] >= MAX_SUBSTITUICOES or not time["banco"]:
         console.print(" [red]Sem substituições disponíveis.[/]")
-        pausar()
+        pausar("Enter para continuar...")
         return
     limpar()
     console.print(tabela_jogadores(time["em_campo"], f"Em campo ({time['subs']}/{MAX_SUBSTITUICOES} substituições)"))
@@ -127,12 +128,14 @@ def menu_plano_partida(partida, time_id):
     console.print(" [bold]1[/] Estilo   [bold]2[/] Ofensividade   [bold]3[/] Intensidade   [bold]0[/] Voltar")
     escolha = ler_opcao(0, 3)
     if escolha == 1:
-        console.print(" " + "   ".join(f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1)))
-        plano["estilo"] = ESTILOS[ler_opcao(1, len(ESTILOS)) - 1]
+        console.print(" " + "   ".join(f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1)) + "   [bold]0[/] Voltar")
+        novo = ler_opcao(0, len(ESTILOS))
+        if novo:
+            plano["estilo"] = ESTILOS[novo - 1]
     elif escolha == 2:
-        plano["ofensividade"] = ler_opcao(1, 5, " Ofensividade (1 retranca a 5 tudo ao ataque) > ")
+        plano["ofensividade"] = ler_opcao(0, 5, " Ofensividade (1 retranca a 5 tudo ao ataque, 0 mantém) > ") or plano["ofensividade"]
     elif escolha == 3:
-        plano["intensidade"] = ler_opcao(1, 5, " Intensidade (1 a 5) > ")
+        plano["intensidade"] = ler_opcao(0, 5, " Intensidade (1 a 5, 0 mantém) > ") or plano["intensidade"]
 
 
 def mostrar_estatisticas(partida):

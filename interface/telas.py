@@ -17,9 +17,9 @@ def titulo(texto):
     console.print(Panel.fit(f"[bold]{texto}[/]", border_style="green"))
 
 
-def estrelas(forca):
+def nivel_de_forca(forca):
     quantidade = max(1, min(5, (forca - 50) // 7))
-    return "★" * quantidade + "☆" * (5 - quantidade)
+    return f"[green]{'█' * quantidade}[/][dim]{'░' * (5 - quantidade)}[/]"
 
 
 def mostrar_menu_inicial():
@@ -37,10 +37,12 @@ def escolher_clube(clubes_base):
         tabela.add_column(coluna)
     for numero, clube in enumerate(clubes_base, start=1):
         nivel = NIVEIS[clube["nivel"]]
-        tabela.add_row(str(numero), f"[bold {clube['cor']}]{clube['nome']}[/]", nivel["nome"], f"{estrelas(clube['forca'])} {clube['forca']}", nivel["meta"])
+        tabela.add_row(str(numero), f"[bold {clube['cor']}]{clube['nome']}[/]", nivel["nome"], f"{nivel_de_forca(clube['forca'])} {clube['forca']}", nivel["meta"])
     console.print(tabela)
     console.print(" [dim]Clubes menores pontuam mais no ranking (médio x1,3, pequeno x1,6).[/]")
-    return clubes_base[ler_opcao(1, len(clubes_base)) - 1]["id"]
+    console.print(" [bold]0[/] Voltar")
+    escolha = ler_opcao(0, len(clubes_base))
+    return clubes_base[escolha - 1]["id"] if escolha else None
 
 
 def texto_jogo(estado, jogo):
@@ -106,6 +108,7 @@ def mostrar_elenco(clube):
 
 
 def trocar_titular(clube):
+    limpar()
     tabela, jogadores = tabela_elenco(clube)
     console.print(tabela)
     console.print(" [bold]0[/] Cancelar")
@@ -141,17 +144,21 @@ def editar_plano(clube):
             return
         if escolha == 1:
             nomes = list(FORMACOES)
-            console.print(" " + "   ".join(f"[bold]{n}[/] {f}" for n, f in enumerate(nomes, start=1)))
-            plano["formacao"] = nomes[ler_opcao(1, len(nomes)) - 1]
-            clube["titulares"] = escalar_automatico(clube["elenco"], plano["formacao"])
-            mensagem = "Time reescalado para a nova formação."
+            console.print(" " + "   ".join(f"[bold]{n}[/] {f}" for n, f in enumerate(nomes, start=1)) + "   [bold]0[/] Voltar")
+            nova = ler_opcao(0, len(nomes))
+            if nova:
+                plano["formacao"] = nomes[nova - 1]
+                clube["titulares"] = escalar_automatico(clube["elenco"], plano["formacao"])
+                mensagem = "Time reescalado para a nova formação."
         elif escolha == 2:
-            console.print(" " + "   ".join(f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1)))
-            plano["estilo"] = ESTILOS[ler_opcao(1, len(ESTILOS)) - 1]
+            console.print(" " + "   ".join(f"[bold]{n}[/] {NOMES_ESTILOS[e]}" for n, e in enumerate(ESTILOS, start=1)) + "   [bold]0[/] Voltar")
+            novo = ler_opcao(0, len(ESTILOS))
+            if novo:
+                plano["estilo"] = ESTILOS[novo - 1]
         elif escolha == 3:
-            plano["ofensividade"] = ler_opcao(1, 5, " Ofensividade (1 retranca a 5 tudo ao ataque) > ")
+            plano["ofensividade"] = ler_opcao(0, 5, " Ofensividade (1 retranca a 5 tudo ao ataque, 0 mantém) > ") or plano["ofensividade"]
         elif escolha == 4:
-            plano["intensidade"] = ler_opcao(1, 5, " Intensidade (1 a 5, mais alta cansa mais) > ")
+            plano["intensidade"] = ler_opcao(0, 5, " Intensidade (1 a 5, mais alta cansa mais, 0 mantém) > ") or plano["intensidade"]
         elif escolha == 5:
             clube["titulares"] = escalar_automatico(clube["elenco"], plano["formacao"])
             mensagem = "Escalados os melhores disponíveis."
@@ -249,7 +256,7 @@ def mostrar_fim_de_jogo(estado, resultado):
     console.print(tabela)
     console.print(" [bold]Súmula:[/]")
     mostrar_sumula(resultado["sumula"])
-    pausar()
+    pausar("Enter para continuar...")
 
 
 def mostrar_resultados_rodada(estado, resultados, informacao, numero):
@@ -264,7 +271,7 @@ def mostrar_resultados_rodada(estado, resultados, informacao, numero):
     console.print(f"\n Confiança da diretoria: [{cor}]{sinal}[/] → {barra(estado['confianca'], 20)}")
     if informacao["trocados"]:
         console.print(f" [yellow]Desfalques substituídos na escalação: {', '.join(informacao['trocados'])}[/]")
-    pausar()
+    pausar("Enter para continuar...")
 
 
 def mostrar_evento(evento):
@@ -279,7 +286,7 @@ def mostrar_evento(evento):
 
 def mostrar_mensagem(texto, estilo="bold"):
     console.print(f"\n [{estilo}]{texto}[/]")
-    pausar()
+    pausar("Enter para continuar...")
 
 
 def mostrar_final(resumo):
@@ -289,7 +296,7 @@ def mostrar_final(resumo):
     console.print(f" Clube: {resumo['clube']}   Meta: {resumo['meta']}")
     console.print(f" Posição final: {resumo['posicao']}º   Pontos: {resumo['pontos']}   Saldo: {resumo['saldo']:+d}")
     console.print(f" Pontuação no ranking: [bold]{resumo['pontuacao']}[/]")
-    pausar()
+    pausar("Enter para continuar...")
 
 
 def mostrar_ranking(linhas):
@@ -301,7 +308,7 @@ def mostrar_ranking(linhas):
         for coluna in ("#", "Técnico", "Clube", "Pos", "Pts", "Pontuação", "Desfecho", "Data"):
             tabela.add_column(coluna)
         for numero, linha in enumerate(linhas, start=1):
-            tabela.add_row(str(numero), linha["tecnico"], linha["clube"], linha["posicao"], linha["pontos"], linha["pontuacao"], linha["desfecho"], linha["data"])
+            tabela.add_row(str(numero), *[str(linha.get(campo) or "-") for campo in ("tecnico", "clube", "posicao", "pontos", "pontuacao", "desfecho", "data")])
         console.print(tabela)
     pausar()
 
