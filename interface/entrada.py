@@ -36,6 +36,18 @@ def ler_opcao(minimo, maximo, rotulo=" > "):
         console.print(f"[red]Digite um número de {minimo} a {maximo}.[/]")
 
 
+def ler_valor(rotulo, minimo, maximo):
+    while True:
+        texto = console.input(rotulo).strip().replace(",", ".")
+        try:
+            valor = round(float(texto), 1)
+        except ValueError:
+            valor = None
+        if valor is not None and (valor == 0 or minimo <= valor <= maximo):
+            return valor
+        console.print(f"[red]Digite um valor entre {minimo} e {maximo} (0 cancela).[/]")
+
+
 def ler_texto(rotulo, minimo=2, maximo=20):
     while True:
         texto = " ".join(console.input(rotulo).split())

@@ -40,12 +40,32 @@ def sortear_nome(banco, usados):
     return nome
 
 
-def criar_jogador(identificador, nome, posicao, qualidade):
+def rotulo(jogador):
+    return f"{jogador['pos']} {jogador['nome']}"
+
+
+def valor_de_mercado(jogador):
+    base = (max(jogador["qualidade"], 41) - 40) / 10
+    valor = base ** 3 * 0.5
+    idade = jogador.get("idade", 26)
+    if idade <= 23:
+        valor *= 1.3
+    elif idade >= 31:
+        valor *= 0.6
+    return round(max(valor, 0.1), 1)
+
+
+def sortear_idade():
+    return random.randint(18, 34)
+
+
+def criar_jogador(identificador, nome, posicao, qualidade, idade=None):
     jogador = {
         "id": identificador,
         "nome": nome,
         "pos": posicao,
         "qualidade": qualidade,
+        "idade": idade or sortear_idade(),
         "energia": 100,
         "amarelos": 0,
         "suspenso": 0,
@@ -122,7 +142,7 @@ def completar_titulares(clube):
         clube["titulares"] = validos
         return []
     sugestao = escalar_automatico(clube["elenco"], clube["plano"]["formacao"])
-    trocados = [por_id[identificador]["nome"] for identificador in clube["titulares"] if
+    trocados = [rotulo(por_id[identificador]) for identificador in clube["titulares"] if
                 identificador not in validos and identificador in por_id]
     for identificador in sugestao:
         if len(validos) >= 11:

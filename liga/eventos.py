@@ -1,6 +1,7 @@
 import random
 
-from elenco.escalacao import criar_jogador, limitar, sortear_nome, valor_para_escalar
+from elenco.escalacao import criar_jogador, limitar, rotulo, sortear_nome, valor_de_mercado, valor_para_escalar
+from mercado.transferencias import dinheiro
 from liga.temporada import ajustar_confianca, clube_do_jogador
 
 
@@ -21,7 +22,7 @@ def escolher_alvo(clube, alvo):
 
 def preparar_evento(evento, clube):
     jogador = escolher_alvo(clube, evento.get("alvo", "nenhum"))
-    nome = jogador["nome"] if jogador else ""
+    nome = rotulo(jogador) if jogador else ""
     return {
         "id": evento["id"],
         "texto": evento["texto"].replace("{jogador}", nome),
@@ -49,29 +50,31 @@ def aplicar_efeito(estado, efeito, jogador_id, banco):
     jogador = next((j for j in clube["elenco"] if j["id"] == jogador_id), None)
     if efeito == "grande_fase" and jogador:
         jogador["fase"] = 2
-        return f"{jogador['nome']} ganha +5 de qualidade nas próximas 2 rodadas."
+        return f"{rotulo(jogador)} ganha +5 de qualidade nas próximas 2 rodadas."
     if efeito == "lesao_treino" and jogador:
         jogador["lesao"] = random.randint(1, 3)
-        return f"{jogador['nome']} fica fora por {jogador['lesao']} rodada(s)."
+        return f"{rotulo(jogador)} fica fora por {jogador['lesao']} rodada(s)."
     if efeito == "reuniao":
         ajustar_confianca(estado, 2)
         return "O grupo se acertou. Confiança da diretoria +2."
     if efeito == "afastar" and jogador:
         jogador["suspenso"] = max(jogador["suspenso"], 1)
         ajustar_confianca(estado, 5)
-        return f"{jogador['nome']} fica fora da próxima rodada. A diretoria aprovou a firmeza: confiança +5."
+        return f"{rotulo(jogador)} fica fora da próxima rodada. A diretoria aprovou a firmeza: confiança +5."
     if efeito == "vender" and jogador:
         clube["elenco"].remove(jogador)
         if jogador["id"] in clube["titulares"]:
             clube["titulares"].remove(jogador["id"])
         garoto = novo_garoto(estado, clube, banco, limitar(jogador["qualidade"] - 12, 40, 92), jogador["pos"])
         clube["elenco"].append(garoto)
+        valor = round(valor_de_mercado(jogador) * 1.2, 1)
+        clube["caixa"] = round(clube.get("caixa", 0) + valor, 1)
         ajustar_confianca(estado, 6)
-        return f"{jogador['nome']} foi vendido. {garoto['nome']} sobe da base no lugar. Confiança +6."
+        return f"{rotulo(jogador)} foi vendido por {dinheiro(valor)}. {rotulo(garoto)} sobe da base no lugar. Confiança +6."
     if efeito == "segurar" and jogador:
         jogador["fase"] = max(jogador["fase"], 1)
         ajustar_confianca(estado, -3)
-        return f"{jogador['nome']} fica e joga motivado na próxima rodada. A diretoria não gostou: confiança -3."
+        return f"{rotulo(jogador)} fica e joga motivado na próxima rodada. A diretoria não gostou: confiança -3."
     if efeito == "base":
         linha = [j for j in clube["elenco"] if j["pos"] != "GOL"]
         pior = min(linha, key=valor_para_escalar)
@@ -81,7 +84,7 @@ def aplicar_efeito(estado, efeito, jogador_id, banco):
         if pior["id"] in clube["titulares"]:
             clube["titulares"].remove(pior["id"])
         clube["elenco"].append(garoto)
-        return f"{garoto['nome']} ({garoto['pos']}, qualidade {garoto['qualidade']}) entra no lugar de {pior['nome']}."
+        return f"{rotulo(garoto)} (qualidade {garoto['qualidade']}) entra no lugar de {rotulo(pior)}."
     if efeito == "protesto":
         ajustar_confianca(estado, -5)
         return "A pressão aumentou. Confiança da diretoria -5."
