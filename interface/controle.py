@@ -151,7 +151,8 @@ def humano_bater_penalti(partida, time_id, batedor, goleiro):
     Deixa o jogador cobrar um pênalti a favor.
 
     Mostra a tela do pênalti e pede o canto (esquerda, meio ou direita) e a força da batida: colocado, que
-    quase nunca sai, ou forte, que é difícil de pegar mas pode ir para fora.
+    quase nunca sai, forte, que é difícil de pegar mas pode ir para fora, ou paradinha, que engana o goleiro
+    a não ser que ele espere.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -165,8 +166,11 @@ def humano_bater_penalti(partida, time_id, batedor, goleiro):
     nome_goleiro = rotulo(goleiro) if goleiro else "ninguém"
     tela_penalti(partida, time_id, f"PÊNALTI A FAVOR! {rotulo(batedor)} contra {nome_goleiro}.")
     canto = CANTOS[ler_opcao(1, 3, " Canto (1-3) > ") - 1]
-    console.print(" [bold]1[/] Colocado (quase nunca sai)   [bold]2[/] Forte (difícil de pegar, pode ir pra fora)")
-    forca = FORCAS_PENALTI[ler_opcao(1, 2, " Força > ") - 1]
+    console.print(
+        " [bold]1[/] Colocado (quase nunca sai)   [bold]2[/] Forte (difícil de pegar, pode ir pra fora)"
+        "   [bold]3[/] Paradinha (engana o goleiro, mas ele pode esperar)"
+    )
+    forca = FORCAS_PENALTI[ler_opcao(1, 3, " Força > ") - 1]
     return canto, forca
 
 

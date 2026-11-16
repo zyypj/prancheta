@@ -15,6 +15,8 @@ LARGURA_AREA = 7
 LINHAS_FAIXA = {0: 1, 1: 3, 2: 5}
 LINHAS_FAIXA_AREA = {0: 2, 1: 3, 2: 4}
 COLUNAS_ZONA = {
+    "saida": LARGURA_AREA // 2 + 1,
+    "defesa": (LARGURA_AREA + 1 + SEPARADORES[1]) // 2,
     "meio": LARGURA_CAMPO // 2,
     "ataque": (SEPARADORES[2] + LARGURA_CAMPO - 2 - LARGURA_AREA) // 2,
     "area": LARGURA_CAMPO - 2 - LARGURA_AREA // 2,

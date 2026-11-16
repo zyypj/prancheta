@@ -2,7 +2,8 @@ import random
 
 from elenco.escalacao import limitar, rotulo
 from elenco.substituicoes import melhor_substituto, pode_substituir
-from partida.lances import CANTOS, FORCAS_PENALTI, criar_partida, fazer_substituicao, goleiro_de, jogar_partida
+from partida.jogo import jogar_partida
+from partida.lances import CANTOS, FORCAS_PENALTI, criar_partida, fazer_substituicao, goleiro_de
 
 SUBSTITUICOES_IA = 3
 
@@ -127,7 +128,9 @@ def ia_bater_penalti(partida, time_id, batedor, goleiro):
         tuple: Par (canto, força). O canto é "esquerda" ou "direita" com 42% de chance cada e "meio" com 16%;
             a força é "colocado" ou "forte", com a mesma chance.
     """
-    return random.choices(CANTOS, weights=(0.42, 0.16, 0.42))[0], random.choice(FORCAS_PENALTI)
+    return random.choices(CANTOS, weights=(0.42, 0.16, 0.42))[0], random.choices(
+        FORCAS_PENALTI, weights=(0.45, 0.35, 0.2)
+    )[0]
 
 
 def ia_defender_penalti(partida, time_id, batedor, goleiro):

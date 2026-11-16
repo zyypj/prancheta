@@ -25,7 +25,8 @@ from liga.temporada import (
     temporada_acabou,
 )
 from mercado.transferencias import movimentar_mercado
-from partida.lances import criar_partida, jogar_partida
+from partida.jogo import jogar_partida
+from partida.lances import criar_partida
 from partida.narracao import carregar_frases
 from partida.simulacao import CONTROLE_IA, plano_ia
 from persistencia.arquivos import anexar_txt, ler_json, ler_linhas_txt
