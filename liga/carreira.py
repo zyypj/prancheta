@@ -343,6 +343,23 @@ def virar_o_ano(jogador):
     return variacao
 
 
+def proteger_numeracao(estado):
+    """
+    Guarda em cada clube o maior número de identificador já usado com o prefixo dele.
+
+    Assim um garoto da base nunca herda o identificador de quem se aposentou ou foi vendido ao exterior, mesmo
+    em saves antigos, que ainda não guardavam esse número.
+
+    Args:
+        estado (dict): Estado da carreira.
+    """
+    todos = [jogador for clube in estado["clubes"].values() for jogador in clube["elenco"]] + estado.get("livres", [])
+    for clube in estado["clubes"].values():
+        prefixo = f"{clube['id']}-"
+        numeros = [int(j["id"][len(prefixo) :]) for j in todos if j["id"].startswith(prefixo)]
+        clube["ultimo_id"] = max(numeros + [clube.get("ultimo_id", 0)])
+
+
 def garoto_da_base(estado, clube, banco, posicao, joia=False):
     """
     Sobe um garoto das categorias de base para o elenco do clube.
@@ -416,6 +433,7 @@ def renovar_livres(estado, banco):
     Returns:
         int: Quantidade de jogadores novos no mercado.
     """
+    numeros = [int(jogador["id"][4:]) for jogador in estado["livres"] if jogador["id"].startswith("liv-")]
     livres = []
     for jogador in estado["livres"]:
         idade = jogador.get("idade", 26)
@@ -426,7 +444,7 @@ def renovar_livres(estado, banco):
     estado["livres"] = livres
     todos = [jogador for clube in estado["clubes"].values() for jogador in clube["elenco"]] + livres
     usados = {jogador["nome"] for jogador in todos}
-    numeros = [int(jogador["id"][4:]) for jogador in todos if jogador["id"].startswith("liv-")]
+    numeros += [int(jogador["id"][4:]) for jogador in todos if jogador["id"].startswith("liv-")]
     numero = max(numeros + [estado.get("ultimo_livre", 0)])
     novos = 0
     while len(estado["livres"]) < AGENTES_LIVRES:
@@ -481,7 +499,8 @@ def nova_temporada(estado, banco, confianca):
     """
     Começa a próxima temporada da carreira.
 
-    Renova os elencos de todos os clubes (evolução pela idade, aposentadorias e garotos da base) e a lista de
+    Guarda a numeração dos identificadores (proteger_numeracao), renova os elencos de todos os clubes
+    (evolução pela idade, aposentadorias e garotos da base) e a lista de
     jogadores sem clube, recalcula a força de cada clube, refaz as escalações, gera o calendário das duas
     divisões e a copa pela classificação anterior, zera a tabela, o histórico, as súmulas, os desafios, os
     objetivos e o extrato, e define a confiança inicial da diretoria.
@@ -496,6 +515,7 @@ def nova_temporada(estado, banco, confianca):
             força antiga e nova, e quantos jogadores novos chegaram ao mercado.
     """
     estado["temporada"] = estado.get("temporada", 1) + 1
+    proteger_numeracao(estado)
     meu = clube_do_jogador(estado)
     forca_antiga = meu["forca"]
     relatorio = {}
@@ -592,6 +612,7 @@ def migrar_save(estado, clubes_base, banco, frases):
         clube["divisao"] = base.get("divisao", 2)
         clube["caixa"] = NIVEIS[clube["nivel"]]["caixa"]
         clube["elenco"] = gerar_elenco(clube, banco, usados)
+        clube["ultimo_id"] = len(clube["elenco"])
         clube["titulares"] = escalar_automatico(clube["elenco"], clube["plano"]["formacao"])
         estado["clubes"][clube["id"]] = clube
         novos[clube["id"]] = clube
@@ -608,6 +629,7 @@ def migrar_save(estado, clubes_base, banco, frases):
                 rodada.append({chave: resultado[chave] for chave in ("mandante", "visitante", "gm", "gv")})
             for clube in novos.values():
                 preparar_proxima_rodada(clube["elenco"])
+    proteger_numeracao(estado)
     copa = estado["copa"]
     no_sorteio = [clube_id for jogos in copa["confrontos"].values() for jogo in jogos for clube_id in jogo]
     copa.setdefault("participantes", list(dict.fromkeys(copa["classificados"] + no_sorteio)))

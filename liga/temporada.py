@@ -44,7 +44,8 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
     Cria o estado inicial de uma nova temporada.
 
     Copia cada clube base, com a sua divisão, define o caixa inicial conforme o nível do clube, gera o elenco
-    com nomes que não se repetem e escala os titulares automaticamente. Em seguida monta o calendário das duas
+    com nomes que não se repetem (guardando o último número de identificador usado) e escala os titulares
+    automaticamente. Em seguida monta o calendário das duas
     divisões, a copa, os agentes livres e a tabela zerada, começando com a confiança da diretoria em
     CONFIANCA_INICIAL. A reputação do técnico começa conforme o nível do clube escolhido (REPUTACAO_INICIAL),
     com um ponto a menos na Série B, e a carreira começa na temporada 1.
@@ -66,6 +67,7 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
         clube["divisao"] = base.get("divisao", 1)
         clube["caixa"] = NIVEIS[clube["nivel"]]["caixa"]
         clube["elenco"] = gerar_elenco(clube, banco_nomes, usados)
+        clube["ultimo_id"] = len(clube["elenco"])
         clube["titulares"] = escalar_automatico(clube["elenco"], clube["plano"]["formacao"])
         clubes[clube["id"]] = clube
     ids = list(clubes)
