@@ -282,7 +282,7 @@ def quem_assume(clube, jogador):
 
 def tela_proposta(estado, evento):
     """
-    Mostra a proposta de um clube do exterior e conduz a negociação.
+    Mostra a proposta de um clube do exterior ou do país e conduz a negociação.
 
     Exibe a ficha do jogador, o valor de mercado, a oferta atual com a porcentagem sobre o valor, como o caixa
     fica se vender, quem assume a vaga, a qualidade do garoto que sobe da base e o efeito de cada decisão na
@@ -304,7 +304,7 @@ def tela_proposta(estado, evento):
     substituto = quem_assume(clube, jogador)
     historico = []
     while True:
-        titulo("EVENTO DA SEMANA — PROPOSTA DO EXTERIOR")
+        titulo(evento.get("titulo", "EVENTO DA SEMANA — PROPOSTA DO EXTERIOR"))
         console.print(f" O [bold]{interessado}[/] quer contratar [bold]{rotulo(jogador)}[/].\n")
         console.print(ficha_do_jogador(clube, jogador))
         oferta = negociacao["oferta"]

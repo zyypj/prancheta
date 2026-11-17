@@ -1,3 +1,4 @@
+import random
 import sys
 
 from config import (
@@ -7,18 +8,41 @@ from config import (
     ARQUIVO_NARRACAO,
     ARQUIVO_NOMES,
     ARQUIVO_TIMES,
+    CHANCE_PROPOSTA_SEMANA,
+    CONFIANCA_INICIAL,
+    CONFIANCA_RENOVADO,
+    CONFIANCA_SEGUNDA_CHANCE,
     PASTA_SUMULAS,
+    VERSAO_SAVE,
 )
 from elenco.escalacao import completar_titulares, ler_banco_de_nomes
 from interface import telas
 from interface.campo import criar_exibidor
+from interface.carreira import (
+    escolher_proposta,
+    mostrar_carreira,
+    mostrar_decisao,
+    mostrar_nova_temporada,
+    mostrar_virada,
+)
 from interface.controle import CONTROLE_HUMANO, menu_pausa
 from interface.entrada import confirmar, console, ler_texto
 from interface.mercado import tela_mercado, tela_proposta
 from interface.treino import tela_treino
 from liga.bastidores import aplicar_bastidor, cobrar_promessa, sortear_bastidor, sortear_entrevista
+from liga.carreira import (
+    assumir_clube,
+    atualizar_reputacao,
+    avaliar_diretoria,
+    fechar_divisoes,
+    migrar_save,
+    nova_temporada,
+    propostas_da_janela,
+    propostas_de_emprego,
+    registrar_na_carreira,
+)
 from liga.desafios import atualizar_objetivos, avaliar_desafio
-from liga.eventos import aplicar_efeito, escolher_evento
+from liga.eventos import aplicar_efeito, criar_proposta, escolher_evento
 from liga.temporada import (
     adversario_de,
     avancar_etapa,
@@ -31,6 +55,7 @@ from liga.temporada import (
     jogo_do_jogador,
     jogo_neutro,
     mata_mata,
+    meta_do_clube,
     resumo_final,
     simular_outros_jogos,
     temporada_acabou,
@@ -178,6 +203,46 @@ def bastidores_do_jogo(estado, recursos, resultado=None):
     telas.mostrar_mensagem(aplicar_bastidor(estado, efeito, tela["jogador_id"]))
 
 
+def negociar_proposta(estado, recursos, evento):
+    """
+    Abre a tela de negociação de uma proposta por um jogador e aplica o que foi decidido.
+
+    O valor acertado na negociação é o que entra no caixa; se o comprador é um clube do país, o jogador vai
+    para o elenco dele.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Recursos carregados, com o banco de nomes para o garoto da base.
+        evento (dict): Proposta no formato de evento, com a negociação.
+
+    Returns:
+        str: Mensagem sobre o que aconteceu.
+    """
+    efeito = tela_proposta(estado, evento)
+    negociacao = evento["negociacao"]
+    return aplicar_efeito(
+        estado, efeito, evento["jogador_id"], recursos["nomes"], negociacao["acordo"], negociacao.get("comprador_id")
+    )
+
+
+def proposta_da_semana(estado, recursos):
+    """
+    Com CHANCE_PROPOSTA_SEMANA (30%), traz uma proposta de outro clube por um jogador do elenco.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        recursos (dict): Recursos carregados.
+    """
+    if random.random() >= CHANCE_PROPOSTA_SEMANA:
+        return
+    evento = criar_proposta(estado)
+    if not evento:
+        return
+    mensagem = negociar_proposta(estado, recursos, evento)
+    completar_titulares(clube_do_jogador(estado))
+    telas.mostrar_mensagem(mensagem)
+
+
 def evento_da_semana(estado, recursos, resultado=None):
     """
     Executa um evento aleatório após uma rodada.
@@ -187,6 +252,9 @@ def evento_da_semana(estado, recursos, resultado=None):
     aplica o efeito escolhido. Quando o evento é uma proposta por um jogador, abre a tela de negociação, e o
     valor acertado nela é o que entra no caixa. No fim, atualiza a escalação do clube.
 
+    Returns:
+        bool: True se o evento da semana já foi uma proposta por um jogador.
+
     Args:
         estado (dict): Estado atual da temporada.
         recursos (dict): Dados dos eventos e jogadores.
@@ -194,18 +262,22 @@ def evento_da_semana(estado, recursos, resultado=None):
     """
     clube = clube_do_jogador(estado)
     discussao = sortear_discussao(estado, resultado)
+    proposta = False
     if discussao:
         efeito = telas.mostrar_evento(discussao, "VESTIÁRIO")
         mensagem = resolver_discussao(estado, discussao, efeito)
     else:
         evento = escolher_evento(recursos["eventos"], clube, estado.get("eventos_recentes", []))
         estado["eventos_recentes"] = (estado.get("eventos_recentes", []) + [evento["id"]])[-4:]
-        negociacao = evento["negociacao"]
-        efeito = tela_proposta(estado, evento) if negociacao else telas.mostrar_evento(evento)
-        valor_venda = negociacao["acordo"] if negociacao else None
-        mensagem = aplicar_efeito(estado, efeito, evento["jogador_id"], recursos["nomes"], valor_venda)
+        proposta = bool(evento["negociacao"])
+        if proposta:
+            mensagem = negociar_proposta(estado, recursos, evento)
+        else:
+            efeito = telas.mostrar_evento(evento)
+            mensagem = aplicar_efeito(estado, efeito, evento["jogador_id"], recursos["nomes"])
     completar_titulares(clube)
     telas.mostrar_mensagem(mensagem)
+    return proposta
 
 
 def escolher_como_jogar(estado):
@@ -275,7 +347,8 @@ def jogar_etapa(estado, recursos):
     jogo, avalia o desafio da diretoria, simula os
     outros jogos, registra a súmula, fecha a rodada ou a fase e confere os objetivos da temporada. Depois
     movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento
-    da semana e salva o jogo automaticamente.
+    da semana (e, se ele não foi uma proposta, talvez uma proposta por um jogador) e salva o jogo
+    automaticamente.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -297,13 +370,14 @@ def jogar_etapa(estado, recursos):
     desafio = avaliar_desafio(estado, resultado)
     with console.status("Simulando os outros jogos..."):
         resultados = ([resultado] if resultado else []) + simular_outros_jogos(estado, recursos["frases"])
+    temporada = estado.get("temporada", 1)
     if competicao == "liga":
-        registrar_sumula(estado, resultado, str(valor), f"Liga, rodada {valor}")
+        registrar_sumula(estado, resultado, str(valor), f"Temporada {temporada}, liga, rodada {valor}")
         informacao = fechar_rodada(estado, resultados)
         titulo_tela = f"RESULTADOS DA RODADA {valor}"
     else:
         if resultado:
-            registrar_sumula(estado, resultado, f"copa-{valor}", descricao_etapa(etapa))
+            registrar_sumula(estado, resultado, f"copa-{valor}", f"Temporada {temporada}, {descricao_etapa(etapa)}")
         informacao = fechar_fase_copa(estado, resultados)
         titulo_tela = f"RESULTADOS — {descricao_etapa(etapa).upper()}"
     informacao["desafio"] = desafio
@@ -311,28 +385,159 @@ def jogar_etapa(estado, recursos):
     noticias = movimentar_mercado(estado, recursos["nomes"])
     telas.mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias)
     avancar_etapa(estado)
-    if not temporada_acabou(estado):
-        evento_da_semana(estado, recursos, resultado)
+    if not temporada_acabou(estado) and not evento_da_semana(estado, recursos, resultado):
+        proposta_da_semana(estado, recursos)
     if salvar_jogo(estado):
         console.print(" [dim]Jogo salvo automaticamente.[/]")
 
 
-def encerrar_temporada(estado):
+def registrar_resumo(estado, resumo):
     """
-    Encerra a temporada e mostra o resumo final.
+    Grava o resumo da temporada no ranking e no histórico da carreira, uma única vez por temporada e clube.
 
-    Confere os objetivos que só valem no fim (como o saldo de gols), calcula a pontuação do técnico e grava no
-    ranking uma única vez, mesmo que o save seja aberto de novo depois do fim.
+    A chave "temporada-clube" fica em estado["registros"], para que reabrir o save depois do fim não grave a
+    mesma temporada de novo.
 
     Args:
-        estado (dict): Estado da temporada encerrada.
+        estado (dict): Estado da carreira.
+        resumo (dict): Resumo montado por resumo_final.
+    """
+    chave = f"{resumo['temporada']}-{estado['clube_id']}"
+    registros = estado.setdefault("registros", [])
+    if chave in registros:
+        return
+    registrar_ranking(resumo)
+    registrar_na_carreira(estado, resumo)
+    registros.append(chave)
+
+
+def encerrar_carreira(estado):
+    """
+    Encerra a carreira do técnico, que recusou as propostas ou ficou sem clube, e mostra o histórico.
+
+    Args:
+        estado (dict): Estado da carreira.
+    """
+    estado["carreira_encerrada"] = True
+    salvar_jogo(estado)
+    mostrar_carreira(estado)
+    telas.mostrar_mensagem("Fim da carreira. Obrigado por jogar!", "bold green")
+
+
+def escolher_novo_clube(estado, titulo_tela):
+    """
+    Mostra as propostas de emprego depois de uma demissão e troca de clube se o técnico aceitar uma.
+
+    Args:
+        estado (dict): Estado da carreira.
+        titulo_tela (str): Título da tela de propostas.
+
+    Returns:
+        bool: True se o técnico assumiu outro clube, False se encerrou a carreira.
+    """
+    propostas = propostas_de_emprego(estado, "demitido")
+    escolha = escolher_proposta(
+        estado, propostas, titulo_tela, "Encerrar a carreira", " Recusar todas e encerrar a carreira?"
+    )
+    if not escolha:
+        encerrar_carreira(estado)
+        return False
+    assumir_clube(estado, escolha)
+    clube = clube_do_jogador(estado)
+    telas.mostrar_mensagem(f"Você é o novo técnico do {clube['nome']}! Meta: {meta_do_clube(clube)[0]}.", "bold green")
+    return True
+
+
+def tratar_demissao(estado):
+    """
+    Trata a demissão no meio da temporada, quando a confiança da diretoria chega a zero.
+
+    Grava o trecho da temporada no ranking e na carreira, tira um ponto de reputação, mostra o resumo e as
+    propostas de outros clubes. Se o técnico aceitar uma, assume o clube na mesma temporada.
+
+    Args:
+        estado (dict): Estado da carreira.
+
+    Returns:
+        bool: True se a carreira continua em outro clube.
+    """
+    resumo = resumo_final(estado)
+    registrar_resumo(estado, resumo)
+    atualizar_reputacao(estado, resumo, True)
+    telas.mostrar_final(resumo)
+    continua = escolher_novo_clube(estado, "PROPOSTAS DE EMPREGO")
+    if continua:
+        salvar_jogo(estado)
+    return continua
+
+
+def janela_de_transferencias(estado, recursos):
+    """
+    Abre a janela de transferências entre uma temporada e outra, com de 1 a 3 propostas por jogadores.
+
+    Args:
+        estado (dict): Estado da carreira, já na nova temporada.
+        recursos (dict): Recursos carregados.
+    """
+    propostas = propostas_da_janela(estado)
+    if not propostas:
+        return
+    telas.mostrar_mensagem(f"Janela de transferências aberta: {len(propostas)} proposta(s) pelos seus jogadores.")
+    for evento in propostas:
+        clube = clube_do_jogador(estado)
+        if not any(jogador["id"] == evento["jogador_id"] for jogador in clube["elenco"]):
+            continue
+        mensagem = negociar_proposta(estado, recursos, evento)
+        completar_titulares(clube)
+        telas.mostrar_mensagem(mensagem)
+
+
+def virar_temporada(estado, recursos):
+    """
+    Fecha a temporada e prepara a próxima.
+
+    Confere os objetivos finais, grava o resumo, fecha as divisões (prêmios, acesso e rebaixamento) e deixa a
+    diretoria decidir se o técnico fica. Renovado, ele pode receber convites de clubes maiores; com a segunda
+    chance, fica com a confiança mais baixa; demitido (ou se a confiança zerou na última etapa), recebe
+    propostas de outros clubes ou encerra a carreira. Depois começa a nova temporada, mostra o que mudou e
+    abre a janela de transferências.
+
+    Args:
+        estado (dict): Estado da temporada que acabou.
+        recursos (dict): Recursos carregados.
+
+    Returns:
+        bool: True se a carreira continua.
     """
     atualizar_objetivos(estado)
     resumo = resumo_final(estado)
-    if not estado.get("ranking_registrado"):
-        estado["ranking_registrado"] = registrar_ranking(resumo)
-        salvar_jogo(estado)
+    registrar_resumo(estado, resumo)
     telas.mostrar_final(resumo)
+    mostrar_virada(estado, fechar_divisoes(estado))
+    if estado["demitido"]:
+        decisao = {"decisao": "demitido", "a_favor": [], "contra": ["a confiança da diretoria zerou"], "chance": 0}
+    else:
+        decisao = avaliar_diretoria(estado, resumo)
+    atualizar_reputacao(estado, resumo, decisao["decisao"] == "demitido")
+    mostrar_decisao(estado, decisao)
+    confianca = CONFIANCA_RENOVADO if decisao["decisao"] == "renovado" else CONFIANCA_SEGUNDA_CHANCE
+    if decisao["decisao"] == "demitido":
+        if not escolher_novo_clube(estado, "PROPOSTAS PARA A PRÓXIMA TEMPORADA"):
+            return False
+        confianca = CONFIANCA_INICIAL
+    elif decisao["decisao"] == "renovado":
+        convites = propostas_de_emprego(estado, "convite")
+        atual = clube_do_jogador(estado)["nome"]
+        escolha = convites and escolher_proposta(estado, convites, "CONVITES DE OUTROS CLUBES", f"Ficar no {atual}")
+        if escolha:
+            assumir_clube(estado, escolha)
+            confianca = CONFIANCA_INICIAL
+    with console.status("Preparando a nova temporada..."):
+        relatorio = nova_temporada(estado, recursos["nomes"], confianca)
+    mostrar_nova_temporada(estado, relatorio)
+    janela_de_transferencias(estado, recursos)
+    salvar_jogo(estado)
+    return True
 
 
 def central(estado, recursos):
@@ -340,17 +545,26 @@ def central(estado, recursos):
     Mantém o usuário na central do clube durante a temporada.
 
     Mostra a central e executa a opção escolhida: próximo jogo, elenco, plano de jogo, treino, classificação,
-    copa, rodadas, mercado, clubes, finanças e objetivos ou salvar. Ao voltar, pergunta se deve salvar. Quando a
-    temporada acaba, encerra e sai.
+    copa, rodadas, mercado, clubes, finanças e objetivos, carreira ou salvar. Ao voltar, pergunta se deve
+    salvar. Quando a temporada acaba, vira para a próxima; quando o técnico é demitido no meio dela, mostra as
+    propostas de outros clubes. Se a carreira termina, volta ao menu.
 
     Args:
         estado (dict): Estado atual da temporada.
         recursos (dict): Recursos carregados do jogo.
     """
     while True:
-        if temporada_acabou(estado):
-            encerrar_temporada(estado)
+        if estado.get("carreira_encerrada"):
+            telas.mostrar_mensagem("Esta carreira já terminou. Comece um novo jogo para treinar outro clube.")
             return
+        if estado["encerrado"]:
+            if not virar_temporada(estado, recursos):
+                return
+            continue
+        if temporada_acabou(estado):
+            if not tratar_demissao(estado):
+                return
+            continue
         escolha = telas.mostrar_central(estado)
         clube = clube_do_jogador(estado)
         if escolha == 1:
@@ -374,6 +588,8 @@ def central(estado, recursos):
         elif escolha == 10:
             telas.mostrar_financas(estado)
         elif escolha == 11:
+            mostrar_carreira(estado)
+        elif escolha == 12:
             mensagem = "Jogo salvo!" if salvar_jogo(estado) else "Não foi possível salvar o jogo."
             telas.mostrar_mensagem(mensagem)
         elif confirmar(" Salvar antes de voltar ao menu?"):
@@ -387,7 +603,8 @@ def abrir_save(recursos):
     """
     Lista os saves, carrega o escolhido e abre a central do clube.
 
-    Mostra um aviso se o arquivo estiver corrompido ou for de uma versão antiga.
+    Saves da versão 2 são migrados para a versão atual, ganhando a Série B. Mostra um aviso se o arquivo
+    estiver corrompido ou for de uma versão que não dá para abrir.
 
     Args:
         recursos (dict): Recursos carregados do jogo.
@@ -396,6 +613,9 @@ def abrir_save(recursos):
     if not caminho:
         return
     estado = carregar_jogo(caminho)
+    if estado and estado["versao"] != VERSAO_SAVE:
+        with console.status("Atualizando o save para a versão com Série B..."):
+            migrar_save(estado, recursos["clubes"], recursos["nomes"], recursos["frases"])
     if estado:
         central(estado, recursos)
     else:

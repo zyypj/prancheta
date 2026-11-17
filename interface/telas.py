@@ -6,13 +6,17 @@ from rich.text import Text
 from config import (
     BONUS_DESAFIO,
     BONUS_OBJETIVO,
+    CLASSIFICADOS_DIRETO_COPA,
+    DIVISOES,
     ESTILOS,
     FORMACOES,
     NIVEIS,
     NOME_JOGO,
     NOMES_ESTILOS,
     TOTAL_RODADAS,
+    VAGAS_SERIE_B_COPA,
     VERSAO,
+    ZONA_ACESSO,
     ZONA_G4,
     ZONA_REBAIXAMENTO,
 )
@@ -29,11 +33,13 @@ from liga.temporada import (
     classificacao,
     clube_do_jogador,
     descricao_etapa,
+    divisao_do_jogador,
     etapa_atual,
     jogo_do_jogador,
     jogo_neutro,
     jogos_da_rodada,
     mata_mata,
+    meta_do_clube,
     posicao_atual,
     ultimos_resultados,
 )
@@ -93,9 +99,9 @@ def escolher_clube(clubes_base):
     """
     Exibe a tela de escolha do clube para um novo jogo.
 
-    Mostra uma tabela com o nome, o nível, a força e a meta da diretoria de cada clube, além de um aviso sobre
-    o multiplicador do ranking para clubes menores. O usuário escolhe um clube pelo número ou digita 0 para
-    voltar.
+    Mostra uma tabela com o nome, a divisão, o nível, a força e a meta da diretoria de cada clube, além de um
+    aviso sobre o multiplicador do ranking para clubes menores. O usuário escolhe um clube pelo número ou
+    digita 0 para voltar.
 
     Args:
         clubes_base (list): Lista de clubes disponíveis para escolha.
@@ -105,19 +111,22 @@ def escolher_clube(clubes_base):
     """
     titulo("ESCOLHA SEU CLUBE")
     tabela = Table(header_style="bold")
-    for coluna in ("#", "Clube", "Nível", "Força", "Meta da diretoria"):
+    for coluna in ("#", "Clube", "Divisão", "Nível", "Força", "Meta da diretoria"):
         tabela.add_column(coluna)
     for numero, clube in enumerate(clubes_base, start=1):
-        nivel = NIVEIS[clube["nivel"]]
         tabela.add_row(
             str(numero),
             f"[bold {clube['cor']}]{clube['nome']}[/]",
-            nivel["nome"],
+            DIVISOES[clube.get("divisao", 1)],
+            NIVEIS[clube["nivel"]]["nome"],
             f"{nivel_de_forca(clube['forca'])} {clube['forca']}",
-            nivel["meta"],
+            meta_do_clube(clube)[0],
         )
     console.print(tabela)
     console.print(" [dim]Clubes menores pontuam mais no ranking (médio x1,3, pequeno x1,6).[/]")
+    console.print(
+        " [dim]A carreira segue por várias temporadas: os 2 últimos da Série A caem e os 2 primeiros da B sobem.[/]"
+    )
     console.print(" [bold]0[/] Voltar")
     escolha = ler_opcao(0, len(clubes_base))
     return clubes_base[escolha - 1]["id"] if escolha else None
@@ -180,6 +189,7 @@ OPCOES_CENTRAL = (
     "Mercado da bola",
     "Clubes",
     "Finanças e objetivos",
+    "Carreira",
     "Salvar",
 )
 
@@ -188,24 +198,27 @@ def mostrar_central(estado):
     """
     Exibe a central do clube e lê a opção escolhida.
 
-    Mostra o técnico, a meta, a posição na liga, o caixa, a situação na copa, os últimos jogos, a confiança da
-    diretoria e o próximo compromisso. Se o clube não joga na etapa atual da copa, a primeira opção passa a
-    ser acompanhar a rodada da copa. Quando há jogo, mostra também o desafio da diretoria para ele. As opções
-    vão de Próximo jogo até Salvar, e 0 volta ao menu; o Treino aparece apagado quando o elenco já treinou na
-    semana.
+    Mostra o técnico, a temporada, a divisão, a meta, a posição na liga, o caixa, a situação na copa, os
+    últimos jogos, a confiança da diretoria e o próximo compromisso. Se o clube não joga na etapa atual da
+    copa, a primeira opção passa a ser acompanhar a rodada da copa. Quando há jogo, mostra também o desafio da
+    diretoria para ele. As opções vão de Próximo jogo até Salvar, e 0 volta ao menu; o Treino aparece apagado
+    quando o elenco já treinou na semana.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        int: Opção escolhida, de 0 a 11.
+        int: Opção escolhida, de 0 a 12.
     """
     clube = clube_do_jogador(estado)
-    nivel = NIVEIS[clube["nivel"]]
     titulo(f"CENTRAL DO CLUBE — {clube['nome'].upper()}")
     console.print(
-        f" Técnico: [bold]{estado['tecnico']}[/]   Meta: [bold]{nivel['meta']}[/]"
-        f"   Posição na liga: [bold]{posicao_atual(estado)}º[/]"
+        f" Técnico: [bold]{estado['tecnico']}[/]   Temporada {estado.get('temporada', 1)}"
+        f" · [bold]{DIVISOES[clube.get('divisao', 1)]}[/]"
+    )
+    console.print(
+        f" Meta: [bold]{meta_do_clube(clube)[0]}[/]   Posição na {DIVISOES[clube.get('divisao', 1)]}:"
+        f" [bold]{posicao_atual(estado)}º[/]"
     )
     console.print(
         f" Caixa: [bold]{dinheiro(clube.get('caixa', 0))}[/]   Copa: {situacao_do_clube(estado['copa'], clube['id'])}"
@@ -540,34 +553,70 @@ def editar_plano(clube):
             mensagem = trocar_titular(clube)
 
 
+def estilo_na_tabela(estado, divisao, posicao, total, clube_id):
+    """
+    Escolhe o estilo da linha de um clube na classificação.
+
+    O clube do técnico fica em amarelo. Na Série A, o líder fica em verde, o G4 em azul e a zona de
+    rebaixamento em vermelho; na Série B, o líder e a zona de acesso ficam em verde.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        divisao (int): Divisão da tabela.
+        posicao (int): Posição do clube.
+        total (int): Quantidade de clubes na divisão.
+        clube_id (str): Identificador do clube.
+
+    Returns:
+        str: Estilo do rich, ou "" para a linha sem destaque.
+    """
+    if clube_id == estado["clube_id"]:
+        return "bold yellow"
+    if posicao == 1 or (divisao == 2 and posicao <= ZONA_ACESSO):
+        return "green"
+    if divisao == 1 and posicao <= ZONA_G4:
+        return "blue"
+    if divisao == 1 and posicao > total - ZONA_REBAIXAMENTO:
+        return "red"
+    return ""
+
+
 def mostrar_classificacao(estado):
     """
-    Exibe a tabela de classificação da liga.
+    Exibe a tabela de classificação das divisões, começando pela do clube do técnico.
 
-    Mostra pontos, jogos, vitórias, empates, derrotas, gols e saldo de cada clube. O líder aparece em verde, o
-    G4 em azul, a zona de rebaixamento em vermelho e o clube do jogador em amarelo. Abaixo da tabela aparecem
-    a legenda e os critérios de desempate. Espera o usuário pressionar Enter.
+    Mostra pontos, jogos, vitórias, empates, derrotas, gols e saldo de cada clube, com as cores de
+    estilo_na_tabela, a legenda e os critérios de desempate. A opção 1 troca para a outra divisão e 0 volta.
 
     Args:
         estado (dict): Estado atual da temporada.
     """
-    titulo("CLASSIFICAÇÃO")
+    divisao = divisao_do_jogador(estado)
+    while True:
+        outra = 2 if divisao == 1 else 1
+        mostrar_tabela_da_divisao(estado, divisao)
+        console.print(f"\n 1 - Ver a {DIVISOES[outra]}   0 - Voltar")
+        if ler_opcao(0, 1) == 0:
+            return
+        divisao = outra
+
+
+def mostrar_tabela_da_divisao(estado, divisao):
+    """
+    Desenha a classificação de uma divisão, com a legenda e os critérios de desempate.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        divisao (int): Divisão a mostrar.
+    """
+    titulo(f"CLASSIFICAÇÃO — {DIVISOES[divisao].upper()}")
     tabela = Table(header_style="bold")
     for coluna in ("#", "Clube", "P", "J", "V", "E", "D", "GP", "GC", "SG"):
         tabela.add_column(coluna, justify="right" if coluna not in ("Clube",) else "left")
-    ordenada = classificacao(estado)
+    ordenada = classificacao(estado, divisao)
     for posicao, linha in enumerate(ordenada, start=1):
         clube = estado["clubes"][linha["id"]]
-        if linha["id"] == estado["clube_id"]:
-            estilo = "bold yellow"
-        elif posicao == 1:
-            estilo = "green"
-        elif posicao <= ZONA_G4:
-            estilo = "blue"
-        elif posicao > len(ordenada) - ZONA_REBAIXAMENTO:
-            estilo = "red"
-        else:
-            estilo = ""
+        estilo = estilo_na_tabela(estado, divisao, posicao, len(ordenada), linha["id"])
         tabela.add_row(
             str(posicao),
             clube["nome"],
@@ -582,11 +631,13 @@ def mostrar_classificacao(estado):
             style=estilo,
         )
     console.print(tabela)
-    console.print(" [green]■[/] campeão  [blue]■[/] G4  [red]■[/] rebaixamento  [bold yellow]■[/] seu clube")
+    if divisao == 1:
+        console.print(" [green]■[/] campeão  [blue]■[/] G4  [red]■[/] rebaixamento  [bold yellow]■[/] seu clube")
+    else:
+        console.print(" [green]■[/] acesso à Série A  [bold yellow]■[/] seu clube")
     console.print(
         " [dim]Desempate: pontos, vitórias, saldo, gols marcados, confronto direto, menos vermelhos, sorteio.[/]"
     )
-    pausar()
 
 
 def mostrar_sumula(linhas):
@@ -604,9 +655,9 @@ def mostrar_rodadas(estado):
     """
     Exibe a tela de rodadas e histórico até o usuário voltar.
 
-    Pede o número da rodada a consultar. Se a rodada já foi jogada, mostra os placares e a súmula do jogo do
-    usuário; se ainda não foi, mostra apenas os confrontos. O jogo do clube do usuário é marcado com uma seta.
-    Digitar 0 volta.
+    Pede o número da rodada a consultar. Se a rodada já foi jogada, mostra os placares da divisão do usuário
+    e a súmula do jogo dele; se ainda não foi, mostra apenas os confrontos. O jogo do clube do usuário é
+    marcado com uma seta. Digitar 0 volta.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -617,10 +668,12 @@ def mostrar_rodadas(estado):
         numero = ler_opcao(0, TOTAL_RODADAS, " Qual rodada ver? (0 volta) > ")
         if numero == 0:
             return
-        titulo(f"RODADA {numero}")
+        titulo(f"RODADA {numero} — {DIVISOES[divisao_do_jogador(estado)].upper()}")
         jogada = numero <= len(estado["historico"])
         if jogada:
             for jogo in estado["historico"][numero - 1]:
+                if not da_minha_divisao(estado, jogo["mandante"]):
+                    continue
                 destaque = " [yellow]◄[/]" if estado["clube_id"] in (jogo["mandante"], jogo["visitante"]) else ""
                 casa = estado["clubes"][jogo["mandante"]]
                 fora = estado["clubes"][jogo["visitante"]]
@@ -629,11 +682,27 @@ def mostrar_rodadas(estado):
             mostrar_sumula(estado["sumulas"].get(str(numero)))
         else:
             for jogo in jogos_da_rodada(estado, numero):
+                if not da_minha_divisao(estado, jogo[0]):
+                    continue
                 destaque = " [yellow]◄[/]" if estado["clube_id"] in jogo else ""
                 console.print(
                     f" {estado['clubes'][jogo[0]]['nome']:>22}   x   {estado['clubes'][jogo[1]]['nome']}{destaque}"
                 )
         pausar()
+
+
+def da_minha_divisao(estado, clube_id):
+    """
+    Indica se um clube joga na mesma divisão que o clube do técnico.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube_id (str): Identificador do clube.
+
+    Returns:
+        bool: True se o clube é da divisão do técnico.
+    """
+    return estado["clubes"][clube_id].get("divisao", 1) == divisao_do_jogador(estado)
 
 
 def pre_jogo(estado):
@@ -759,9 +828,10 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
     """
     Exibe os resultados de uma rodada ou fase.
 
-    Mostra os placares e, conforme as informações recebidas, se o clube do usuário foi campeão, avançou ou foi
-    eliminado da copa, a variação da confiança da diretoria, os desfalques substituídos na escalação e as
-    notícias do mercado da bola. Espera o usuário pressionar Enter.
+    Mostra os placares (numa rodada da liga, separados por divisão, começando pela do usuário) e, conforme as
+    informações recebidas, se o clube do usuário foi campeão, avançou ou foi eliminado da copa, a variação da
+    confiança da diretoria, os desfalques substituídos na escalação e as notícias do mercado da bola. Espera o
+    usuário pressionar Enter.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -771,8 +841,19 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
         noticias (list): Notícias do mercado da bola.
     """
     titulo(titulo_tela)
-    for resultado in resultados:
-        console.print(linha_de_resultado(estado, resultado))
+    if etapa_atual(estado)[0] == "liga":
+        minha = divisao_do_jogador(estado)
+        for divisao in sorted(DIVISOES, key=lambda d: d != minha):
+            jogos = [r for r in resultados if estado["clubes"][r["mandante"]].get("divisao", 1) == divisao]
+            if jogos:
+                console.print(
+                    f" [bold]{DIVISOES[divisao]}[/]" if divisao == minha else f"\n [dim]{DIVISOES[divisao]}[/]"
+                )
+            for resultado in jogos:
+                console.print(linha_de_resultado(estado, resultado))
+    else:
+        for resultado in resultados:
+            console.print(linha_de_resultado(estado, resultado))
     jogo = informacao.get("jogo")
     if jogo:
         if estado["copa"]["campeao"] == estado["clube_id"]:
@@ -859,10 +940,13 @@ def mostrar_final(resumo):
     Args:
         resumo (dict): Resumo da temporada.
     """
-    titulo("FIM DA TEMPORADA" if "demitido" not in resumo["desfecho"] else "VOCÊ FOI DEMITIDO")
+    temporada = resumo.get("temporada", 1)
+    titulo(f"FIM DA TEMPORADA {temporada}" if "demitido" not in resumo["desfecho"] else "VOCÊ FOI DEMITIDO")
     cor = "green" if resumo["venceu"] else "red"
-    console.print(f" [bold {cor}]{'VITÓRIA' if resumo['venceu'] else 'DERROTA'}: {resumo['desfecho']}[/]\n")
-    console.print(f" Clube: {resumo['clube']}   Meta: {resumo['meta']}")
+    console.print(
+        f" [bold {cor}]{'META CUMPRIDA' if resumo['venceu'] else 'META NÃO CUMPRIDA'}: {resumo['desfecho']}[/]\n"
+    )
+    console.print(f" Clube: {resumo['clube']} ({DIVISOES[resumo.get('divisao', 1)]})   Meta: {resumo['meta']}")
     console.print(f" Posição final: {resumo['posicao']}º   Pontos: {resumo['pontos']}   Saldo: {resumo['saldo']:+d}")
     if resumo.get("copa"):
         console.print(" [bold green]Campeão da copa: bônus de 250 na pontuação.[/]")
@@ -907,8 +991,8 @@ def escolher_save(saves):
     """
     Exibe a tela de carregar jogo e lê o save escolhido.
 
-    Mostra uma tabela com técnico, clube, rodada e data de cada jogo salvo. Se não houver saves, mostra um
-    aviso. O usuário escolhe pelo número ou digita 0 para voltar.
+    Mostra uma tabela com técnico, clube, temporada, rodada e data de cada jogo salvo. Se não houver saves,
+    mostra um aviso. O usuário escolhe pelo número ou digita 0 para voltar.
 
     Args:
         saves (list): Jogos salvos disponíveis.
@@ -922,11 +1006,16 @@ def escolher_save(saves):
         mostrar_mensagem("Nenhum jogo salvo encontrado.", "yellow")
         return None
     tabela = Table(header_style="bold")
-    for coluna in ("#", "Técnico", "Clube", "Rodada", "Salvo em"):
+    for coluna in ("#", "Técnico", "Clube", "Temporada", "Rodada", "Salvo em"):
         tabela.add_column(coluna)
     for numero, save in enumerate(saves, start=1):
         tabela.add_row(
-            str(numero), save["tecnico"], save["clube"], str(min(save["rodada"], TOTAL_RODADAS)), save["salvo_em"]
+            str(numero),
+            save["tecnico"],
+            save["clube"],
+            str(save.get("temporada", 1)),
+            str(min(save["rodada"], TOTAL_RODADAS)),
+            save["salvo_em"],
         )
     console.print(tabela)
     console.print(" [bold]0[/] Voltar")
@@ -972,10 +1061,12 @@ def mostrar_clube(estado, clube_id):
     while True:
         titulo(clube["nome"].upper())
         linha = estado["tabela"][clube_id]
-        posicao = posicao_do_clube(classificacao(estado), clube_id)
+        divisao = clube.get("divisao", 1)
+        posicao = posicao_do_clube(classificacao(estado, divisao), clube_id)
         console.print(
             f" Nível: {nivel['nome']}   Força: {nivel_de_forca(clube['forca'])} {clube['forca']}"
-            f"   Liga: {posicao}º com {linha['pontos']} pontos   Copa: {situacao_do_clube(estado['copa'], clube_id)}"
+            f"   {DIVISOES[divisao]}: {posicao}º com {linha['pontos']} pontos"
+            f"   Copa: {situacao_do_clube(estado['copa'], clube_id)}"
         )
         console.print(
             f" Caixa: {dinheiro(clube.get('caixa', 0))}"
@@ -1004,7 +1095,8 @@ def mostrar_clube(estado, clube_id):
 
 def escolher_clube_para_ver(estado):
     """
-    Lista os clubes na ordem da classificação para o usuário ver a ficha de um deles.
+    Lista os clubes das duas divisões, cada uma na ordem da classificação, para o usuário ver a ficha de um
+    deles.
 
     Mostra o nome e a força de cada clube, com destaque para o clube do usuário. Ao escolher um número, abre a
     ficha do clube; 0 volta.
@@ -1014,18 +1106,31 @@ def escolher_clube_para_ver(estado):
     """
     while True:
         titulo("CLUBES")
-        ordenada = classificacao(estado)
-        for numero, linha in enumerate(ordenada, start=1):
-            clube = estado["clubes"][linha["id"]]
-            marca = " [yellow]◄ seu clube[/]" if clube["id"] == estado["clube_id"] else ""
-            console.print(
-                f" {numero:>2} - [bold {clube['cor']}]{clube['nome']}[/]  [dim]força {clube['forca']}[/]{marca}"
-            )
+        ordenada = []
+        for divisao in DIVISOES:
+            console.print(f" [bold]{DIVISOES[divisao]}[/]")
+            for linha in classificacao(estado, divisao):
+                ordenada.append(linha)
+                mostrar_clube_na_lista(estado, len(ordenada), linha["id"])
         console.print(" 0 - Voltar")
         escolha = ler_opcao(0, len(ordenada))
         if escolha == 0:
             return
         mostrar_clube(estado, ordenada[escolha - 1]["id"])
+
+
+def mostrar_clube_na_lista(estado, numero, clube_id):
+    """
+    Imprime a linha de um clube na lista de clubes.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        numero (int): Número da opção.
+        clube_id (str): Identificador do clube.
+    """
+    clube = estado["clubes"][clube_id]
+    marca = " [yellow]◄ seu clube[/]" if clube_id == estado["clube_id"] else ""
+    console.print(f" {numero:>2} - [bold {clube['cor']}]{clube['nome']}[/]  [dim]força {clube['forca']}[/]{marca}")
 
 
 def nome_na_chave(clube):
@@ -1252,7 +1357,9 @@ def mostrar_copa(estado):
         console.print(f"\n [bold green]Campeão: {estado['clubes'][copa['campeao']]['nome']}[/]")
     console.print(f"\n Seu clube: {situacao_do_clube(copa, estado['clube_id'])}")
     console.print(
-        " [dim]Os 4 clubes de menor força disputam a preliminar."
+        f" [dim]Os {CLASSIFICADOS_DIRETO_COPA} primeiros da Série A na última temporada (na primeira, os mais fortes)"
+        " vão direto às quartas; só os piores colocados da Série A e os"
+        f" {VAGAS_SERIE_B_COPA} melhores da Série B disputam a preliminar."
         " Jogo único, empate vai para os pênaltis e a final é em campo neutro.[/]"
     )
     pausar()
