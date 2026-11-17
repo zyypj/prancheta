@@ -94,7 +94,7 @@ def chegar_dispensados(estado, banco):
         jogador = criar_agente_livre(f"liv-{numero:02d}", banco, usados)
         estado["livres"].append(jogador)
         texto = (
-            f"{rotulo(jogador)} (qualidade {jogador['qualidade']}, {jogador['idade']} anos) foi dispensado por um "
+            f"{rotulo(jogador)}, qualidade {jogador['qualidade']} e {jogador['idade']} anos, foi dispensado por um "
             "clube do exterior e está sem clube."
         )
         noticias.append(noticia(estado, texto))
@@ -507,7 +507,7 @@ def motivo_da_contratacao(jogador, titulares_da_posicao, reservas_da_posicao, qu
     if pior and jogador["qualidade"] >= pior["qualidade"] + 3:
         ganho = jogador["qualidade"] - pior["qualidade"]
         pontos += ganho
-        motivos.append(f"vira titular no lugar de {rotulo(pior)} (+{ganho} de qualidade)")
+        motivos.append(f"vira titular no lugar de {rotulo(pior)}, com +{ganho} de qualidade")
     if quantidade_na_posicao < COMPOSICAO_ELENCO[jogador["pos"]] and jogador["qualidade"] >= forca - 8:
         pontos += 4
         motivos.append(f"a posição só tem {quantidade_na_posicao} jogadores")
@@ -517,7 +517,7 @@ def motivo_da_contratacao(jogador, titulares_da_posicao, reservas_da_posicao, qu
     reserva = min(reservas_da_posicao, key=lambda j: j["qualidade"], default=None)
     if reserva and jogador["qualidade"] >= reserva["qualidade"] + 6 and jogador["qualidade"] >= forca - 6:
         pontos += 1.5
-        motivos.append(f"reforça o banco: bem melhor que {rotulo(reserva)} ({reserva['qualidade']})")
+        motivos.append(f"reforça o banco: bem melhor que {rotulo(reserva)}, que tem {reserva['qualidade']}")
     return pontos, (motivos[0] if motivos else None)
 
 

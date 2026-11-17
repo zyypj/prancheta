@@ -152,7 +152,7 @@ def mostrar_nova_temporada(estado, relatorio):
     cor = "green" if depois > antes else ("red" if depois < antes else "yellow")
     console.print(f" Força do elenco: {antes} → [{cor}]{depois}[/]")
     if relatorio["aposentados"]:
-        nomes = ", ".join(f"{rotulo(j)} ({j['idade']} anos)" for j in relatorio["aposentados"])
+        nomes = " · ".join(f"{rotulo(j)}, aos {j['idade']} anos" for j in relatorio["aposentados"])
         console.print(f"\n [bold]Penduraram as chuteiras:[/] {nomes}")
     if relatorio["revelados"]:
         console.print("\n [bold]Subiram da base:[/]")

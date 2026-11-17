@@ -206,7 +206,7 @@ def desenhar_quadro(partida, clube_jogador, coluna, linha, pergunta, opcoes, des
     if portador and partida["bola"]["time"]:
         dono = partida["times"][partida["bola"]["time"]]
         console.print(
-            f"\n Bola com: [bold {dono['cor']}]{rotulo(portador)}[/] (qualidade {portador['qualidade']})"
+            f"\n Bola com: [bold {dono['cor']}]{rotulo(portador)}[/] · qualidade {portador['qualidade']}"
             f"   Energia {barra(portador['energia'])}"
         )
     if destaque:

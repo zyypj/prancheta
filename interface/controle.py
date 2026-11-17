@@ -383,14 +383,16 @@ def menu_substituicao(partida, time_id):
             sugestao = sugestoes[letras.index(escolha)]
             sai, entra = sugestao["sai"], sugestao["entra"]
             if fazer_substituicao(partida, time_id, sai["id"], entra["id"]):
-                mensagem = f"Saiu {rotulo(sai)}, entrou {rotulo(entra)} ({time['subs']}/{MAX_SUBSTITUICOES})."
+                mensagem = (
+                    f"Saiu {rotulo(sai)}, entrou {rotulo(entra)}. Substituições: {time['subs']}/{MAX_SUBSTITUICOES}."
+                )
             continue
         if not escolha:
             return
         sai = time["em_campo"][escolha - 1]
         entra = escolher_entrada(time, f"Quem entra no lugar de {rotulo(sai)}?")
         if entra and fazer_substituicao(partida, time_id, sai["id"], entra["id"]):
-            mensagem = f"Saiu {rotulo(sai)}, entrou {rotulo(entra)} ({time['subs']}/{MAX_SUBSTITUICOES})."
+            mensagem = f"Saiu {rotulo(sai)}, entrou {rotulo(entra)}. Substituições: {time['subs']}/{MAX_SUBSTITUICOES}."
         else:
             mensagem = ""
 

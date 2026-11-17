@@ -88,15 +88,15 @@ def sortear_nome(banco, usados):
 
 def rotulo(jogador):
     """
-    Monta o texto de identificação do jogador com posição e nome.
+    Monta o texto de identificação do jogador com nome e posição.
 
     Args:
         jogador (dict): Jogador a ser identificado.
 
     Returns:
-        str: Texto no formato "POS Nome", por exemplo "ATA Fulano".
+        str: Texto no formato "Nome (POS)", por exemplo "Diogo Figueiredo (MEI)".
     """
-    return f"{jogador['pos']} {jogador['nome']}"
+    return f"{jogador['nome']} ({jogador['pos']})"
 
 
 def valor_de_mercado(jogador):

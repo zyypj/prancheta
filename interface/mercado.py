@@ -177,9 +177,7 @@ def vender_jogador(estado):
     if not ofertas:
         mostrar_mensagem("Nenhum clube fez proposta por esse jogador agora.", "yellow")
         return
-    console.print(
-        f"\n Propostas por {jogador['pos']} {jogador['nome']} (valor de mercado {dinheiro(valor_de_mercado(jogador))}):"
-    )
+    console.print(f"\n Propostas por {rotulo(jogador)}, valor de mercado {dinheiro(valor_de_mercado(jogador))}:")
     for numero, (comprador, valor) in enumerate(ofertas, start=1):
         console.print(f" {numero} - {comprador['nome']}: [bold]{dinheiro(valor)}[/]")
     console.print(" 0 - Recusar todas")
@@ -210,10 +208,10 @@ def tela_mercado(estado):
             console.print()
         sugestoes = sugerir_contratacoes(estado, 1)
         if sugestoes:
-            indicado = sugestoes[0]
+            indicado = sugestoes[0]["jogador"]
             console.print(
-                f" [yellow]Olheiro indica:[/] {rotulo(indicado['jogador'])} ({indicado['jogador']['qualidade']})"
-                f" [dim]— {indicado['motivo']}[/]\n"
+                f" [yellow]Olheiro indica:[/] {rotulo(indicado)}, qualidade {indicado['qualidade']}"
+                f" [dim]— {sugestoes[0]['motivo']}[/]\n"
             )
         console.print(
             " 1 - Comprar de outros clubes   2 - Jogadores sem clube   3 - Vender jogador"
@@ -314,7 +312,7 @@ def tela_proposta(estado, evento):
         console.print(f" Oferta atual:      [bold green]{dinheiro(oferta)}[/] ({porcentagem}% do valor de mercado)")
         console.print(f" Caixa do clube:    {dinheiro(caixa)} → [bold]{dinheiro(caixa + oferta)}[/] se vender")
         if substituto:
-            console.print(f" Assume a vaga:     {rotulo(substituto)} (qualidade {substituto['qualidade']})")
+            console.print(f" Assume a vaga:     {rotulo(substituto)}, qualidade {substituto['qualidade']}")
         console.print(f" Sobe da base:      um {jogador['pos']} com qualidade {qualidade_do_garoto(jogador)}")
         console.print(
             f" Diretoria:         quer vender. Vender +{CONFIANCA_VENDA} de confiança · segurar"

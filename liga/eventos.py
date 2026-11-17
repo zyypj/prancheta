@@ -380,7 +380,7 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None, comprado
         if pior["id"] in clube["titulares"]:
             clube["titulares"].remove(pior["id"])
         clube["elenco"].append(garoto)
-        return f"{rotulo(garoto)} (qualidade {garoto['qualidade']}) entra no lugar de {rotulo(pior)}."
+        return f"{rotulo(garoto)}, qualidade {garoto['qualidade']}, entra no lugar de {rotulo(pior)}."
     if efeito == "protesto":
         ajustar_confianca(estado, -5)
         return "A pressão aumentou. Confiança da diretoria -5."

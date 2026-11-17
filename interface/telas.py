@@ -880,7 +880,7 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
     for texto_objetivo in informacao.get("objetivos", []):
         console.print(f" [bold green]Objetivo da temporada alcançado: {texto_objetivo}![/]")
     if informacao.get("aniversarios"):
-        festa = ", ".join(f"{rotulo(j)} ({j['idade']} anos)" for j in informacao["aniversarios"])
+        festa = " · ".join(f"{rotulo(j)} faz {j['idade']} anos" for j in informacao["aniversarios"])
         console.print(f" Aniversário no elenco: {festa}")
     receitas = {}
     for categoria, valor in estado.get("extrato_etapa", []):
@@ -1082,12 +1082,12 @@ def mostrar_clube(estado, clube_id):
         )
         console.print(desenho_formacao(clube))
         destaques = sorted(clube["elenco"], key=lambda j: j["qualidade"], reverse=True)[:3]
-        console.print(" Destaques: " + ", ".join(f"{rotulo(j)} ({j['qualidade']})" for j in destaques))
+        console.print(" Destaques: " + " · ".join(f"{rotulo(j)}, qualidade {j['qualidade']}" for j in destaques))
         artilheiro = max(clube["elenco"], key=lambda j: j["gols"])
         if artilheiro["gols"]:
             console.print(f" Artilheiro: {rotulo(artilheiro)} com {artilheiro['gols']} gol(s)")
         desfalques = [
-            f"{rotulo(j)} ({'lesionado' if j['lesao'] else 'suspenso'})" for j in clube["elenco"] if not disponivel(j)
+            f"{rotulo(j)}, {'lesionado' if j['lesao'] else 'suspenso'}" for j in clube["elenco"] if not disponivel(j)
         ]
         console.print(" Desfalques: " + (", ".join(desfalques) if desfalques else "nenhum"))
         console.print("\n 1 - Ver elenco completo   0 - Voltar")
