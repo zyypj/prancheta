@@ -1,7 +1,8 @@
 # Prancheta
 
-Jogo de terminal em Python em que você escolhe um dos 10 clubes fictícios da Liga Prancheta e precisa cumprir a meta da
-diretoria na temporada: 9 rodadas de liga e a Copa Prancheta em mata-mata. Escale o time, monte o plano de jogo (formação, estilo, ofensividade e intensidade), faça
+Jogo de terminal em Python em que você escolhe um dos 20 clubes fictícios da Liga Prancheta (10 na Série A e 10 na
+Série B) e constrói uma carreira de técnico, temporada após temporada. Em cada uma, precisa cumprir a meta da diretoria:
+9 rodadas de liga e a Copa Prancheta em mata-mata. Escale o time, monte o plano de jogo (formação, estilo, ofensividade e intensidade), faça
 substituições e decida os lances da partida, ou simule-a de acordo com o seu plano. O campo é redesenhado a cada jogada,
 mostrando onde a bola está.
 
@@ -23,14 +24,18 @@ pip install -r requirements.txt
 python main.py
 ```
 
-1. No menu, escolha **Novo jogo**, digite o nome do técnico e escolha o clube. Cada clube tem uma meta: os grandes
-   precisam ser campeões, os médios precisam ficar no G4 e os pequenos não podem cair.
+1. No menu, escolha **Novo jogo**, digite o nome do técnico e escolha o clube. Cada clube tem uma meta, que depende
+   do tamanho e da divisão. Na Série A, os grandes precisam ser campeões, os médios ficar no G4 e os pequenos não
+   cair. Na Série B, os grandes precisam subir, os médios brigar pelo acesso (até o 4º) e os pequenos ficar no meio da
+   tabela (até o 6º).
 2. Na **Central do clube** você vê o elenco (com idade e valor de mercado), ajusta o plano de jogo, treina o
-   elenco, consulta a classificação, a chave da copa e o histórico das rodadas, entra no mercado da bola, vê a página de qualquer clube e
-   salva o jogo.
-3. A temporada alterna liga e copa. A liga tem 9 rodadas em turno único. A copa tem fase preliminar (os 4 clubes de
-   menor força), quartas, semifinal e final em campo neutro, sempre em jogo único: empate vai para a disputa de
-   pênaltis, cobrada e defendida pelo jogador.
+   elenco, consulta a classificação das duas divisões, a chave da copa e o histórico das rodadas, entra no mercado
+   da bola, vê a página de qualquer clube, acompanha a carreira e salva o jogo.
+3. A temporada alterna liga e copa. Cada divisão tem 9 rodadas em turno único, jogadas ao mesmo tempo. A copa reúne a
+   Série A e os 2 melhores da Série B: os 4 primeiros da Série A na temporada anterior (na primeira, os mais fortes)
+   vão direto às quartas, e só os piores colocados da Série A e os clubes da Série B jogam a fase preliminar. Depois
+   vêm quartas, semifinal e final em campo neutro, sempre em jogo único: empate vai para a disputa de pênaltis,
+   cobrada e defendida pelo jogador.
 4. Em **Próximo jogo**, escolha entre jogar lance a lance, simular assistindo (Enter avança), simular rápido ou ir
    direto para o resultado. Também dá para ver o adversário: posição, últimos jogos, plano e formação prováveis,
    destaques e desfalques. A simulação segue o seu plano e para no intervalo, em lesões, expulsões e pênaltis.
@@ -90,7 +95,8 @@ python main.py
    seis contratações que cabem no caixa, com o motivo (vira titular, posição carente, jovem promissor ou reforço de
    banco), e dá para contratar direto dali. Cada clube começa com 22 jogadores (máximo de 28), há 30 jogadores sem
    clube e, a cada semana, chegam 1 ou 2 dispensados do exterior. Os outros clubes também contratam ao longo da
-   temporada.
+   temporada, e às vezes um clube do país ou do exterior faz uma **proposta por um dos seus jogadores**, que você
+   pode aceitar, recusar ou negociar.
 7. O caixa cresce com bilheteria nos jogos em casa (maior quando o time vem vencendo), cota de TV por rodada, prêmio
    por vitória e empate, fases da copa, desafios, objetivos e eventos como patrocínio, amistoso, camisa nova e
    investidor. Em **Finanças e objetivos** fica o extrato da temporada por categoria.
@@ -107,15 +113,28 @@ python main.py
     **torcida organizada** (mosaico que empurra o time no jogo em casa, protesto no aeroporto, cobrança no CT,
     festa no desembarque, briga punida). A imprensa também chama para **entrevistas**, muito mais nos clubes
     grandes; prometer vitória agrada a torcida, mas a diretoria cobra se o time perder o jogo seguinte.
+11. No fim da temporada, os 2 últimos da Série A caem e os 2 primeiros da Série B sobem. Os campeões e quem sobe
+    ganham prêmio em dinheiro. Depois a **diretoria decide o seu futuro**:
+    - Cumpriu a meta: contrato renovado e, às vezes, convites de clubes maiores.
+    - Não cumpriu, mas jogou bem (confiança alta, perto da meta, longe na copa, objetivos e desafios): pode ganhar
+      uma segunda chance, com a confiança mais baixa.
+    - Demitido (também no meio da temporada, se a confiança zerar): chegam propostas de outros clubes, conforme a
+      sua reputação, e você pode assumir um deles ou encerrar a carreira.
+12. Na virada de temporada, todos envelhecem um ano. Os jovens evoluem, os veteranos caem e os mais velhos se
+    aposentam. A base sobe garotos para completar os elencos, às vezes com uma joia. A força de cada clube é
+    recalculada pelo elenco, chegam novos jogadores sem clube e abre uma janela de transferências com propostas
+    pelos seus jogadores. Em **Carreira** fica o histórico de cada temporada e a sua reputação.
 
 Em todas as narrações, súmulas e mensagens, o nome do jogador aparece depois da posição, por exemplo `ATA Rodrigão`.
 
 ## Objetivo
 
-- Vitória: cumprir a meta do clube ao fim da temporada.
-- Derrota: ser demitido (a confiança da diretoria chega a 0) ou terminar a temporada sem cumprir a meta.
+- Em cada temporada: cumprir a meta do clube. Ser demitido (confiança da diretoria em 0, ou a diretoria não
+  renovar no fim) não acaba o jogo: você pode aceitar outra proposta e seguir a carreira.
+- A carreira termina quando você recusa todas as propostas depois de uma demissão.
 - Pontuação: (pontos × 10 + saldo × 2 + bônus) × dificuldade do clube. Ser campeão da copa vale +250 de bônus, cada
-  desafio cumprido +25 e cada objetivo da temporada +60. Vai para o ranking ao fim da temporada.
+  desafio cumprido +25 e cada objetivo da temporada +60. Cada temporada (ou passagem por um clube) vai para o
+  ranking.
 
 ## Estrutura
 
@@ -124,10 +143,10 @@ prancheta/
 ├── main.py            menu, central do clube e fluxo das rodadas
 ├── config.py          constantes e caminhos
 ├── partida/           motor dos lances, jogadas especiais, laço da partida, pênaltis, narração e simulação
-├── liga/              calendário, classificação, copa, temporada, finanças, desafios, eventos e vestiário
+├── liga/              calendário, classificação, copa, temporada, carreira, finanças, desafios, eventos e vestiário
 ├── mercado/           valores, compras, vendas, jogadores livres e mercado dos outros clubes
 ├── elenco/            geração de jogadores, escalação, substituições e treino
-├── interface/         campo animado, telas, mercado, controles e leitura de entrada
+├── interface/         campo animado, telas, carreira, mercado, controles e leitura de entrada
 ├── persistencia/      save, load, ranking e arquivos
 ├── dados/             times.json, nomes.txt, narracao.txt, eventos.json, ranking.csv e saves
 ├── docs/              GDD.docx editável
@@ -138,7 +157,7 @@ prancheta/
 
 | Arquivo                       | Formato | Conteúdo                                                    |
 |-------------------------------|---------|-------------------------------------------------------------|
-| `dados/saves/<técnico>.json`  | JSON    | estado completo da temporada                                |
+| `dados/saves/<técnico>.json`  | JSON    | estado completo da carreira                                 |
 | `dados/ranking.csv`           | CSV     | técnico, clube, posição, pontos, pontuação, desfecho e data |
 | `dados/sumulas/<técnico>.txt` | TXT     | súmula de cada partida do jogador                           |
 
