@@ -120,8 +120,8 @@ python main.py
       uma segunda chance, com a confiança mais baixa.
     - Demitido (também no meio da temporada, se a confiança zerar): chegam propostas de outros clubes, conforme a
       sua reputação, e você pode assumir um deles ou encerrar a carreira.
-12. Na virada de temporada, todos envelhecem um ano. Os jovens evoluem, os veteranos caem e os mais velhos se
-    aposentam. A base sobe garotos para completar os elencos, às vezes com uma joia. A força de cada clube é
+12. Cada jogador faz aniversário numa semana diferente da temporada (os do seu elenco aparecem nos resultados). Na
+    virada de temporada, os jovens evoluem, os veteranos caem e os mais velhos se aposentam. A base sobe garotos para completar os elencos, às vezes com uma joia. A força de cada clube é
     recalculada pelo elenco, chegam novos jogadores sem clube e abre uma janela de transferências com propostas
     pelos seus jogadores. Em **Carreira** fica o histórico de cada temporada e a sua reputação.
 
