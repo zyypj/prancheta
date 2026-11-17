@@ -125,7 +125,8 @@ python main.py
     recalculada pelo elenco, chegam novos jogadores sem clube e abre uma janela de transferências com propostas
     pelos seus jogadores. Em **Carreira** fica o histórico de cada temporada e a sua reputação.
 
-Em todas as narrações, súmulas e mensagens, o nome do jogador aparece depois da posição, por exemplo `ATA Rodrigão`.
+Em todas as narrações, súmulas e mensagens, o jogador aparece com a posição depois do nome, por exemplo
+`Rodrigão (ATA)`. Nos lances da partida e na súmula, o nome vem pintado com a cor do time dele.
 
 ## Objetivo
 
