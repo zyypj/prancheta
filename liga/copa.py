@@ -1,6 +1,13 @@
 import random
 
-from config import CLASSIFICADOS_DIRETO_COPA, FASES_COPA, NOMES_FASES, PREMIO_FASE_COPA, PREMIO_TITULO_COPA
+from config import (
+    CLASSIFICADOS_DIRETO_COPA,
+    FASES_COPA,
+    NOMES_FASES,
+    PREMIO_FASE_COPA,
+    PREMIO_TITULO_COPA,
+    VAGAS_SERIE_B_COPA,
+)
 from liga.financas import lancar
 
 
@@ -22,24 +29,49 @@ def montar_confrontos(ids):
     return [(sorteados[indice], sorteados[indice + 1]) for indice in range(0, len(sorteados) - 1, 2)]
 
 
-def criar_copa(clubes):
+def ordem_por_forca(clubes):
     """
-    Cria a estrutura inicial da copa.
+    Ordena os clubes de cada divisão pela força, do mais forte para o mais fraco.
 
-    Ordena os clubes pela força: os CLASSIFICADOS_DIRETO_COPA (6) mais fortes vão direto às quartas de final,
-    e os demais disputam a fase preliminar, com confrontos sorteados.
+    É a ordem usada para montar a copa na primeira temporada, quando ainda não há classificação anterior.
 
     Args:
         clubes (dict): Clubes da temporada, indexados pelo identificador.
 
     Returns:
-        dict: Copa com os classificados diretos, os confrontos da fase preliminar, os resultados vazios, o
-            campeão e a fase de eliminação do jogador ainda indefinidos.
+        dict: Para cada divisão (1 e 2), a lista de identificadores na ordem.
     """
-    ordem = sorted(clubes.values(), key=lambda clube: clube["forca"], reverse=True)
-    diretos = [clube["id"] for clube in ordem[:CLASSIFICADOS_DIRETO_COPA]]
-    preliminar = [clube["id"] for clube in ordem[CLASSIFICADOS_DIRETO_COPA:]]
+    ordem = {1: [], 2: []}
+    for clube in sorted(clubes.values(), key=lambda clube: clube["forca"], reverse=True):
+        ordem[clube.get("divisao", 1)].append(clube["id"])
+    return ordem
+
+
+def criar_copa(clubes, ordem=None):
+    """
+    Cria a estrutura inicial da copa.
+
+    Jogam a copa os clubes da Série A e os VAGAS_SERIE_B_COPA (2) primeiros da Série B na ordem recebida. Os
+    CLASSIFICADOS_DIRETO_COPA (4) primeiros da Série A vão direto às quartas de final; só os piores colocados
+    da Série A e os clubes da Série B disputam a fase preliminar, com confrontos sorteados. A ordem é a
+    classificação da temporada anterior ou, na primeira temporada, a força dos clubes.
+
+    Args:
+        clubes (dict): Clubes da temporada, indexados pelo identificador.
+        ordem (dict | None): Para cada divisão, os identificadores do melhor para o pior. Padrão None, que usa
+            a força.
+
+    Returns:
+        dict: Copa com os participantes, os classificados diretos, os confrontos da fase preliminar, os
+            resultados vazios, o campeão e a fase de eliminação do jogador ainda indefinidos.
+    """
+    ordem = ordem or ordem_por_forca(clubes)
+    serie_a = [clube_id for clube_id in ordem[1] if clube_id in clubes]
+    serie_b = [clube_id for clube_id in ordem.get(2, []) if clube_id in clubes][:VAGAS_SERIE_B_COPA]
+    diretos = serie_a[:CLASSIFICADOS_DIRETO_COPA]
+    preliminar = serie_a[CLASSIFICADOS_DIRETO_COPA:] + serie_b
     return {
+        "participantes": diretos + preliminar,
         "classificados": diretos,
         "confrontos": {"preliminar": montar_confrontos(preliminar)},
         "resultados": {},
@@ -148,16 +180,18 @@ def situacao_do_clube(copa, clube_id):
     """
     Descreve a situação de um clube na copa.
 
-    Verifica primeiro se o clube é o campeão; depois procura, nos resultados registrados, um jogo em que ele
-    tenha perdido.
+    Clubes que não entraram na copa aparecem como fora dela. Para os outros, verifica primeiro se o clube é
+    o campeão; depois procura, nos resultados registrados, um jogo em que ele tenha perdido.
 
     Args:
         copa (dict): Estrutura da copa na temporada.
         clube_id (str): Identificador do clube.
 
     Returns:
-        str: "campeão", "eliminado na <fase>" ou "na disputa".
+        str: "fora da copa", "campeão", "eliminado na <fase>" ou "na disputa".
     """
+    if clube_id not in copa.get("participantes", [clube_id]):
+        return "fora da copa"
     if copa["campeao"] == clube_id:
         return "campeão"
     for fase, resultados in copa["resultados"].items():
