@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from config import PASTA_SAVES, VERSAO_SAVE
+from config import PASTA_SAVES, VERSOES_DE_SAVE_ACEITAS
 from persistencia.arquivos import gravar_json, ler_json
 
 
@@ -56,13 +56,13 @@ def listar_saves():
     Lista os jogos salvos disponíveis para carregar.
 
     Percorre os arquivos JSON de PASTA_SAVES, do modificado mais recentemente para o mais antigo, e ignora os
-    que não são um dicionário, que têm versão diferente de VERSAO_SAVE ou que estão sem algum dado do resumo
-    (técnico, clube ou rodada), sem derrubar a lista. Se a pasta não puder ser lida, o erro é capturado por
-    try/except e a função devolve uma lista vazia.
+    que não são um dicionário, que têm uma versão fora de VERSOES_DE_SAVE_ACEITAS ou que estão sem algum dado
+    do resumo (técnico, clube ou rodada), sem derrubar a lista. Se a pasta não puder ser lida, o erro é
+    capturado por try/except e a função devolve uma lista vazia.
 
     Returns:
-        list: Dicionários com caminho, técnico, nome do clube, rodada e data do salvamento de cada save
-            válido.
+        list: Dicionários com caminho, técnico, nome do clube, temporada, rodada e data do salvamento de cada
+            save válido.
     """
     try:
         arquivos = sorted(PASTA_SAVES.glob("*.json"), key=lambda caminho: caminho.stat().st_mtime, reverse=True)
@@ -71,7 +71,7 @@ def listar_saves():
     saves = []
     for caminho in arquivos:
         estado = ler_json(caminho)
-        if not isinstance(estado, dict) or estado.get("versao") != VERSAO_SAVE:
+        if not isinstance(estado, dict) or estado.get("versao") not in VERSOES_DE_SAVE_ACEITAS:
             continue
         try:
             saves.append(
@@ -79,6 +79,7 @@ def listar_saves():
                     "caminho": caminho,
                     "tecnico": estado["tecnico"],
                     "clube": estado["clubes"][estado["clube_id"]]["nome"],
+                    "temporada": estado.get("temporada", 1),
                     "rodada": estado["rodada"],
                     "salvo_em": estado.get("salvo_em", "-"),
                 }
@@ -92,7 +93,8 @@ def carregar_jogo(caminho):
     """
     Carrega uma temporada salva a partir do arquivo JSON.
 
-    Rejeita o arquivo se ele não for um dicionário ou tiver versão diferente de VERSAO_SAVE. Como o JSON
+    Rejeita o arquivo se ele não for um dicionário ou tiver uma versão fora de VERSOES_DE_SAVE_ACEITAS; saves
+    da versão 2 são aceitos para serem migrados depois. Como o JSON
     guarda tuplas como listas, os jogos do calendário e os confrontos de cada fase da copa são convertidos de
     volta para tuplas. Se essa estrutura estiver incompleta ou malformada, o erro é capturado por try/except e
     o save é rejeitado.
@@ -104,7 +106,7 @@ def carregar_jogo(caminho):
         dict | None: Estado da temporada restaurado ou None se o save for inválido.
     """
     estado = ler_json(caminho)
-    if not isinstance(estado, dict) or estado.get("versao") != VERSAO_SAVE:
+    if not isinstance(estado, dict) or estado.get("versao") not in VERSOES_DE_SAVE_ACEITAS:
         return None
     try:
         estado["calendario"] = [[tuple(jogo) for jogo in rodada] for rodada in estado["calendario"]]

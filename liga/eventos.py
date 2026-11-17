@@ -7,12 +7,13 @@ from config import (
     CONFIANCA_VENDA,
     FAIXA_OFERTA_EXTERIOR,
     FAIXA_TETO_EXTERIOR,
+    MAX_ELENCO,
     QUEDA_QUALIDADE_GAROTO,
 )
 from elenco.escalacao import criar_jogador, limitar, rotulo, sortear_nome, valor_de_mercado, valor_para_escalar
 from liga.financas import lancar, vitorias_recentes
 from liga.temporada import ajustar_confianca, clube_do_jogador
-from mercado.transferencias import dinheiro
+from mercado.transferencias import dinheiro, pode_sair, transferir
 
 
 def sortear_evento(eventos):
@@ -144,6 +145,58 @@ def criar_negociacao(jogador):
     }
 
 
+def criar_proposta(estado):
+    """
+    Cria uma proposta de outro clube por um jogador do elenco do técnico, fora do evento da semana.
+
+    O jogador é sorteado entre os que podem sair sem desfalcar o elenco, com mais chance para os mais
+    valiosos, os jovens de até 23 anos e quem já fez 3 gols ou mais na temporada. A negociação começa como a
+    de um clube do exterior (criar_negociacao), mas em 60% das vezes quem faz a proposta é um clube do país
+    que tenha caixa para pagar o teto, vaga no elenco e para quem o jogador seja reforço (qualidade de pelo
+    menos a força do clube menos 4); nesse caso o jogador vai para esse clube se for vendido.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        dict | None: Proposta no formato de um evento preparado, com título, texto, jogador alvo e
+            negociação (com o comprador quando é do país), ou None se ninguém pode sair.
+    """
+    clube = clube_do_jogador(estado)
+    candidatos = [jogador for jogador in clube["elenco"] if pode_sair(clube, jogador)]
+    if not candidatos:
+        return None
+    pesos = [
+        (valor_de_mercado(jogador) + 0.5)
+        * (1.5 if jogador.get("idade", 26) <= 23 else 1)
+        * (1.3 if jogador["gols"] >= 3 else 1)
+        for jogador in candidatos
+    ]
+    jogador = random.choices(candidatos, pesos)[0]
+    negociacao = criar_negociacao(jogador)
+    compradores = [
+        outro
+        for outro in estado["clubes"].values()
+        if outro["id"] != clube["id"]
+        and outro.get("caixa", 0) >= negociacao["teto"]
+        and jogador["qualidade"] >= outro["forca"] - 4
+        and len(outro["elenco"]) < MAX_ELENCO
+    ]
+    if compradores and random.random() < 0.6:
+        comprador = random.choice(compradores)
+        negociacao["clube"] = comprador["nome"]
+        negociacao["comprador_id"] = comprador["id"]
+    return {
+        "id": "proposta",
+        "titulo": "PROPOSTA POR JOGADOR",
+        "texto": f"O {negociacao['clube']} fez uma proposta por {rotulo(jogador)}.",
+        "jogador_id": jogador["id"],
+        "efeito": None,
+        "opcoes": [],
+        "negociacao": negociacao,
+    }
+
+
 def aceitar_oferta(negociacao):
     """
     Fecha a venda pelo valor da oferta atual.
@@ -215,7 +268,7 @@ def nomes_em_uso(estado):
     return {jogador["nome"] for clube in estado["clubes"].values() for jogador in clube["elenco"]}
 
 
-def novo_garoto(estado, clube, banco, qualidade, posicao):
+def novo_garoto(estado, clube, banco, qualidade, posicao, idade=None):
     """
     Cria um jogador vindo das categorias de base.
 
@@ -230,6 +283,7 @@ def novo_garoto(estado, clube, banco, qualidade, posicao):
         banco (dict): Banco de nomes usado no sorteio.
         qualidade (int): Qualidade do novo jogador.
         posicao (str): Posição do novo jogador.
+        idade (int | None): Idade do novo jogador. Padrão None, que sorteia a idade.
 
     Returns:
         dict: Jogador criado.
@@ -240,10 +294,10 @@ def novo_garoto(estado, clube, banco, qualidade, posicao):
     numero = max(usados + [clube.get("ultimo_id", 0)]) + 1
     clube["ultimo_id"] = numero
     nome = sortear_nome(banco, nomes_em_uso(estado))
-    return criar_jogador(f"{clube['id']}-{numero:02d}", nome, posicao, qualidade)
+    return criar_jogador(f"{clube['id']}-{numero:02d}", nome, posicao, qualidade, idade)
 
 
-def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
+def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None, comprador_id=None):
     """
     Aplica o efeito de um evento ao clube do jogador.
 
@@ -251,7 +305,8 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
     "lesao_treino" deixa o alvo lesionado por 1 a 3 rodadas; "reuniao" soma 2 de confiança; "afastar" suspende
     o alvo por pelo menos 1 rodada e soma 5 de confiança; "vender" tira o alvo do elenco, credita no caixa o
     valor negociado (ou 1,2 vez o valor de mercado, se não houve negociação), sobe da base um garoto da mesma
-    posição com 12 de qualidade a menos (entre 40 e 92) e soma 6 de confiança; "segurar" dá ao alvo pelo menos
+    posição com 12 de qualidade a menos (entre 40 e 92) e soma 6 de confiança; quando o comprador é um clube
+    do país, o jogador vai para o elenco dele, que paga o valor; "segurar" dá ao alvo pelo menos
     1 rodada de bônus e tira 3 de confiança; "negociacao_fracassou" mantém o alvo e tira 2 de confiança;
     "base" troca o jogador de linha com menor valor para escalar por um garoto da mesma posição, com qualidade
     sorteada entre 6 abaixo e 4 acima da força do clube (entre 40 e 92); "protesto" tira 5 de confiança;
@@ -265,7 +320,9 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
         efeito (str | None): Nome do efeito escolhido.
         jogador_id (str | None): Identificador do jogador alvo do evento.
         banco (dict): Banco de nomes usado para criar garotos da base.
-        valor_venda (float | None): Valor acertado na negociação com o clube do exterior. Padrão None.
+        valor_venda (float | None): Valor acertado na negociação. Padrão None.
+        comprador_id (str | None): Clube do país que compra o jogador, ou None se o comprador é do exterior.
+            Padrão None.
 
     Returns:
         str: Mensagem descrevendo o que mudou.
@@ -286,13 +343,16 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
         ajustar_confianca(estado, 5)
         return f"{rotulo(jogador)} fica fora da próxima rodada. A diretoria aprovou a firmeza: confiança +5."
     if efeito == "vender" and jogador:
-        clube["elenco"].remove(jogador)
-        if jogador["id"] in clube["titulares"]:
-            clube["titulares"].remove(jogador["id"])
+        valor = valor_venda if valor_venda else round(valor_de_mercado(jogador) * 1.2, 1)
+        if comprador_id:
+            transferir(estado, jogador, clube, estado["clubes"][comprador_id], valor)
+        else:
+            clube["elenco"].remove(jogador)
+            if jogador["id"] in clube["titulares"]:
+                clube["titulares"].remove(jogador["id"])
+            lancar(estado, clube["id"], "Venda ao exterior", valor)
         garoto = novo_garoto(estado, clube, banco, qualidade_do_garoto(jogador), jogador["pos"])
         clube["elenco"].append(garoto)
-        valor = valor_venda if valor_venda else round(valor_de_mercado(jogador) * 1.2, 1)
-        lancar(estado, clube["id"], "Venda ao exterior", valor)
         ajustar_confianca(estado, CONFIANCA_VENDA)
         return (
             f"{rotulo(jogador)} foi vendido por {dinheiro(valor)}. "
@@ -308,7 +368,7 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None):
     if efeito == "negociacao_fracassou" and jogador:
         ajustar_confianca(estado, CONFIANCA_NEGOCIACAO_FRACASSADA)
         return (
-            f"O clube do exterior desistiu e {rotulo(jogador)} fica. "
+            f"O clube interessado desistiu e {rotulo(jogador)} fica. "
             f"A diretoria lamentou o dinheiro perdido: confiança {CONFIANCA_NEGOCIACAO_FRACASSADA}."
         )
     if efeito == "base":
