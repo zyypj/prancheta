@@ -1,6 +1,7 @@
 import random
 
 from config import (
+    AGENDA,
     BONUS_GRANDE_FASE,
     BONUS_TREINO,
     COMPOSICAO_ELENCO,
@@ -138,7 +139,8 @@ def criar_jogador(identificador, nome, posicao, qualidade, idade=None):
 
     Os atributos de finalização, passe, desarme, físico e reflexo partem da qualidade, recebem o ajuste típico
     da posição e uma variação aleatória de -5 a 5, e ficam entre 5 e 99. Sem idade informada, a idade é
-    sorteada.
+    sorteada. O aniversário é sorteado entre as etapas da agenda: quando essa etapa termina, o jogador fica um
+    ano mais velho.
 
     Args:
         identificador (str): Identificador único do jogador.
@@ -156,6 +158,7 @@ def criar_jogador(identificador, nome, posicao, qualidade, idade=None):
         "pos": posicao,
         "qualidade": qualidade,
         "idade": idade or sortear_idade(),
+        "aniversario": random.randrange(len(AGENDA)),
         "energia": 100,
         "amarelos": 0,
         "suspenso": 0,

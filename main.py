@@ -47,6 +47,7 @@ from liga.temporada import (
     adversario_de,
     avancar_etapa,
     clube_do_jogador,
+    comemorar_aniversarios,
     criar_estado_novo,
     descricao_etapa,
     etapa_atual,
@@ -343,12 +344,11 @@ def jogar_etapa(estado, recursos):
     """
     Disputa a etapa atual da temporada, seja uma rodada da liga ou uma fase da copa.
 
-    Joga a partida do clube do jogador (se ele estiver na etapa), com os bastidores de antes e depois do
-    jogo, avalia o desafio da diretoria, simula os
-    outros jogos, registra a súmula, fecha a rodada ou a fase e confere os objetivos da temporada. Depois
-    movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento
-    da semana (e, se ele não foi uma proposta, talvez uma proposta por um jogador) e salva o jogo
-    automaticamente.
+    Joga a partida do clube do jogador (se ele estiver na etapa), com os bastidores de antes e depois do jogo,
+    avalia o desafio da diretoria, simula os outros jogos, registra a súmula, fecha a rodada ou a fase,
+    confere os objetivos da temporada e faz os aniversários da etapa. Depois movimenta o mercado dos outros
+    clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento da semana (e, se ele não foi
+    uma proposta, talvez uma proposta por um jogador) e salva o jogo automaticamente.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -382,6 +382,7 @@ def jogar_etapa(estado, recursos):
         titulo_tela = f"RESULTADOS — {descricao_etapa(etapa).upper()}"
     informacao["desafio"] = desafio
     informacao["objetivos"] = atualizar_objetivos(estado)
+    informacao["aniversarios"] = comemorar_aniversarios(estado)
     noticias = movimentar_mercado(estado, recursos["nomes"])
     telas.mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias)
     avancar_etapa(estado)

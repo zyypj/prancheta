@@ -830,8 +830,8 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
 
     Mostra os placares (numa rodada da liga, separados por divisão, começando pela do usuário) e, conforme as
     informações recebidas, se o clube do usuário foi campeão, avançou ou foi eliminado da copa, a variação da
-    confiança da diretoria, os desfalques substituídos na escalação e as notícias do mercado da bola. Espera o
-    usuário pressionar Enter.
+    confiança da diretoria, os desfalques substituídos na escalação, quem do elenco fez aniversário e as
+    notícias do mercado da bola. Espera o usuário pressionar Enter.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -879,6 +879,9 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
             console.print(f" [red]Desafio não cumprido: {desafio['texto']}[/]")
     for texto_objetivo in informacao.get("objetivos", []):
         console.print(f" [bold green]Objetivo da temporada alcançado: {texto_objetivo}![/]")
+    if informacao.get("aniversarios"):
+        festa = ", ".join(f"{rotulo(j)} ({j['idade']} anos)" for j in informacao["aniversarios"])
+        console.print(f" Aniversário no elenco: {festa}")
     receitas = {}
     for categoria, valor in estado.get("extrato_etapa", []):
         receitas[categoria] = round(receitas.get(categoria, 0) + valor, 1)

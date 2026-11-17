@@ -277,13 +277,13 @@ def registrar_na_carreira(estado, resumo):
 
 def evolucao_da_idade(idade):
     """
-    Sorteia quanto a qualidade de um jogador muda na virada da temporada, conforme a nova idade.
+    Sorteia quanto a qualidade de um jogador muda na virada da temporada, conforme a idade dele.
 
     Usa EVOLUCAO_POR_IDADE: até 21 anos sobe de 2 a 5, até 24 de 1 a 3, até 28 varia de -1 a 2, até 31 de -2
     a 1, até 33 de -3 a 0 e depois cai de 1 a 5.
 
     Args:
-        idade (int): Idade do jogador na nova temporada.
+        idade (int): Idade do jogador no fim da temporada, já contando o aniversário dela.
 
     Returns:
         int: Variação da qualidade.
@@ -302,7 +302,7 @@ def vai_se_aposentar(jogador):
     IDADE_LIMITE (38 anos) ele sempre para.
 
     Args:
-        jogador (dict): Jogador avaliado, já com a nova idade.
+        jogador (dict): Jogador avaliado, com a idade do fim da temporada.
 
     Returns:
         bool: True se o jogador se aposenta.
@@ -317,9 +317,10 @@ def vai_se_aposentar(jogador):
 
 def virar_o_ano(jogador):
     """
-    Envelhece um jogador em um ano, aplica a evolução da idade e zera os números da temporada.
+    Aplica a evolução da idade a um jogador e zera os números da temporada.
 
-    A qualidade muda conforme evolucao_da_idade (entre 40 e 92) e cada atributo acompanha a mudança, com
+    A idade não muda aqui: cada jogador fica mais velho no próprio aniversário, ao longo da temporada. A
+    qualidade muda conforme evolucao_da_idade (entre 40 e 92) e cada atributo acompanha a mudança, com
     variação de -1 a 1 (entre 5 e 99). Gols, cartões, suspensões, lesões, grande fase, insatisfação e foco
     de treino são zerados, e a energia volta a 100.
 
@@ -329,7 +330,7 @@ def virar_o_ano(jogador):
     Returns:
         int: Variação da qualidade.
     """
-    jogador["idade"] = jogador.get("idade", 26) + 1
+    jogador.setdefault("idade", 26)
     antes = jogador["qualidade"]
     jogador["qualidade"] = limitar(antes + evolucao_da_idade(jogador["idade"]), 40, 92)
     variacao = jogador["qualidade"] - antes
@@ -370,9 +371,9 @@ def renovar_elenco(estado, clube, banco):
     """
     Passa o elenco de um clube para a nova temporada.
 
-    Cada jogador envelhece (virar_o_ano) ou se aposenta (vai_se_aposentar). Depois a base completa as
-    posições que ficaram abaixo de COMPOSICAO_ELENCO, sem passar de MAX_ELENCO, e com CHANCE_JOIA_DA_BASE
-    (30%) sobe também uma joia da base, de linha.
+    Cada jogador evolui conforme a idade (virar_o_ano) ou se aposenta (vai_se_aposentar). Depois a base
+    completa as posições que ficaram abaixo de COMPOSICAO_ELENCO, sem passar de MAX_ELENCO, e com
+    CHANCE_JOIA_DA_BASE (30%) sobe também uma joia da base, de linha.
 
     Args:
         estado (dict): Estado da carreira.
@@ -385,8 +386,8 @@ def renovar_elenco(estado, clube, banco):
     aposentados = []
     variacoes = []
     for jogador in list(clube["elenco"]):
-        jogador["idade"] = jogador.get("idade", 26)
-        if vai_se_aposentar({"idade": jogador["idade"] + 1}):
+        jogador.setdefault("idade", 26)
+        if vai_se_aposentar(jogador):
             clube["elenco"].remove(jogador)
             aposentados.append(jogador)
             continue
@@ -405,7 +406,7 @@ def renovar_livres(estado, banco):
     """
     Passa os jogadores sem clube para a nova temporada e traz gente nova ao mercado.
 
-    Os livres envelhecem como os outros jogadores, e quem passa de 33 anos tem 40% de chance de parar (além da
+    Os livres evoluem como os outros jogadores, e quem passa de 33 anos tem 40% de chance de parar (além da
     aposentadoria normal). Depois a lista é completada com novos jogadores até AGENTES_LIVRES (30).
 
     Args:
@@ -417,8 +418,8 @@ def renovar_livres(estado, banco):
     """
     livres = []
     for jogador in estado["livres"]:
-        idade = jogador.get("idade", 26) + 1
-        if vai_se_aposentar({"idade": idade}) or (idade > 33 and random.random() < 0.4):
+        idade = jogador.get("idade", 26)
+        if vai_se_aposentar(jogador) or (idade > 33 and random.random() < 0.4):
             continue
         virar_o_ano(jogador)
         livres.append(jogador)
@@ -480,7 +481,7 @@ def nova_temporada(estado, banco, confianca):
     """
     Começa a próxima temporada da carreira.
 
-    Renova os elencos de todos os clubes (idade, evolução, aposentadorias e garotos da base) e a lista de
+    Renova os elencos de todos os clubes (evolução pela idade, aposentadorias e garotos da base) e a lista de
     jogadores sem clube, recalcula a força de cada clube, refaz as escalações, gera o calendário das duas
     divisões e a copa pela classificação anterior, zera a tabela, o histórico, as súmulas, os desafios, os
     objetivos e o extrato, e define a confiança inicial da diretoria.

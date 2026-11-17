@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 
 from config import (
@@ -178,6 +179,51 @@ def descricao_etapa(etapa):
     if competicao == "liga":
         return f"Liga — rodada {valor}/{TOTAL_RODADAS}"
     return f"Copa — {NOMES_FASES[valor]}"
+
+
+def fazer_aniversario(jogador, etapa):
+    """
+    Deixa o jogador um ano mais velho se o aniversário dele cai na etapa informada.
+
+    Jogadores de saves antigos, que ainda não têm aniversário, ganham um sorteado entre as etapas da agenda.
+
+    Args:
+        jogador (dict): Jogador avaliado.
+        etapa (int): Índice da etapa que está terminando.
+
+    Returns:
+        bool: True se o jogador fez aniversário.
+    """
+    if "aniversario" not in jogador:
+        jogador["aniversario"] = random.randrange(len(AGENDA))
+    if jogador["aniversario"] != etapa:
+        return False
+    jogador["idade"] = jogador.get("idade", 26) + 1
+    return True
+
+
+def comemorar_aniversarios(estado):
+    """
+    Faz os aniversários da etapa atual, em todos os elencos e entre os jogadores sem clube.
+
+    Cada jogador faz aniversário uma vez por temporada, ao fim da etapa sorteada para ele, então as idades vão
+    mudando ao longo do ano e não todas de uma vez na virada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        list[dict]: Jogadores do clube do técnico que fizeram aniversário.
+    """
+    etapa = estado["etapa"]
+    do_tecnico = []
+    for clube in estado["clubes"].values():
+        for jogador in clube["elenco"]:
+            if fazer_aniversario(jogador, etapa) and clube["id"] == estado["clube_id"]:
+                do_tecnico.append(jogador)
+    for jogador in estado.get("livres", []):
+        fazer_aniversario(jogador, etapa)
+    return do_tecnico
 
 
 def jogos_da_rodada(estado, rodada=None):
