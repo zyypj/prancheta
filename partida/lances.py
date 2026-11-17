@@ -1,4 +1,5 @@
 import random
+import re
 
 from config import MANDO_DE_CAMPO, MAX_SUBSTITUICOES, REVELACOES_POR_PARTIDA
 from elenco.escalacao import atributo_efetivo, disponivel, forca_setores, limitar, rotulo
@@ -357,12 +358,42 @@ def entregar_bola(partida, time_id, zona, faixa, portador):
     mover_bola(partida, time_id, zona, faixa)
 
 
+def colorir_nomes(partida, texto):
+    """
+    Pinta o nome de cada jogador citado no texto com a cor do time dele.
+
+    Na primeira chamada, monta e guarda na partida um padrão com o rótulo de todos os jogadores dos dois times
+    (em campo e no banco), do mais longo para o mais curto, para um nome nunca ser pintado dentro de outro.
+    Cada rótulo encontrado no texto ganha a marcação de cor do rich com a cor do seu clube.
+
+    Args:
+        partida (dict): Estado da partida.
+        texto (str): Texto do lance.
+
+    Returns:
+        str: Texto com os nomes coloridos.
+    """
+    if "cores_dos_nomes" not in partida:
+        cores = {}
+        for time in partida["times"].values():
+            for jogador in time["em_campo"] + time["banco"] + time["saiu"]:
+                cores[rotulo(jogador)] = time["cor"]
+        nomes = sorted(cores, key=len, reverse=True)
+        padrao = re.compile(r"(?<!\w)(" + "|".join(re.escape(nome) for nome in nomes) + ")") if nomes else None
+        partida["cores_dos_nomes"] = (padrao, cores)
+    padrao, cores = partida["cores_dos_nomes"]
+    if not padrao:
+        return texto
+    return padrao.sub(lambda achado: f"[{cores[achado.group(1)]}]{achado.group(1)}[/]", texto)
+
+
 def registrar(partida, chave, dados=None, tipo="lance", time_id=None):
     """
     Narra um lance e o envia para a exibição da partida.
 
-    Gera o texto da narração a partir da chave, guarda apenas as cinco últimas linhas narradas com o minuto e,
-    se houver uma função de exibição configurada, repassa o lance para ela.
+    Gera o texto da narração a partir da chave, pinta os nomes dos jogadores com a cor do time
+    (colorir_nomes), guarda apenas as cinco últimas linhas narradas com o minuto e, se houver uma função de
+    exibição configurada, repassa o lance para ela.
 
     Args:
         partida (dict): Estado da partida.
@@ -374,7 +405,7 @@ def registrar(partida, chave, dados=None, tipo="lance", time_id=None):
     Returns:
         str: Texto narrado.
     """
-    texto = narrar(partida["frases"], chave, dados)
+    texto = colorir_nomes(partida, narrar(partida["frases"], chave, dados))
     partida["narracao"] = (partida["narracao"] + [f"{minuto_texto(partida)} {texto}"])[-5:]
     if partida["exibir"]:
         partida["exibir"](partida, {"texto": texto, "tipo": tipo, "time": time_id})
@@ -383,13 +414,14 @@ def registrar(partida, chave, dados=None, tipo="lance", time_id=None):
 
 def anotar_sumula(partida, texto):
     """
-    Adiciona uma linha à súmula da partida, precedida do minuto atual.
+    Adiciona uma linha à súmula da partida, precedida do minuto atual, com os nomes dos jogadores na cor do
+    time.
 
     Args:
         partida (dict): Estado da partida.
         texto (str): Texto do acontecimento.
     """
-    partida["sumula"].append(f"{minuto_texto(partida)} {texto}")
+    partida["sumula"].append(f"{minuto_texto(partida)} {colorir_nomes(partida, texto)}")
 
 
 def goleiro_de(time):
@@ -599,7 +631,7 @@ def expulsar(partida, time_id, jogador, chave):
     partida["ocorrencias"].append({"tipo": "vermelho", "time": time_id, "jogador": jogador["id"]})
     invalidar_setores(partida)
     registrar(partida, chave, {"jogador": rotulo(jogador)}, tipo="vermelho", time_id=time_id)
-    anotar_sumula(partida, f"Vermelho — {rotulo(jogador)} ({time['sigla']})")
+    anotar_sumula(partida, f"Vermelho ({time['sigla']}) — {rotulo(jogador)}")
     pausar_todos(partida, "expulsao")
 
 
@@ -624,7 +656,7 @@ def amarelar(partida, time_id, jogador):
     suspenso = registrar_amarelo(jogador)
     registrar(partida, "amarelo", {"jogador": rotulo(jogador)}, tipo="amarelo", time_id=time_id)
     aviso = " (3º amarelo, suspenso na próxima rodada)" if suspenso else ""
-    anotar_sumula(partida, f"Amarelo — {rotulo(jogador)} ({time['sigla']}){aviso}")
+    anotar_sumula(partida, f"Amarelo ({time['sigla']}) — {rotulo(jogador)}{aviso}")
 
 
 def tirar_de_campo(partida, time_id, jogador, chave, rodadas):
@@ -648,9 +680,9 @@ def tirar_de_campo(partida, time_id, jogador, chave, rodadas):
     invalidar_setores(partida)
     registrar(partida, chave, {"jogador": rotulo(jogador)}, tipo="lesao", time_id=time_id)
     if rodadas:
-        anotar_sumula(partida, f"Lesão — {rotulo(jogador)} ({time['sigla']}), fora por {rodadas} rodada(s)")
+        anotar_sumula(partida, f"Lesão ({time['sigla']}) — {rotulo(jogador)}, fora por {rodadas} rodada(s)")
     else:
-        anotar_sumula(partida, f"Câimbra — {rotulo(jogador)} ({time['sigla']}) deixa o campo")
+        anotar_sumula(partida, f"Câimbra ({time['sigla']}) — {rotulo(jogador)} deixa o campo")
     partida["controles"][time_id]["lesao"](partida, time_id, jogador)
 
 
@@ -855,14 +887,14 @@ def marcar_gol(partida, atacante_id, autor, contra=False):
     if not contra and random.random() < 0.04:
         time["gols"] -= 1
         registrar(partida, "var", tipo="var", time_id=atacante_id)
-        anotar_sumula(partida, f"Gol anulado pelo VAR — {rotulo(autor)} ({time['sigla']})")
+        anotar_sumula(partida, f"Gol anulado pelo VAR ({time['sigla']}) — {rotulo(autor)}")
         return False
     if contra:
-        anotar_sumula(partida, f"GOL CONTRA — {rotulo(autor)} (a favor do {time['sigla']})")
+        anotar_sumula(partida, f"GOL CONTRA (a favor do {time['sigla']}) — {rotulo(autor)}")
     else:
         autor["gols"] += 1
         partida["ocorrencias"].append({"tipo": "gol", "time": atacante_id, "jogador": autor["id"]})
-        anotar_sumula(partida, f"GOL — {rotulo(autor)} ({time['sigla']})")
+        anotar_sumula(partida, f"GOL ({time['sigla']}) — {rotulo(autor)}")
     return True
 
 
@@ -1474,7 +1506,7 @@ def cobrar_penalti(partida, atacante_id):
         partida["ocorrencias"].append({"tipo": "penalti_perdido", "time": atacante_id, "jogador": batedor["id"]})
     if desfecho == "fora":
         registrar(partida, "penalti_fora", {"jogador": rotulo(batedor)}, tipo="penalti_fim", time_id=atacante_id)
-        anotar_sumula(partida, f"Pênalti perdido — {rotulo(batedor)} ({atacante['sigla']})")
+        anotar_sumula(partida, f"Pênalti perdido ({atacante['sigla']}) — {rotulo(batedor)}")
         return
     atacante["no_alvo"] += 1
     if desfecho == "defesa":
@@ -1489,7 +1521,7 @@ def cobrar_penalti(partida, atacante_id):
     registrar(
         partida, "penalti_gol", {"jogador": rotulo(batedor), "placar": placar(partida)}, tipo="gol", time_id=atacante_id
     )
-    anotar_sumula(partida, f"GOL (pênalti) — {rotulo(batedor)} ({atacante['sigla']})")
+    anotar_sumula(partida, f"GOL de pênalti ({atacante['sigla']}) — {rotulo(batedor)}")
 
 
 def cartao_na_falta(partida, defensor_id, marcador, chance_amarelo):

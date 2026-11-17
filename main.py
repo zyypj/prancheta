@@ -65,7 +65,7 @@ from liga.vestiario import resolver_discussao, sortear_discussao
 from mercado.transferencias import movimentar_mercado
 from partida.jogo import jogar_partida
 from partida.lances import criar_partida
-from partida.narracao import carregar_frases
+from partida.narracao import carregar_frases, sem_cores
 from partida.simulacao import CONTROLE_IA, plano_ia
 from persistencia.arquivos import anexar_txt, ler_json, ler_linhas_txt
 from persistencia.ranking import ler_ranking, registrar_ranking
@@ -162,8 +162,8 @@ def registrar_sumula(estado, resultado, chave, titulo_jogo):
     """
     Registra a súmula de uma partida disputada.
 
-    Armazena os acontecimentos no histórico da temporada e adiciona o resultado e os lances ao arquivo de
-    texto correspondente ao técnico.
+    Armazena os acontecimentos no histórico da temporada, com os nomes coloridos, e adiciona o resultado e os
+    lances, sem as marcações de cor, ao arquivo de texto correspondente ao técnico.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -175,7 +175,7 @@ def registrar_sumula(estado, resultado, chave, titulo_jogo):
     casa = estado["clubes"][resultado["mandante"]]["nome"]
     fora = estado["clubes"][resultado["visitante"]]["nome"]
     cabecalho = f"{titulo_jogo}: {casa} {resultado['gm']} x {resultado['gv']} {fora}"
-    texto = [cabecalho] + [f"  {linha}" for linha in resultado["sumula"]]
+    texto = [cabecalho] + [f"  {sem_cores(linha)}" for linha in resultado["sumula"]]
     anexar_txt(PASTA_SUMULAS / f"{nome_do_arquivo(estado['tecnico'])}.txt", "\n".join(texto) + "\n")
 
 

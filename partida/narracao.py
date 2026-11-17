@@ -1,4 +1,7 @@
 import random
+import re
+
+MARCACAO_DE_COR = re.compile(r"\[/?[a-z_0-9 ]*\]")
 
 
 def carregar_frases(linhas):
@@ -21,6 +24,19 @@ def carregar_frases(linhas):
         if separador and texto.strip():
             frases.setdefault(chave.strip().lower(), []).append(texto.strip())
     return frases
+
+
+def sem_cores(texto):
+    """
+    Tira as marcações de cor do rich de um texto, para gravá-lo em arquivo.
+
+    Args:
+        texto (str): Texto que pode ter marcações como "[green]" e "[/]".
+
+    Returns:
+        str: Texto puro.
+    """
+    return MARCACAO_DE_COR.sub("", texto)
 
 
 def narrar(frases, chave, dados=None):
