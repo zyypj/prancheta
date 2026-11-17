@@ -1,4 +1,4 @@
-from config import BILHETERIA, COTA_TV
+from config import BILHETERIA, COTA_TV, FATOR_RECEITA_SERIE_B
 
 
 def lancar(estado, clube_id, categoria, valor):
@@ -26,6 +26,19 @@ def lancar(estado, clube_id, categoria, valor):
         financas[categoria] = round(financas.get(categoria, 0) + valor, 1)
         estado.setdefault("extrato_etapa", []).append((categoria, valor))
     return valor
+
+
+def fator_da_divisao(clube):
+    """
+    Indica quanto da receita normal um clube recebe pela divisão em que joga.
+
+    Args:
+        clube (dict): Clube avaliado.
+
+    Returns:
+        float: 1 na Série A e FATOR_RECEITA_SERIE_B (0,6) na Série B.
+    """
+    return FATOR_RECEITA_SERIE_B if clube.get("divisao", 1) == 2 else 1.0
 
 
 def vitorias_recentes(estado, clube_id, quantidade=5):
@@ -71,7 +84,8 @@ def receber_bilheteria(estado, resultado, neutro=False):
     Paga a bilheteria de um jogo.
 
     O mandante recebe o valor de BILHETERIA do seu nível multiplicado pelo fator da torcida. Em campo neutro,
-    a renda é dividida: cada clube recebe metade do valor do seu nível.
+    a renda é dividida: cada clube recebe metade do valor do seu nível. Clubes da Série B recebem só
+    FATOR_RECEITA_SERIE_B (60%) desses valores.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -80,22 +94,25 @@ def receber_bilheteria(estado, resultado, neutro=False):
     """
     if neutro:
         for clube_id in (resultado["mandante"], resultado["visitante"]):
-            lancar(estado, clube_id, "Bilheteria", BILHETERIA[estado["clubes"][clube_id]["nivel"]] / 2)
+            clube = estado["clubes"][clube_id]
+            lancar(estado, clube_id, "Bilheteria", BILHETERIA[clube["nivel"]] / 2 * fator_da_divisao(clube))
         return
     mandante = resultado["mandante"]
-    valor = BILHETERIA[estado["clubes"][mandante]["nivel"]] * fator_torcida(estado, mandante)
+    clube = estado["clubes"][mandante]
+    valor = BILHETERIA[clube["nivel"]] * fator_torcida(estado, mandante) * fator_da_divisao(clube)
     lancar(estado, mandante, "Bilheteria", valor)
 
 
 def receber_cota_tv(estado):
     """
-    Paga a cota de TV da rodada da liga a todos os clubes, conforme o nível de cada um (COTA_TV).
+    Paga a cota de TV da rodada da liga a todos os clubes, conforme o nível de cada um (COTA_TV). Na Série
+    B, a cota é FATOR_RECEITA_SERIE_B (60%) do valor.
 
     Args:
         estado (dict): Estado atual da temporada.
     """
     for clube_id, clube in estado["clubes"].items():
-        lancar(estado, clube_id, "Cota de TV", COTA_TV[clube["nivel"]])
+        lancar(estado, clube_id, "Cota de TV", COTA_TV[clube["nivel"]] * fator_da_divisao(clube))
 
 
 def extrato(estado):

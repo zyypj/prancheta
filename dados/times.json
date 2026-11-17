@@ -11,7 +11,8 @@
       "estilo": "posse",
       "ofensividade": 4,
       "intensidade": 3
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "met",
@@ -25,7 +26,8 @@
       "estilo": "posse",
       "ofensividade": 3,
       "intensidade": 4
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "lit",
@@ -39,7 +41,8 @@
       "estilo": "contra-ataque",
       "ofensividade": 3,
       "intensidade": 3
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "uni",
@@ -53,7 +56,8 @@
       "estilo": "posse",
       "ofensividade": 3,
       "intensidade": 3
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "gav",
@@ -67,7 +71,8 @@
       "estilo": "contra-ataque",
       "ofensividade": 3,
       "intensidade": 4
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "tro",
@@ -81,7 +86,8 @@
       "estilo": "jogo direto",
       "ofensividade": 3,
       "intensidade": 4
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "cox",
@@ -95,7 +101,8 @@
       "estilo": "contra-ataque",
       "ofensividade": 2,
       "intensidade": 3
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "fer",
@@ -109,7 +116,8 @@
       "estilo": "jogo direto",
       "ofensividade": 2,
       "intensidade": 4
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "pam",
@@ -123,7 +131,8 @@
       "estilo": "contra-ataque",
       "ofensividade": 2,
       "intensidade": 3
-    }
+    },
+    "divisao": 1
   },
   {
     "id": "lag",
@@ -132,6 +141,157 @@
     "cor": "cyan",
     "forca": 58,
     "nivel": "pequeno",
+    "plano": {
+      "formacao": "5-3-2",
+      "estilo": "jogo direto",
+      "ofensividade": 2,
+      "intensidade": 3
+    },
+    "divisao": 1
+  },
+  {
+    "id": "cha",
+    "nome": "Charrua EC",
+    "sigla": "CHA",
+    "cor": "dark_orange",
+    "forca": 66,
+    "nivel": "grande",
+    "divisao": 2,
+    "plano": {
+      "formacao": "4-4-2",
+      "estilo": "posse",
+      "ofensividade": 3,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "gua",
+    "nome": "Atlético Guaíba",
+    "sigla": "GUA",
+    "cor": "bright_cyan",
+    "forca": 64,
+    "nivel": "medio",
+    "divisao": 2,
+    "plano": {
+      "formacao": "4-3-3",
+      "estilo": "contra-ataque",
+      "ofensividade": 3,
+      "intensidade": 4
+    }
+  },
+  {
+    "id": "min",
+    "nome": "Minuano FC",
+    "sigla": "MIN",
+    "cor": "white",
+    "forca": 63,
+    "nivel": "medio",
+    "divisao": 2,
+    "plano": {
+      "formacao": "4-4-2",
+      "estilo": "jogo direto",
+      "ofensividade": 3,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "taq",
+    "nome": "Taquari EC",
+    "sigla": "TAQ",
+    "cor": "gold1",
+    "forca": 61,
+    "nivel": "pequeno",
+    "divisao": 2,
+    "plano": {
+      "formacao": "4-5-1",
+      "estilo": "contra-ataque",
+      "ofensividade": 2,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "imp",
+    "nome": "Imperial de Viamão",
+    "sigla": "IMP",
+    "cor": "orchid",
+    "forca": 60,
+    "nivel": "pequeno",
+    "divisao": 2,
+    "plano": {
+      "formacao": "4-4-2",
+      "estilo": "posse",
+      "ofensividade": 3,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "fro",
+    "nome": "Fronteira FC",
+    "sigla": "FRO",
+    "cor": "spring_green3",
+    "forca": 58,
+    "nivel": "pequeno",
+    "divisao": 2,
+    "plano": {
+      "formacao": "5-3-2",
+      "estilo": "jogo direto",
+      "ofensividade": 2,
+      "intensidade": 4
+    }
+  },
+  {
+    "id": "jac",
+    "nome": "Estrela do Jacuí",
+    "sigla": "JAC",
+    "cor": "indian_red",
+    "forca": 57,
+    "nivel": "pequeno",
+    "divisao": 2,
+    "plano": {
+      "formacao": "4-3-3",
+      "estilo": "posse",
+      "ofensividade": 3,
+      "intensidade": 2
+    }
+  },
+  {
+    "id": "car",
+    "nome": "Carreteiro EC",
+    "sigla": "CAR",
+    "cor": "light_salmon3",
+    "forca": 56,
+    "nivel": "pequeno",
+    "divisao": 2,
+    "plano": {
+      "formacao": "3-5-2",
+      "estilo": "jogo direto",
+      "ofensividade": 3,
+      "intensidade": 4
+    }
+  },
+  {
+    "id": "mis",
+    "nome": "Missões FC",
+    "sigla": "MIS",
+    "cor": "khaki1",
+    "forca": 55,
+    "nivel": "pequeno",
+    "divisao": 2,
+    "plano": {
+      "formacao": "4-5-1",
+      "estilo": "contra-ataque",
+      "ofensividade": 2,
+      "intensidade": 3
+    }
+  },
+  {
+    "id": "cer",
+    "nome": "Cerro Largo AC",
+    "sigla": "CER",
+    "cor": "medium_purple",
+    "forca": 53,
+    "nivel": "pequeno",
+    "divisao": 2,
     "plano": {
       "formacao": "5-3-2",
       "estilo": "jogo direto",

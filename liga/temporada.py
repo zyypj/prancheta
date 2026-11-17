@@ -17,16 +17,20 @@ from config import (
     CONFIANCA_ZEBRA,
     DIFERENCA_FAVORITISMO,
     FASES_COPA,
+    METAS,
     NIVEIS,
     NOMES_FASES,
     PREMIO_EMPATE,
     PREMIO_VITORIA,
+    REPUTACAO_INICIAL,
     TOTAL_RODADAS,
     VERSAO_SAVE,
+    ZONA_ACESSO,
+    ZONA_REBAIXAMENTO,
 )
 from elenco.escalacao import completar_titulares, escalar_automatico, gerar_elenco
 from elenco.substituicoes import preparar_proxima_rodada
-from liga.calendario import gerar_calendario, jogo_do_clube
+from liga.calendario import gerar_calendario_das_divisoes, jogo_do_clube
 from liga.copa import criar_copa, fase_neutra, preparar_fase, registrar_fase
 from liga.financas import lancar, receber_bilheteria, receber_cota_tv
 from liga.tabela import criar_tabela, ordenar_tabela, posicao_do_clube, registrar_resultado, saldo
@@ -38,9 +42,11 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
     """
     Cria o estado inicial de uma nova temporada.
 
-    Copia cada clube base, define o caixa inicial conforme o nível do clube, gera o elenco com nomes que não
-    se repetem e escala os titulares automaticamente. Em seguida monta o calendário da liga, a copa, os
-    agentes livres e a tabela zerada, começando com a confiança da diretoria em CONFIANCA_INICIAL.
+    Copia cada clube base, com a sua divisão, define o caixa inicial conforme o nível do clube, gera o elenco
+    com nomes que não se repetem e escala os titulares automaticamente. Em seguida monta o calendário das duas
+    divisões, a copa, os agentes livres e a tabela zerada, começando com a confiança da diretoria em
+    CONFIANCA_INICIAL. A reputação do técnico começa conforme o nível do clube escolhido (REPUTACAO_INICIAL),
+    com um ponto a menos na Série B, e a carreira começa na temporada 1.
 
     Args:
         tecnico (str): Nome do técnico.
@@ -56,6 +62,7 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
     for base in clubes_base:
         clube = dict(base)
         clube["plano"] = dict(base["plano"])
+        clube["divisao"] = base.get("divisao", 1)
         clube["caixa"] = NIVEIS[clube["nivel"]]["caixa"]
         clube["elenco"] = gerar_elenco(clube, banco_nomes, usados)
         clube["titulares"] = escalar_automatico(clube["elenco"], clube["plano"]["formacao"])
@@ -66,7 +73,7 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
         "tecnico": tecnico,
         "clube_id": clube_id,
         "clubes": clubes,
-        "calendario": gerar_calendario(ids),
+        "calendario": gerar_calendario_das_divisoes(clubes),
         "copa": criar_copa(clubes),
         "livres": gerar_agentes_livres(banco_nomes, usados),
         "etapa": 0,
@@ -79,6 +86,9 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
         "ultimos": [],
         "demitido": False,
         "encerrado": False,
+        "temporada": 1,
+        "carreira": [],
+        "reputacao": max(0, REPUTACAO_INICIAL[clubes[clube_id]["nivel"]] - (clubes[clube_id]["divisao"] - 1)),
         "inicio": datetime.now().strftime("%d/%m/%Y %H:%M"),
     }
 
@@ -94,6 +104,49 @@ def clube_do_jogador(estado):
         dict: Clube do jogador.
     """
     return estado["clubes"][estado["clube_id"]]
+
+
+def divisao_do_jogador(estado):
+    """
+    Obtém a divisão em que joga o clube do técnico.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        int: 1 para a Série A ou 2 para a Série B.
+    """
+    return clube_do_jogador(estado).get("divisao", 1)
+
+
+def meta_do_clube(clube):
+    """
+    Obtém a meta da diretoria de um clube, que depende do nível e da divisão (METAS).
+
+    Na Série A, o grande quer o título, o médio o G4 e o pequeno não cair; na Série B, o grande quer o acesso,
+    o médio brigar por ele e o pequeno ficar no meio da tabela.
+
+    Args:
+        clube (dict): Clube avaliado.
+
+    Returns:
+        tuple[str, int]: Texto da meta e a pior posição que ainda a cumpre.
+    """
+    return METAS[clube.get("divisao", 1)][clube["nivel"]]
+
+
+def ids_da_divisao(estado, divisao):
+    """
+    Lista os clubes de uma divisão.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        divisao (int): 1 para a Série A ou 2 para a Série B.
+
+    Returns:
+        list[str]: Identificadores dos clubes da divisão.
+    """
+    return [clube_id for clube_id, clube in estado["clubes"].items() if clube.get("divisao", 1) == divisao]
 
 
 def etapa_atual(estado):
@@ -235,22 +288,25 @@ def simular_outros_jogos(estado, frases):
     ]
 
 
-def classificacao(estado):
+def classificacao(estado, divisao=None):
     """
-    Obtém a classificação atual da liga, já com os critérios de desempate aplicados.
+    Obtém a classificação atual de uma divisão, já com os critérios de desempate aplicados.
 
     Args:
         estado (dict): Estado atual da temporada.
+        divisao (int | None): Divisão a classificar. Padrão None, que usa a divisão do clube do técnico.
 
     Returns:
-        list[dict]: Linhas da tabela do primeiro ao último colocado.
+        list[dict]: Linhas da tabela do primeiro ao último colocado da divisão.
     """
-    return ordenar_tabela(estado["tabela"], estado["historico"])
+    ids = set(ids_da_divisao(estado, divisao or divisao_do_jogador(estado)))
+    tabela = {clube_id: linha for clube_id, linha in estado["tabela"].items() if clube_id in ids}
+    return ordenar_tabela(tabela, estado["historico"])
 
 
 def posicao_atual(estado):
     """
-    Obtém a posição atual do clube do jogador na liga.
+    Obtém a posição atual do clube do jogador na sua divisão.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -523,10 +579,10 @@ def temporada_acabou(estado):
 
 def meta_cumprida(estado, posicao):
     """
-    Verifica se a posição alcança a meta do nível do clube do jogador.
+    Verifica se a posição alcança a meta do clube do jogador.
 
-    A meta é terminar na posição definida para o nível ou acima dela: 1º para clube grande, 4º para médio e 8º
-    para pequeno.
+    A meta é terminar na posição definida por meta_do_clube ou acima dela: na Série A, 1º para clube grande,
+    4º para médio e 8º para pequeno; na Série B, 2º, 4º e 6º.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -535,8 +591,7 @@ def meta_cumprida(estado, posicao):
     Returns:
         bool: True se a meta foi cumprida.
     """
-    nivel = NIVEIS[clube_do_jogador(estado)["nivel"]]
-    return posicao <= nivel["posicao_meta"]
+    return posicao <= meta_do_clube(clube_do_jogador(estado))[1]
 
 
 def resumo_final(estado):
@@ -544,53 +599,67 @@ def resumo_final(estado):
     Monta o resumo da temporada do técnico, usado na tela final e no ranking.
 
     A pontuação é (pontos × 10 + saldo × 2 + bônus) multiplicada pelo multiplicador do nível do clube, nunca
-    abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta, BONUS_TITULO (200) pelo título da liga e
-    BONUS_COPA (250) pelo título da copa, mais BONUS_DESAFIO (25) por desafio da diretoria cumprido e
-    BONUS_OBJETIVO (60) por objetivo da temporada alcançado; técnico demitido não recebe os bônus de meta e de
-    título da liga. O desfecho informa a demissão (com a etapa em que aconteceu), o título (feito histórico se
-    o clube não for grande), a meta cumprida ou não, e acrescenta o título da copa quando houver.
+    abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta, BONUS_TITULO (200) pelo título da Série
+    A (metade pelo da Série B) e BONUS_COPA (250) pelo título da copa, mais BONUS_DESAFIO (25) por desafio da
+    diretoria cumprido e BONUS_OBJETIVO (60) por objetivo da temporada alcançado; técnico demitido não recebe
+    os bônus de meta e de título da liga. O desfecho informa a demissão (com a etapa em que aconteceu), o
+    título (feito histórico se o clube não for grande), o acesso, o rebaixamento, a meta cumprida ou não, e
+    acrescenta o título da copa quando houver e, a partir da segunda temporada, o número dela.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        dict: Técnico, clube, posição, pontos, saldo, pontuação, desfecho, se a meta foi cumprida, a meta, se
-            ganhou a copa e a data.
+        dict: Técnico, clube, divisão, temporada, posição, pontos, saldo, pontuação, desfecho, se a meta foi
+            cumprida, a meta, se ganhou a copa e a data.
     """
     clube = clube_do_jogador(estado)
     nivel = NIVEIS[clube["nivel"]]
+    divisao = clube.get("divisao", 1)
     linha = estado["tabela"][clube["id"]]
     posicao = posicao_atual(estado)
     titulo = posicao == 1 and not estado["demitido"]
     copa = estado["copa"]["campeao"] == clube["id"]
     cumpriu = meta_cumprida(estado, posicao) and not estado["demitido"]
-    bonus = (BONUS_META if cumpriu else 0) + (BONUS_TITULO if titulo else 0) + (BONUS_COPA if copa else 0)
+    bonus_titulo = BONUS_TITULO if divisao == 1 else BONUS_TITULO // 2
+    bonus = (BONUS_META if cumpriu else 0) + (bonus_titulo if titulo else 0) + (BONUS_COPA if copa else 0)
     desafios = estado.get("desafios_cumpridos", 0)
     objetivos = len(estado.get("objetivos", []))
     bonus += desafios * BONUS_DESAFIO + objetivos * BONUS_OBJETIVO
     pontuacao = round((linha["pontos"] * 10 + saldo(linha) * 2 + bonus) * nivel["multiplicador"])
     if estado["demitido"]:
         desfecho = f"demitido ({descricao_etapa(AGENDA[max(0, estado['etapa'] - 1)])})"
+    elif titulo and divisao == 2:
+        desfecho = "campeão da Série B"
     elif titulo and clube["nivel"] != "grande":
         desfecho = "campeão (feito histórico)"
     elif titulo:
         desfecho = "campeão"
+    elif divisao == 2 and posicao <= ZONA_ACESSO:
+        desfecho = "acesso à Série A"
+    elif divisao == 1 and posicao > len(ids_da_divisao(estado, 1)) - ZONA_REBAIXAMENTO:
+        desfecho = "rebaixado"
     elif cumpriu:
         desfecho = "meta cumprida"
     else:
         desfecho = "meta não cumprida"
     if copa:
         desfecho += " + campeão da copa"
+    temporada = estado.get("temporada", 1)
+    if temporada > 1:
+        desfecho += f" ({temporada}ª temporada)"
     return {
         "tecnico": estado["tecnico"],
         "clube": clube["nome"],
+        "divisao": divisao,
+        "temporada": temporada,
         "posicao": posicao,
         "pontos": linha["pontos"],
         "saldo": saldo(linha),
         "pontuacao": max(0, pontuacao),
         "desfecho": desfecho,
         "venceu": cumpriu,
-        "meta": nivel["meta"],
+        "meta": meta_do_clube(clube)[0],
         "copa": copa,
         "desafios": desafios,
         "objetivos": objetivos,

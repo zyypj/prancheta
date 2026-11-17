@@ -1,8 +1,9 @@
 from pathlib import Path
 
 NOME_JOGO = "PRANCHETA"
-VERSAO = "2.0"
-VERSAO_SAVE = 2
+VERSAO = "3.0"
+VERSAO_SAVE = 3
+VERSOES_DE_SAVE_ACEITAS = (2, 3)
 
 PASTA_RAIZ = Path(__file__).resolve().parent
 PASTA_DADOS = PASTA_RAIZ / "dados"
@@ -32,10 +33,18 @@ POSICOES = ("GOL", "DEF", "MEI", "ATA")
 COMPOSICAO_ELENCO = {"GOL": 3, "DEF": 7, "MEI": 7, "ATA": 5}
 
 NIVEIS = {
-    "grande": {"nome": "Grande", "meta": "título", "multiplicador": 1.0, "posicao_meta": 1, "caixa": 60.0},
-    "medio": {"nome": "Médio", "meta": "G4", "multiplicador": 1.3, "posicao_meta": 4, "caixa": 30.0},
-    "pequeno": {"nome": "Pequeno", "meta": "não cair", "multiplicador": 1.6, "posicao_meta": 8, "caixa": 15.0},
+    "grande": {"nome": "Grande", "multiplicador": 1.0, "caixa": 60.0},
+    "medio": {"nome": "Médio", "multiplicador": 1.3, "caixa": 30.0},
+    "pequeno": {"nome": "Pequeno", "multiplicador": 1.6, "caixa": 15.0},
 }
+DIVISOES = {1: "Série A", 2: "Série B"}
+METAS = {
+    1: {"grande": ("título", 1), "medio": ("G4", 4), "pequeno": ("não cair", 8)},
+    2: {"grande": ("acesso", 2), "medio": ("brigar pelo acesso", 4), "pequeno": ("meio da tabela", 6)},
+}
+FATOR_RECEITA_SERIE_B = 0.6
+PREMIO_CAMPEAO = {1: 6.0, 2: 3.0}
+PREMIO_ACESSO = 2.0
 
 TOTAL_RODADAS = 9
 FASES_COPA = ("preliminar", "quartas", "semifinal", "final")
@@ -45,7 +54,8 @@ NOMES_FASES = {
     "semifinal": "Semifinal",
     "final": "Final",
 }
-CLASSIFICADOS_DIRETO_COPA = 6
+CLASSIFICADOS_DIRETO_COPA = 4
+VAGAS_SERIE_B_COPA = 2
 AGENDA = (
     ("liga", 1),
     ("liga", 2),
@@ -65,8 +75,22 @@ PONTOS_VITORIA = 3
 PONTOS_EMPATE = 1
 ZONA_G4 = 4
 ZONA_REBAIXAMENTO = 2
+ZONA_ACESSO = 2
 
 CONFIANCA_INICIAL = 60
+CONFIANCA_RENOVADO = 70
+CONFIANCA_SEGUNDA_CHANCE = 45
+REPUTACAO_INICIAL = {"grande": 3, "medio": 2, "pequeno": 1}
+REPUTACAO_MAXIMA = 5
+PESO_DO_NIVEL = {"grande": 3, "medio": 2, "pequeno": 1}
+CHANCE_CONVITE = 0.45
+CHANCE_PROPOSTA_SEMANA = 0.3
+PROPOSTAS_NA_JANELA = (1, 3)
+IDADE_APOSENTADORIA = 35
+IDADE_LIMITE = 38
+EVOLUCAO_POR_IDADE = ((21, 1, 4), (24, 0, 3), (28, -1, 1), (31, -2, 0), (33, -3, -1), (99, -5, -2))
+CHANCE_JOIA_DA_BASE = 0.3
+FOLGA_DOS_TITULARES = 2.5
 CONFIANCA_VITORIA = 6
 CONFIANCA_EMPATE = 0
 CONFIANCA_DERROTA = -8
