@@ -1031,6 +1031,18 @@ def mostrar_evento(evento, titulo_tela="EVENTO DA SEMANA"):
     return evento["opcoes"][ler_opcao(1, len(evento["opcoes"])) - 1]["efeito"]
 
 
+def mostrar_imprensa(texto):
+    """
+    Mostra uma notícia da imprensa sobre o técnico ou outro clube e espera o usuário pressionar Enter.
+
+    Args:
+        texto (str): Texto da notícia.
+    """
+    titulo("NA IMPRENSA")
+    console.print(f" {texto}")
+    pausar("Enter para continuar...")
+
+
 def mostrar_mensagem(texto, estilo="bold"):
     """
     Exibe uma mensagem e espera o usuário pressionar Enter.

@@ -124,6 +124,10 @@ python main.py
     Isso também pode acontecer **logo depois de um jogo**. Com o time fora da meta e a confiança baixa, uma derrota
     pode custar o cargo, e a confiança zerada demite na hora. Com o time dentro da meta, uma vitória pode trazer
     proposta de um clube melhor: se aceitar, você assume o novo clube na mesma temporada.
+
+    A **imprensa** também solta boatos: seu cargo em risco, um clube interessado em você ou um técnico rival
+    perto da demissão. Alguns são verdade e outros não, e cada veículo acerta com frequência diferente. Um boato
+    verdadeiro tem efeito no jogo, e o desfecho aparece algumas etapas depois.
 12. Cada jogador faz aniversário numa semana diferente da temporada (os do seu elenco aparecem nos resultados). Na
     virada de temporada, os jovens evoluem, os veteranos caem e os mais velhos se aposentam. A base sobe garotos para completar os elencos, às vezes com uma joia. A força de cada clube é
     recalculada pelo elenco, chegam novos jogadores sem clube e abre uma janela de transferências com propostas

@@ -45,6 +45,7 @@ from liga.carreira import (
 )
 from liga.desafios import atualizar_objetivos, avaliar_desafio
 from liga.eventos import aplicar_efeito, criar_proposta, escolher_evento
+from liga.imprensa import criar_boato, encerrar_boato
 from liga.temporada import (
     adversario_de,
     avancar_etapa,
@@ -342,13 +343,58 @@ def jogar_partida_do_jogador(estado, recursos, escolha):
     return resultado
 
 
+def oferecer_clubes(estado, propostas):
+    """
+    Mostra propostas de outros clubes durante a temporada e leva o técnico para o escolhido.
+
+    Ao aceitar, a passagem pelo clube atual vai para o ranking e para a carreira, e ele assume o novo clube na hora.
+
+    Args:
+        estado (dict): Estado da carreira.
+        propostas (list[dict]): Propostas com o identificador do clube e o motivo do interesse.
+
+    Returns:
+        bool: True se o técnico trocou de clube.
+    """
+    clube = clube_do_jogador(estado)
+    escolha = escolher_proposta(estado, propostas, "PROPOSTA DE EMPREGO", f"Ficar no {clube['nome']}")
+    if not escolha:
+        return False
+    novo = estado["clubes"][escolha]
+    registrar_resumo(estado, resumo_final(estado, f"saiu para o {novo['nome']}"))
+    assumir_clube(estado, escolha)
+    telas.mostrar_mensagem(f"Você é o novo técnico do {novo['nome']}! Meta: {meta_do_clube(novo)[0]}.", "bold green")
+    return True
+
+
+def acompanhar_imprensa(estado):
+    """
+    Mostra o desfecho do boato que venceu e, às vezes, um boato novo.
+
+    Args:
+        estado (dict): Estado da carreira.
+
+    Returns:
+        bool: True se o técnico trocou de clube por causa do desfecho.
+    """
+    desfecho = encerrar_boato(estado)
+    if desfecho:
+        telas.mostrar_imprensa(desfecho["texto"])
+        if desfecho["propostas"] and oferecer_clubes(estado, desfecho["propostas"]):
+            return True
+    boato = criar_boato(estado)
+    if boato:
+        telas.mostrar_imprensa(boato)
+    return False
+
+
 def decidir_futuro_do_tecnico(estado, letra):
     """
     Resolve o que acontece com o técnico logo depois de um jogo.
 
     Depois de uma derrota com a diretoria sem paciência, ele pode ser demitido ou receber um aviso. Depois de
-    uma vitória com o clube dentro da meta, pode receber propostas de clubes melhores; ao aceitar uma, a
-    passagem pelo clube atual vai para o ranking e para a carreira, e ele assume o novo clube na hora.
+    um bom resultado, pode receber propostas de clubes melhores. Se ele continuar onde está, a imprensa dá o
+    desfecho do boato que venceu e pode soltar outro.
 
     Args:
         estado (dict): Estado da carreira.
@@ -371,18 +417,10 @@ def decidir_futuro_do_tecnico(estado, letra):
             f"A diretoria do {clube['nome']} está insatisfeita: novos tropeços podem custar o seu cargo.",
             "bold yellow",
         )
-        return False
     propostas = convites_depois_do_jogo(estado, letra)
-    if not propostas:
-        return False
-    escolha = escolher_proposta(estado, propostas, "PROPOSTA DE EMPREGO", f"Ficar no {clube['nome']}")
-    if not escolha:
-        return False
-    novo = estado["clubes"][escolha]
-    registrar_resumo(estado, resumo_final(estado, f"saiu para o {novo['nome']}"))
-    assumir_clube(estado, escolha)
-    telas.mostrar_mensagem(f"Você é o novo técnico do {novo['nome']}! Meta: {meta_do_clube(novo)[0]}.", "bold green")
-    return True
+    if propostas and oferecer_clubes(estado, propostas):
+        return True
+    return acompanhar_imprensa(estado)
 
 
 def jogar_etapa(estado, recursos):
