@@ -33,7 +33,7 @@ from elenco.escalacao import (
 from elenco.treino import pode_treinar
 from interface.campo import barra
 from interface.entrada import console, ler_opcao, limpar, pausar
-from interface.taca import animar_taca
+from interface.taca import animar_taca, taca_do_titulo
 from liga.copa import situacao_do_clube
 from liga.desafios import OBJETIVOS, desafio_da_etapa
 from liga.financas import extrato
@@ -979,7 +979,7 @@ def linhas_do_titulo(estado, informacao):
 
 def mostrar_titulo(estado, informacao):
     """
-    Anuncia o título conquistado na etapa que acabou de terminar, com a animação da taça.
+    Anuncia o título conquistado na etapa que acabou de terminar, com a animação da taça desse campeonato.
 
     Espera o usuário pressionar Enter.
 
@@ -1003,7 +1003,8 @@ def mostrar_titulo(estado, informacao):
             console.print(linha)
 
     limpar()
-    animar_taca(clube_do_jogador(estado)["cor"], desenhar_tela)
+    taca = taca_do_titulo(informacao["titulo"], divisao_do_jogador(estado))
+    animar_taca(clube_do_jogador(estado)["cor"], desenhar_tela, taca)
     pausar("Enter para continuar...")
 
 

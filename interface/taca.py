@@ -25,15 +25,107 @@ DISTANCIA_DOS_OMBROS = 11
 RECUO_DA_ENTRADA = 30
 TAMANHO_DO_BRACO = 7.5
 QUANTIDADE_CONFETES = 70
-MEIA_LARGURA_BOCA = 7.5
-PERFIL_DO_PE = {12: 2, 13: 1.5, 14: 2.5, 15: 1.5, 16: 2, 17: 3, 18: 4.5, 19: 5.5, 20: 6.5, 21: 6.5}
-ESTRELA_DA_TACA = ((0, 4), (-1, 5), (0, 5), (1, 5), (0, 6))
-OURO_BRILHO = "#fff3b0"
-OURO_CLARO = "#ffd94a"
-OURO = "#e6b422"
-OURO_ESCURO = "#a87a12"
-OURO_SOMBRA = "#6f4e0b"
-MADEIRA = "#8a5a33"
+PALETA_OURO = {
+    "brilho": "#fff3b0",
+    "claro": "#ffd94a",
+    "medio": "#e6b422",
+    "escuro": "#a87a12",
+    "sombra": "#6f4e0b",
+}
+PALETA_PRATA = {
+    "brilho": "#ffffff",
+    "claro": "#e3e8ec",
+    "medio": "#bcc4cb",
+    "escuro": "#858e96",
+    "sombra": "#565d64",
+}
+PALETA_COBRE = {
+    "brilho": "#ffe3c4",
+    "claro": "#f2b27a",
+    "medio": "#d98a4e",
+    "escuro": "#a35f2e",
+    "sombra": "#6e3e1c",
+}
+BRANCO_DA_BOLA = "#f7f7f2"
+PRETO_DA_BOLA = "#2a2a2a"
+ESTRELA_SERIE_A = {
+    (coluna, linha): PALETA_OURO["brilho"] for coluna, linha in ((0, 4), (-1, 5), (0, 5), (1, 5), (0, 6))
+}
+LETRA_SERIE_B = {
+    (coluna, linha): PALETA_PRATA["sombra"]
+    for coluna, linha in (
+        (-1, 3),
+        (0, 3),
+        (-1, 4),
+        (1, 4),
+        (-1, 5),
+        (0, 5),
+        (-1, 6),
+        (1, 6),
+        (-1, 7),
+        (0, 7),
+    )
+}
+LETRA_DA_COPA = {
+    (coluna, linha): PALETA_COBRE["sombra"]
+    for coluna, linha in ((-1, 8), (0, 8), (-1, 9), (1, 9), (-1, 10), (0, 10), (-1, 11), (-1, 12))
+}
+BOLA_DA_COPA = {
+    (coluna, linha): BRANCO_DA_BOLA
+    for linha, meia_largura in enumerate((1, 2, 2, 2, 1))
+    for coluna in range(-meia_largura, meia_largura + 1)
+}
+GOMOS_DA_BOLA = {posicao: PRETO_DA_BOLA for posicao in ((0, 2), (-2, 1), (2, 1), (-1, 4), (1, 4))}
+TACAS = {
+    "serie_a": {
+        "perfil": (
+            7.5,
+            7.5,
+            7.5,
+            7.46,
+            7.35,
+            7.15,
+            6.87,
+            6.5,
+            6,
+            5.36,
+            4.5,
+            3.27,
+            2,
+            1.5,
+            2.5,
+            1.5,
+            2,
+            3,
+            4.5,
+            5.5,
+            6.5,
+            6.5,
+        ),
+        "boca": 0,
+        "alca": (8, 4.5, 3.5, 3.8),
+        "paleta": PALETA_OURO,
+        "base": "#8a5a33",
+        "detalhes": ESTRELA_SERIE_A,
+    },
+    "serie_b": {
+        "perfil": (8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.2, 3.4, 2.6, 2, 1.5, 1.5, 1.5, 1.5, 2, 3.5, 4.5, 5.5, 6.5, 6.5),
+        "boca": 0,
+        "alca": (8.5, 3.5, 2.8, 3),
+        "paleta": PALETA_PRATA,
+        "base": "#2f7d4f",
+        "detalhes": LETRA_SERIE_B,
+    },
+    "copa": {
+        "perfil": (1, 2, 2, 2, 1, 4, 6.5, 8, 8, 7.5, 7, 6, 4.5, 3, 1.5, 2.5, 1.5, 2.5, 4, 5.5, 6.5, 6.5),
+        "boca": None,
+        "alca": (9.5, 10, 3, 3.6),
+        "paleta": PALETA_COBRE,
+        "base": "#7a2e2e",
+        "detalhes": {**BOLA_DA_COPA, **GOMOS_DA_BOLA, **LETRA_DA_COPA},
+    },
+}
+TACA_DA_DIVISAO = {1: "serie_a", 2: "serie_b"}
 PELE = "#c58a5c"
 CABELO = "#5c3b22"
 CONFETE_CLARO = "#f2f2f2"
@@ -104,86 +196,89 @@ def pintar_segmento(pixels, inicio, fim, raio, cor):
         pintar_disco(pixels, x, y, raio, cor)
 
 
-def perfil_da_taca(linha):
+def taca_do_titulo(titulo, divisao):
     """
-    Informa a meia largura da taça em uma de suas linhas.
+    Escolhe a taça de um título.
 
     Args:
-        linha (int): Linha dentro da taça, de 0 (boca) a ALTURA_TACA - 1 (base).
+        titulo (str): Título conquistado, "liga" ou "copa".
+        divisao (int): Divisão do clube, usada no título da liga.
 
     Returns:
-        float: Meia largura, em pixels.
+        str: Chave da taça em TACAS.
     """
-    if linha in PERFIL_DO_PE:
-        return PERFIL_DO_PE[linha]
-    if linha <= 2:
-        return MEIA_LARGURA_BOCA
-    return MEIA_LARGURA_BOCA * math.sqrt(1 - ((linha - 2) / 10) ** 2)
+    return "copa" if titulo == "copa" else TACA_DA_DIVISAO[divisao]
 
 
-def cor_da_taca(coluna, linha, meia_largura):
+def cor_da_taca(taca, coluna, linha):
     """
     Escolhe a cor de um ponto da taça, com a luz vindo da esquerda.
 
     Args:
+        taca (dict): Dados da taça, um dos valores de TACAS.
         coluna (int): Coluna relativa ao centro da taça.
         linha (int): Linha dentro da taça.
-        meia_largura (float): Meia largura da taça nessa linha.
 
     Returns:
         str: Cor do ponto.
     """
-    if linha >= 20:
-        return MADEIRA
-    if linha == 0 or (coluna, linha) in ESTRELA_DA_TACA:
-        return OURO_BRILHO if linha else OURO_CLARO
-    if linha == 1 and abs(coluna) < meia_largura - 1.5:
-        return OURO_SOMBRA
+    paleta = taca["paleta"]
+    meia_largura = taca["perfil"][linha]
+    if linha >= ALTURA_TACA - 2:
+        return taca["base"]
+    if (coluna, linha) in taca["detalhes"]:
+        return taca["detalhes"][(coluna, linha)]
+    if linha == taca["boca"]:
+        return paleta["claro"]
+    if taca["boca"] is not None and linha == taca["boca"] + 1 and abs(coluna) < meia_largura - 1.5:
+        return paleta["sombra"]
     posicao = coluna / meia_largura
     if posicao < -0.7:
-        return OURO
+        return paleta["medio"]
     if posicao < -0.15:
-        return OURO_CLARO
+        return paleta["claro"]
     if posicao < 0.5:
-        return OURO
-    return OURO_ESCURO if posicao < 0.85 else OURO_SOMBRA
+        return paleta["medio"]
+    return paleta["escuro"] if posicao < 0.85 else paleta["sombra"]
 
 
-def pintar_alcas(pixels, topo):
+def pintar_alcas(pixels, taca, topo):
     """
     Pinta as duas alças da taça, nas laterais do bojo.
 
     Args:
         pixels (list[list]): Grade de cores da arte.
-        topo (int): Linha da boca da taça.
+        taca (dict): Dados da taça, um dos valores de TACAS.
+        topo (int): Linha do alto da taça.
     """
-    for lado, cor in ((-1, OURO), (1, OURO_ESCURO)):
-        for y in range(11):
-            for x in range(6, 13):
-                distancia = math.hypot((x - 8) / 3.5, (y - 4.5) / 3.8)
-                if 0.72 <= distancia <= 1.12 and x > perfil_da_taca(y):
-                    pintar(pixels, CENTRO_ARTE + lado * x, topo + y, cor)
+    centro_x, centro_y, raio_x, raio_y = taca["alca"]
+    for lado, tom in ((-1, "medio"), (1, "escuro")):
+        for y in range(ALTURA_TACA):
+            for x in range(4, 14):
+                distancia = math.hypot((x - centro_x) / raio_x, (y - centro_y) / raio_y)
+                if 0.72 <= distancia <= 1.12 and x > taca["perfil"][y]:
+                    pintar(pixels, CENTRO_ARTE + lado * x, topo + y, taca["paleta"][tom])
 
 
-def pintar_taca(pixels, topo, faixa_de_brilho):
+def pintar_taca(pixels, taca, topo, faixa_de_brilho):
     """
-    Pinta a taça, com as alças, o pé, a base de madeira e a faixa de brilho.
+    Pinta a taça, com as alças, o pé, a base e a faixa de brilho.
 
     Args:
         pixels (list[list]): Grade de cores da arte.
-        topo (int): Linha da boca da taça.
+        taca (dict): Dados da taça, um dos valores de TACAS.
+        topo (int): Linha do alto da taça.
         faixa_de_brilho (float | None): Posição diagonal do brilho, ou None se não houver brilho.
     """
-    pintar_alcas(pixels, topo)
-    for y in range(ALTURA_TACA):
-        meia_largura = perfil_da_taca(y)
+    pintar_alcas(pixels, taca, topo)
+    for y, meia_largura in enumerate(taca["perfil"]):
         alcance = math.ceil(meia_largura)
         for x in range(-alcance, alcance + 1):
             if abs(x) > meia_largura:
                 continue
-            cor = cor_da_taca(x, y, meia_largura)
-            if faixa_de_brilho is not None and cor != MADEIRA and abs(x + y - faixa_de_brilho) < 1.6:
-                cor = OURO_BRILHO
+            cor = cor_da_taca(taca, x, y)
+            if faixa_de_brilho is not None and cor != taca["base"] and abs(x + y - faixa_de_brilho) < 1.6:
+                cor = taca["paleta"]["brilho"]
             pintar(pixels, CENTRO_ARTE + x, topo + y, cor)
 
 
@@ -248,18 +343,19 @@ def pintar_braco(pixels, ombro, mao, lado, cor):
     pintar_segmento(pixels, ombro, manga, 2, cor)
 
 
-def criar_confetes(cor):
+def criar_confetes(cor, taca):
     """
     Sorteia os confetes da comemoração, sem mexer no sorteio do jogo.
 
     Args:
         cor (str): Cor do clube, usada em parte dos confetes.
+        taca (dict): Dados da taça, cujo tom claro colore outra parte deles.
 
     Returns:
         list[tuple]: Coluna, linha inicial, velocidade, fase do balanço e cor de cada confete.
     """
     sorteio = random.Random(LARGURA_ARTE)
-    cores = (cor, cor, OURO_CLARO, CONFETE_CLARO)
+    cores = (cor, cor, taca["paleta"]["claro"], CONFETE_CLARO)
     return [
         (
             sorteio.uniform(0, LARGURA_ARTE - 1),
@@ -287,7 +383,7 @@ def pintar_confetes(pixels, confetes, tempo):
             pintar(pixels, coluna + math.sin(tempo * 0.12 + fase) * 1.5, linha % ALTURA_ARTE, cor)
 
 
-def pixels_do_quadro(cor, confetes, numero):
+def pixels_do_quadro(cor, confetes, numero, taca):
     """
     Monta a grade de cores de um quadro da animação.
 
@@ -298,6 +394,7 @@ def pixels_do_quadro(cor, confetes, numero):
         cor (str): Cor do clube.
         confetes (list[tuple]): Confetes criados por criar_confetes.
         numero (int): Número do quadro, de 0 a TOTAL_QUADROS.
+        taca (dict): Dados da taça, um dos valores de TACAS.
 
     Returns:
         list[list]: Grade de cores, com None nos pixels vazios.
@@ -317,7 +414,7 @@ def pixels_do_quadro(cor, confetes, numero):
     maos = {lado: (CENTRO_ARTE + lado * 7, mao_y) for lado in (-1, 1)}
     for lado, mao in maos.items():
         pintar_braco(pixels, (CENTRO_ARTE + lado * DISTANCIA_DOS_OMBROS, ombro_y), mao, lado, cor)
-    pintar_taca(pixels, round(mao_y) - 20, faixa)
+    pintar_taca(pixels, taca, round(mao_y) - 20, faixa)
     for mao in maos.values():
         pintar_disco(pixels, mao[0], mao[1], 1.8, PELE)
     return pixels
@@ -361,7 +458,7 @@ def texto_da_arte(pixels):
     return arte
 
 
-def animar_taca(cor, desenhar_tela):
+def animar_taca(cor, desenhar_tela, chave_da_taca):
     """
     Mostra a taça sendo levantada e termina na imagem final.
 
@@ -371,19 +468,21 @@ def animar_taca(cor, desenhar_tela):
     Args:
         cor (str): Cor do clube.
         desenhar_tela (callable): Função que recebe a arte e imprime a tela inteira.
+        chave_da_taca (str): Chave da taça em TACAS.
     """
-    confetes = criar_confetes(cor)
+    taca = TACAS[chave_da_taca]
+    confetes = criar_confetes(cor, taca)
     if TERMINAL_REAL and console.height >= ALTURA_MINIMA_TELA and console.width >= LARGURA_MINIMA_TELA:
         tecla_pressionada()
         console.show_cursor(False)
         try:
             for numero in range(TOTAL_QUADROS):
-                arte = texto_da_arte(pixels_do_quadro(cor, confetes, numero))
+                arte = texto_da_arte(pixels_do_quadro(cor, confetes, numero, taca))
                 desenhar_no_lugar(partial(desenhar_tela, arte))
                 time.sleep(PAUSA_QUADRO)
                 if tecla_pressionada():
                     break
         finally:
             console.show_cursor(True)
-    final = texto_da_arte(pixels_do_quadro(cor, confetes, TOTAL_QUADROS))
+    final = texto_da_arte(pixels_do_quadro(cor, confetes, TOTAL_QUADROS, taca))
     desenhar_no_lugar(partial(desenhar_tela, final))
