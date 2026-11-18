@@ -30,6 +30,8 @@ from partida.lances import (
 )
 
 CHANCE_JOGADA_ESPECIAL = 0.3
+MINUTO_DO_ABAFA = 85
+MINUTO_DE_SEGURAR = 80
 PESOS_JOGADAS = {
     "tiro_de_meta": 3,
     "lateral_no_ataque": 3,
@@ -50,6 +52,13 @@ PESOS_JOGADAS = {
     "levantamento": 2,
     "pivo": 2,
     "contra_ataque_sofrido": 2,
+    "bola_nas_costas": 2,
+    "linha_de_impedimento": 2,
+    "cobranca_rapida": 2,
+    "apoio_do_lateral": 2,
+    "queda_na_area": 1,
+    "goleiro_na_area": 6,
+    "gastar_tempo": 6,
 }
 CHANCES_ACONTECIMENTOS = {
     "reclamacao": 0.012,
@@ -57,6 +66,11 @@ CHANCES_ACONTECIMENTOS = {
     "paralisacao": 0.01,
     "chuva_comeca": 0.006,
     "beira_do_campo": 0.025,
+    "cera_do_goleiro": 0.03,
+    "cansaco_em_campo": 0.012,
+    "torcida_empurra": 0.02,
+    "bate_boca": 0.008,
+    "curiosidade": 0.015,
 }
 PESOS_ATACANTE = {"ATA": 6, "MEI": 2}
 
@@ -1196,6 +1210,415 @@ def contra_ataque_sofrido(partida, time_id, portador):
     return jogar_posse(partida, time_id, contra_ataque=True, portador=condutor)
 
 
+def diferenca_no_placar(partida, time_id):
+    """
+    Calcula a vantagem de um time no placar.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time avaliado.
+
+    Returns:
+        int: Gols do time menos os gols do adversário.
+    """
+    return partida["times"][time_id]["gols"] - partida["times"][outro(partida, time_id)]["gols"]
+
+
+def perdendo_no_fim(partida, time_id):
+    """
+    Indica se o time perde nos minutos finais e ainda tem goleiro em campo.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time avaliado.
+
+    Returns:
+        bool: True a partir de MINUTO_DO_ABAFA (85) do segundo tempo, com o time atrás no placar.
+    """
+    return (
+        partida["tempo"] == 2
+        and partida["minuto"] >= MINUTO_DO_ABAFA
+        and diferenca_no_placar(partida, time_id) < 0
+        and goleiro_de(partida["times"][time_id]) is not None
+    )
+
+
+def ganhando_no_fim(partida, time_id):
+    """
+    Indica se o time vence nos minutos finais.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time avaliado.
+
+    Returns:
+        bool: True a partir de MINUTO_DE_SEGURAR (80) do segundo tempo, com o time à frente no placar.
+    """
+    return (
+        partida["tempo"] == 2 and partida["minuto"] >= MINUTO_DE_SEGURAR and diferenca_no_placar(partida, time_id) > 0
+    )
+
+
+def bola_nas_costas(partida, time_id, portador):
+    """
+    Um meia vê o atacante correndo nas costas da zaga.
+
+    O passe em profundidade depende do passe do meia contra o desarme do zagueiro (33% de base) e deixa o atacante
+    cara a cara. Ao errar, 40% das vezes o atacante está impedido; nas outras, a bola é cortada e pode virar
+    contra-ataque. Também dá para tocar com calma ou arriscar de longe.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time com a bola.
+        portador (dict): Jogador que ganhou a bola no lance, não usado aqui.
+
+    Returns:
+        tuple | None: Contra-ataque do adversário, quando houver.
+    """
+    time = partida["times"][time_id]
+    armador = escolher_jogador(time, {"MEI": 5, "ATA": 1})
+    atacante = escolher_jogador(time, {"ATA": 6, "MEI": 1}, excluir=armador)
+    zagueiro = marcador_de(partida, time_id, "ataque")
+    entregar_bola(partida, time_id, "intermediaria", 1, armador)
+    dados = {"jogador": rotulo(armador), "companheiro": rotulo(atacante), "marcador": rotulo(zagueiro)}
+    registrar(partida, "bola_nas_costas", dados, time_id=time_id)
+    chance_passe = limitar(
+        0.33 + (atributo_efetivo(armador, "pas") - atributo_efetivo(zagueiro, "des")) * 0.005, 0.12, 0.6
+    )
+    escolha = perguntar(
+        partida,
+        time_id,
+        f"{rotulo(atacante)} dispara nas costas de {rotulo(zagueiro)}. O que {rotulo(armador)} faz?",
+        [
+            (
+                "enfiar",
+                f"Enfiar a bola para {rotulo(atacante)}",
+                3,
+                chance_passe * chance_de_gol(partida, time_id, atacante, "cara", "colocado", 0.02),
+            ),
+            ("tocar", "Tocar com calma", 3, 1.0),
+            ("chutar", "Arriscar de longe", 1, chance_de_gol(partida, time_id, armador, "intermediaria", "forte")),
+        ],
+    )
+    if escolha == "tocar":
+        return jogar_posse(partida, time_id, portador=armador, zona_inicial="intermediaria")
+    if escolha == "chutar":
+        finalizar(partida, time_id, armador, "intermediaria", "forte", 0.0, "fechar")
+        return None
+    if random.random() < chance_passe:
+        entregar_bola(partida, time_id, "area", 1, atacante)
+        registrar(partida, "enfiada_ok", dados, tipo="oportunidade", time_id=time_id)
+        cara_a_cara(partida, time_id, atacante, 0.02, "fechar")
+        return None
+    if random.random() < 0.4:
+        registrar(partida, "enfiada_impedida", dados, tipo="perda", time_id=time_id)
+        return None
+    registrar(partida, "enfiada_cortada", dados, tipo="perda", time_id=time_id)
+    return contra_golpe(partida, time_id, "meio", 0.2)
+
+
+def linha_de_impedimento(partida, time_id, portador):
+    """
+    O time que defende decide como reagir a um atacante prestes a receber nas costas.
+
+    Adiantar a linha dá impedimento em 50% das vezes, com ajuste pelo desarme, mas deixa o atacante cara a cara
+    quando falha. Recuar entrega a entrada da área. O bote recupera a bola em 45% das vezes, com o mesmo ajuste;
+    se falhar, o atacante segue com a bola na entrada da área.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time que ataca.
+        portador (dict): Jogador que ganhou a bola no lance, não usado aqui.
+
+    Returns:
+        tuple | None: Contra-ataque de algum dos times, quando houver.
+    """
+    atacantes = partida["times"][time_id]
+    defensor_id = outro(partida, time_id)
+    defensor = partida["times"][defensor_id]
+    atacante = escolher_jogador(atacantes, PESOS_ATACANTE)
+    zagueiro = escolher_jogador(defensor, {"DEF": 6, "MEI": 1})
+    entregar_bola(partida, time_id, "intermediaria", 1, atacante)
+    dados = {"jogador": rotulo(atacante), "marcador": rotulo(zagueiro), "time": defensor["nome"]}
+    registrar(partida, "linha_alta", dados, time_id=time_id)
+    ajuste = (atributo_efetivo(zagueiro, "des") - atributo_efetivo(atacante, "fis")) * 0.004
+    chance_linha = limitar(0.5 + ajuste, 0.25, 0.75)
+    chance_bote = limitar(0.45 + ajuste, 0.2, 0.7)
+    escolha = perguntar(
+        partida,
+        defensor_id,
+        f"{rotulo(atacante)} se prepara para receber. Como o {defensor['nome']} defende?",
+        [
+            ("linha", "Adiantar a linha e pedir impedimento", 3, chance_linha),
+            ("recuar", "Recuar e proteger a área", 3, 0.7),
+            ("bote", f"{rotulo(zagueiro)} sai no bote", 2, chance_bote),
+        ],
+    )
+    if escolha == "linha":
+        if random.random() < chance_linha:
+            registrar(partida, "linha_funcionou", dados, tipo="defesa", time_id=defensor_id)
+            return None
+        entregar_bola(partida, time_id, "area", 1, atacante)
+        registrar(partida, "linha_furada", dados, tipo="oportunidade", time_id=time_id)
+        cara_a_cara(partida, time_id, atacante, 0.0, "fechar")
+        return None
+    if escolha == "bote" and random.random() < chance_bote:
+        registrar(partida, "bote_ok", {"marcador": rotulo(zagueiro), "time": defensor["nome"]}, time_id=defensor_id)
+        return defensor_id, zagueiro
+    return jogar_posse(partida, time_id, portador=atacante, zona_inicial="ataque")
+
+
+def cobranca_rapida(partida, time_id, portador):
+    """
+    O time sofre falta no meio de campo e decide como repor a bola.
+
+    A cobrança rápida depende do passe (55% de base): dando certo, pega a defesa desarrumada num contra-ataque;
+    dando errado, entrega a bola. Levantar na área vira um cruzamento com menos precisão, e esperar o time subir
+    recomeça a jogada na intermediária.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time que sofreu a falta.
+        portador (dict): Jogador que ganhou a bola no lance, não usado aqui.
+
+    Returns:
+        tuple | None: Contra-ataque de algum dos times, quando houver.
+    """
+    time = partida["times"][time_id]
+    batedor = escolher_jogador(time, {"MEI": 6, "DEF": 2})
+    alvo = escolher_jogador(time, PESOS_ATACANTE, excluir=batedor)
+    marcador = marcador_de(partida, time_id, "meio")
+    partida["times"][outro(partida, time_id)]["faltas"] += 1
+    entregar_bola(partida, time_id, "meio", 1, batedor)
+    dados = {"jogador": rotulo(batedor), "companheiro": rotulo(alvo), "marcador": rotulo(marcador)}
+    registrar(partida, "falta_no_meio", dados, tipo="falta", time_id=time_id)
+    chance_rapida = limitar(0.55 + (atributo_efetivo(batedor, "pas") - 70) * 0.004, 0.3, 0.8)
+    escolha = perguntar(
+        partida,
+        time_id,
+        f"Falta para o {time['nome']} no meio de campo. O que {rotulo(batedor)} faz?",
+        [
+            ("rapida", f"Cobrar rápido para {rotulo(alvo)}", 3, chance_rapida),
+            ("esperar", "Esperar o time subir", 3, 1.0),
+            ("levantar", "Levantar na área", 2, chance_de_gol(partida, time_id, alvo, "cabeceio", "colocado", -0.04)),
+        ],
+    )
+    if escolha == "esperar":
+        return jogar_posse(partida, time_id, portador=batedor, zona_inicial="intermediaria")
+    if escolha == "levantar":
+        registrar(partida, "falta_levantada", dados, time_id=time_id)
+        cruzamento(partida, time_id, batedor, -0.04, "fechar")
+        return None
+    if random.random() < chance_rapida:
+        registrar(partida, "cobranca_rapida_ok", dados, tipo="oportunidade", time_id=time_id)
+        return jogar_posse(partida, time_id, contra_ataque=True, portador=alvo)
+    registrar(partida, "cobranca_rapida_erro", dados, tipo="perda", time_id=time_id)
+    return contra_golpe(partida, time_id, "meio", 0.2)
+
+
+def apoio_do_lateral(partida, time_id, portador):
+    """
+    O ponta recebe aberto e o lateral passa por fora pedindo a bola.
+
+    Tocar para o lateral dá certo em 70% das vezes e termina em cruzamento. Cortar para dentro é um chute colocado
+    de fora da área, e prender a bola recomeça a jogada na entrada da área.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time com a bola.
+        portador (dict): Jogador que ganhou a bola no lance, não usado aqui.
+
+    Returns:
+        tuple | None: Contra-ataque do adversário, quando houver.
+    """
+    time = partida["times"][time_id]
+    ponta = escolher_jogador(time, {"ATA": 4, "MEI": 4})
+    lateral = escolher_jogador(time, {"DEF": 6, "MEI": 1}, excluir=ponta)
+    lado = random.choice((0, 2))
+    entregar_bola(partida, time_id, "ataque", lado, ponta)
+    dados = {"jogador": rotulo(ponta), "companheiro": rotulo(lateral)}
+    registrar(partida, "apoio_lateral", dados, time_id=time_id)
+    escolha = perguntar(
+        partida,
+        time_id,
+        f"{rotulo(lateral)} passa por fora de {rotulo(ponta)}. Qual a decisão?",
+        [
+            ("tocar", f"Tocar para {rotulo(lateral)} cruzar", 4, 0.7),
+            (
+                "cortar",
+                "Cortar para dentro e bater",
+                3,
+                chance_de_gol(partida, time_id, ponta, "longe", "colocado", 0.03),
+            ),
+            ("prender", "Prender a bola", 2, 1.0),
+        ],
+    )
+    if escolha == "prender":
+        return jogar_posse(partida, time_id, portador=ponta, zona_inicial="ataque")
+    if escolha == "cortar":
+        finalizar(partida, time_id, ponta, "longe", "colocado", 0.03, "fechar")
+        return None
+    if random.random() < 0.7:
+        entregar_bola(partida, time_id, "linha_de_fundo", lado, lateral)
+        registrar(partida, "apoio_lateral_ok", dados, time_id=time_id)
+        cruzamento(partida, time_id, lateral, 0.0, "fechar")
+        return None
+    registrar(partida, "apoio_lateral_erro", dados, tipo="perda", time_id=time_id)
+    return contra_golpe(partida, time_id, "ataque", 0.15)
+
+
+def queda_na_area(partida, time_id, portador):
+    """
+    O atacante sente um toque dentro da área e decide se cai ou continua.
+
+    Se cair, o árbitro marca pênalti em 18% das vezes, dá amarelo por simulação em 40% e manda seguir no resto, com
+    risco de contra-ataque. Ficar em pé garante um chute da área mais difícil, e rolar para trás deixa um companheiro
+    bater de primeira.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time com a bola.
+        portador (dict): Jogador que ganhou a bola no lance, não usado aqui.
+
+    Returns:
+        tuple | None: Contra-ataque do adversário, quando houver.
+    """
+    time = partida["times"][time_id]
+    defensor_id = outro(partida, time_id)
+    atacante = escolher_jogador(time, PESOS_ATACANTE)
+    apoio = escolher_jogador(time, {"MEI": 5, "ATA": 2}, excluir=atacante)
+    zagueiro = marcador_de(partida, time_id, "area")
+    entregar_bola(partida, time_id, "area", random.randint(0, 2), atacante)
+    dados = {"jogador": rotulo(atacante), "marcador": rotulo(zagueiro), "companheiro": rotulo(apoio)}
+    registrar(partida, "toque_na_area", dados, tipo="oportunidade", time_id=time_id)
+    escolha = perguntar(
+        partida,
+        time_id,
+        f"{rotulo(zagueiro)} encosta em {rotulo(atacante)} dentro da área. E agora?",
+        [
+            ("cair", "Cair e pedir pênalti", 1, 0.18),
+            ("bater", "Ficar em pé e bater", 4, chance_de_gol(partida, time_id, atacante, "area", "colocado", -0.04)),
+            (
+                "rolar",
+                f"Rolar para {rotulo(apoio)}",
+                3,
+                chance_de_gol(partida, time_id, apoio, "primeira", "forte", 0.03),
+            ),
+        ],
+    )
+    if escolha == "bater":
+        finalizar(partida, time_id, atacante, "area", "colocado", -0.04, "fechar")
+        return None
+    if escolha == "rolar":
+        registrar(partida, "rolou_para_tras", dados, time_id=time_id)
+        finalizar(partida, time_id, apoio, "primeira", "forte", 0.03, "fechar")
+        return None
+    sorteio = random.random()
+    if sorteio < 0.18:
+        partida["times"][defensor_id]["faltas"] += 1
+        registrar(partida, "queda_penalti", dados, tipo="falta", time_id=defensor_id)
+        cartao_na_falta(partida, defensor_id, zagueiro, 0.4)
+        if revisar_penalti(partida, time_id):
+            cobrar_penalti(partida, time_id)
+        return None
+    if sorteio < 0.58:
+        registrar(partida, "queda_simulada", dados, tipo="falta", time_id=time_id)
+        amarelar(partida, time_id, atacante)
+        return None
+    registrar(partida, "queda_ignorada", dados, tipo="perda", time_id=time_id)
+    return contra_golpe(partida, time_id, "area", 0.15)
+
+
+def goleiro_na_area(partida, time_id, portador):
+    """
+    Perdendo nos minutos finais, o time ganha um escanteio e o goleiro pede para subir.
+
+    Com o goleiro na área, ele alcança a bola em 35% das vezes e cabeceia com bônus. Se não alcançar, metade das vezes
+    o adversário sai em disparada para o gol quase vazio. Sem subir, é um escanteio normal.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time que perde o jogo.
+        portador (dict): Jogador que ganhou a bola no lance, não usado aqui.
+
+    Returns:
+        tuple | None: Sempre None, pois a jogada termina nela mesma.
+    """
+    time = partida["times"][time_id]
+    goleiro = goleiro_de(time)
+    canto = random.choice((0, 2))
+    mover_bola(partida, time_id, "escanteio", canto)
+    dados = {"jogador": rotulo(goleiro), "time": time["nome"]}
+    registrar(partida, "goleiro_sobe", dados, tipo="oportunidade", time_id=time_id)
+    chance = 0.35 * chance_de_gol(partida, time_id, goleiro, "cabeceio", "colocado", 0.12)
+    escolha = perguntar(
+        partida,
+        time_id,
+        f"Último escanteio! {rotulo(goleiro)} pede para subir. Você deixa?",
+        [("subir", "Mandar o goleiro para a área", 3, chance), ("ficar", "Segurar o goleiro no gol", 2, 1.0)],
+    )
+    if escolha == "ficar":
+        cobrar_escanteio(partida, time_id, "fechar")
+        return None
+    entregar_bola(partida, time_id, "area", 1, goleiro)
+    if random.random() < 0.35:
+        registrar(partida, "goleiro_cabeceia", dados, tipo="oportunidade", time_id=time_id)
+        finalizar(partida, time_id, goleiro, "cabeceio", "colocado", 0.12, "fechar", rebote=False, escanteio=False)
+        return None
+    registrar(partida, "goleiro_nao_alcanca", dados, tipo="perda", time_id=time_id)
+    if random.random() < 0.5:
+        adversario_id = outro(partida, time_id)
+        corredor = escolher_jogador(partida["times"][adversario_id], PESOS_ATACANTE)
+        entregar_bola(partida, adversario_id, "area", 1, corredor)
+        registrar(partida, "gol_vazio", {"jogador": rotulo(corredor)}, tipo="oportunidade", time_id=adversario_id)
+        finalizar(partida, adversario_id, corredor, "cara", "colocado", 0.15, "fechar", rebote=False, escanteio=False)
+    return None
+
+
+def gastar_tempo(partida, time_id, portador):
+    """
+    Vencendo nos minutos finais, o time decide como administrar o resultado.
+
+    Prender a bola na bandeirinha dá certo em 65% das vezes e consome 2 minutos; se der errado, o adversário pode
+    sair no contra-ataque. Trocar passes recomeça no meio, e buscar mais um gol recomeça na entrada da área.
+
+    Args:
+        partida (dict): Estado da partida.
+        time_id (str): Time que vence o jogo.
+        portador (dict): Jogador que ganhou a bola no lance.
+
+    Returns:
+        tuple | None: Contra-ataque do adversário, quando houver.
+    """
+    time = partida["times"][time_id]
+    jogador = escolher_jogador(time, {"ATA": 4, "MEI": 3})
+    marcador = marcador_de(partida, time_id, "ataque")
+    entregar_bola(partida, time_id, "ataque", random.choice((0, 2)), jogador)
+    dados = {"jogador": rotulo(jogador), "marcador": rotulo(marcador), "time": time["nome"]}
+    registrar(partida, "segurar_resultado", dados, time_id=time_id)
+    escolha = perguntar(
+        partida,
+        time_id,
+        f"O {time['nome']} está na frente e o tempo acaba. O que {rotulo(jogador)} faz?",
+        [
+            ("bandeirinha", "Prender a bola na bandeirinha", 4, 0.65),
+            ("trocar", "Trocar passes sem pressa", 3, 1.0),
+            ("buscar", "Buscar mais um gol", 2, chance_de_gol(partida, time_id, jogador, "longe", "colocado")),
+        ],
+    )
+    if escolha == "trocar":
+        return jogar_posse(partida, time_id, portador=jogador, zona_inicial="meio")
+    if escolha == "buscar":
+        return jogar_posse(partida, time_id, portador=jogador, zona_inicial="ataque")
+    mover_bola(partida, time_id, "escanteio", partida["bola"]["faixa"])
+    if random.random() < 0.65:
+        partida["minuto"] = min(partida["limite"], partida["minuto"] + 2)
+        registrar(partida, "bandeirinha_ok", dados, time_id=time_id)
+        return None
+    registrar(partida, "bandeirinha_erro", dados, tipo="perda", time_id=time_id)
+    return contra_golpe(partida, time_id, "ataque", 0.2)
+
+
 def reclamacao(partida):
     """
     Um jogador reclama demais com o árbitro e leva amarelo.
@@ -1260,6 +1683,80 @@ def beira_do_campo(partida):
     registrar(partida, "beira_do_campo", {"time": partida["times"][time_id]["nome"]}, tipo="evento", time_id=time_id)
 
 
+def cera_do_goleiro(partida):
+    """
+    No segundo tempo, o goleiro de quem vence demora para repor a bola.
+
+    O árbitro aumenta os acréscimos em 1 minuto e dá amarelo em 30% das vezes. Só acontece a partir dos 70 minutos.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
+    if partida["tempo"] != 2 or partida["minuto"] < 70:
+        return
+    vencendo = [t for t in (partida["casa"], partida["fora"]) if diferenca_no_placar(partida, t) > 0]
+    goleiro = goleiro_de(partida["times"][vencendo[0]]) if vencendo else None
+    if not goleiro:
+        return
+    registrar(partida, "cera_goleiro", {"jogador": rotulo(goleiro)}, tipo="evento", time_id=vencendo[0])
+    partida["limite"] += 1
+    if random.random() < 0.3:
+        amarelar(partida, vencendo[0], goleiro)
+
+
+def cansaco_em_campo(partida):
+    """
+    No segundo tempo, um jogador de linha sente o ritmo do jogo e perde 15 de energia.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
+    if partida["tempo"] != 2:
+        return
+    time_id = random.choice((partida["casa"], partida["fora"]))
+    jogador = escolher_jogador(partida["times"][time_id], {"DEF": 2, "MEI": 3, "ATA": 3})
+    jogador["energia"] = max(0, jogador["energia"] - 15)
+    registrar(partida, "sentiu_o_ritmo", {"jogador": rotulo(jogador)}, tipo="evento", time_id=time_id)
+
+
+def torcida_empurra(partida):
+    """
+    A torcida do mandante canta alto, sem efeito no jogo. Não acontece em campo neutro.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
+    if partida["neutro"]:
+        return
+    casa = partida["casa"]
+    registrar(partida, "torcida_canta", {"time": partida["times"][casa]["nome"]}, tipo="evento", time_id=casa)
+
+
+def bate_boca(partida):
+    """
+    Dois companheiros discutem em campo, sem efeito no jogo.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
+    time_id = random.choice((partida["casa"], partida["fora"]))
+    time = partida["times"][time_id]
+    jogador = escolher_jogador(time, {"DEF": 2, "MEI": 2, "ATA": 2})
+    companheiro = escolher_jogador(time, {"DEF": 2, "MEI": 2, "ATA": 2}, excluir=jogador)
+    dados = {"jogador": rotulo(jogador), "companheiro": rotulo(companheiro)}
+    registrar(partida, "bate_boca", dados, tipo="evento", time_id=time_id)
+
+
+def curiosidade(partida):
+    """
+    Narra um momento curioso da partida, sem efeito no jogo.
+
+    Args:
+        partida (dict): Estado da partida.
+    """
+    registrar(partida, "curiosidade", tipo="evento")
+
+
 FUNCOES_JOGADAS = {
     "tiro_de_meta": tiro_de_meta,
     "lateral_no_ataque": lateral_no_ataque,
@@ -1280,13 +1777,26 @@ FUNCOES_JOGADAS = {
     "levantamento": levantamento,
     "pivo": pivo,
     "contra_ataque_sofrido": contra_ataque_sofrido,
+    "bola_nas_costas": bola_nas_costas,
+    "linha_de_impedimento": linha_de_impedimento,
+    "cobranca_rapida": cobranca_rapida,
+    "apoio_do_lateral": apoio_do_lateral,
+    "queda_na_area": queda_na_area,
+    "goleiro_na_area": goleiro_na_area,
+    "gastar_tempo": gastar_tempo,
 }
+CONDICOES_JOGADAS = {"goleiro_na_area": perdendo_no_fim, "gastar_tempo": ganhando_no_fim}
 FUNCOES_ACONTECIMENTOS = {
     "reclamacao": reclamacao,
     "confusao": confusao,
     "paralisacao": paralisacao,
     "chuva_comeca": chuva_comeca,
     "beira_do_campo": beira_do_campo,
+    "cera_do_goleiro": cera_do_goleiro,
+    "cansaco_em_campo": cansaco_em_campo,
+    "torcida_empurra": torcida_empurra,
+    "bate_boca": bate_boca,
+    "curiosidade": curiosidade,
 }
 
 
@@ -1294,8 +1804,8 @@ def jogada_especial(partida, time_id, portador):
     """
     Sorteia e joga uma das jogadas especiais para o time que ganhou a bola.
 
-    A jogada é sorteada com os pesos de PESOS_JOGADAS e executada pela função correspondente em
-    FUNCOES_JOGADAS.
+    A jogada é sorteada com os pesos de PESOS_JOGADAS, entre as que valem no momento (CONDICOES_JOGADAS), e
+    executada pela função correspondente em FUNCOES_JOGADAS.
 
     Args:
         partida (dict): Estado da partida.
@@ -1305,7 +1815,8 @@ def jogada_especial(partida, time_id, portador):
     Returns:
         tuple | None: Contra-ataque de algum dos times, quando houver, como em jogar_posse.
     """
-    tipo = random.choices(list(PESOS_JOGADAS), weights=list(PESOS_JOGADAS.values()))[0]
+    tipos = [t for t in PESOS_JOGADAS if t not in CONDICOES_JOGADAS or CONDICOES_JOGADAS[t](partida, time_id)]
+    tipo = random.choices(tipos, weights=[PESOS_JOGADAS[t] for t in tipos])[0]
     return FUNCOES_JOGADAS[tipo](partida, time_id, portador)
 
 

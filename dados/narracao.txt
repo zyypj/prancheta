@@ -525,3 +525,97 @@ recuou_contra | O {time} recua as linhas e fecha a área.
 recuou_contra | Todo mundo atrás da linha da bola no {time}.
 bote_furado | {marcador} dá o bote e erra! {jogador} passa livre!
 bote_furado | {jogador} deixa {marcador} no chão e segue em direção ao gol!
+bola_nas_costas | {jogador} levanta a cabeça e vê {companheiro} partindo nas costas de {marcador}.
+bola_nas_costas | {companheiro} faz a diagonal e pede a bola para {jogador}.
+bola_nas_costas | {jogador} tem a bola e {companheiro} já corre atrás da zaga.
+enfiada_ok | Que passe de {jogador}! {companheiro} sai na cara do gol!
+enfiada_ok | {jogador} enfia na medida e {companheiro} deixa {marcador} para trás!
+enfiada_ok | A bola passa entre os zagueiros e {companheiro} recebe livre!
+enfiada_impedida | {jogador} enfia, mas a bandeira sobe: {companheiro} estava impedido.
+enfiada_impedida | {companheiro} saiu antes da hora. Impedimento!
+enfiada_impedida | Passe bonito de {jogador}, mas {companheiro} estava à frente da linha.
+enfiada_cortada | {marcador} lê o passe de {jogador} e corta.
+enfiada_cortada | A enfiada sai forte demais e {marcador} fica com a bola.
+enfiada_cortada | {marcador} antecipa {companheiro} e acaba com a jogada.
+linha_alta | {jogador} se movimenta entre os zagueiros do {time}.
+linha_alta | O {time} joga com a linha alta e {jogador} tenta escapar.
+linha_alta | {marcador} comanda a defesa do {time} de olho em {jogador}.
+linha_funcionou | A linha do {time} sobe na hora certa e {jogador} fica impedido!
+linha_funcionou | {marcador} levanta o braço, e a bandeira confirma o impedimento de {jogador}.
+linha_funcionou | Armadilha perfeita do {time}: {jogador} estava impedido.
+linha_furada | A linha falhou! {jogador} sai sozinho!
+linha_furada | {marcador} ficou para trás e {jogador} está livre!
+linha_furada | A defesa do {time} pede impedimento, mas o jogo segue e {jogador} dispara!
+falta_no_meio | {marcador} derruba {jogador} no meio de campo.
+falta_no_meio | Falta de {marcador} em {jogador} no círculo central.
+falta_no_meio | {jogador} sofre a falta e já procura {companheiro}.
+falta_levantada | {jogador} levanta a falta na direção da área.
+falta_levantada | Bola alçada por {jogador} lá de longe.
+falta_levantada | {jogador} manda para a área e os zagueiros se posicionam.
+cobranca_rapida_ok | {jogador} cobra rápido e pega a defesa dormindo! {companheiro} arranca!
+cobranca_rapida_ok | Cobrança ligeira de {jogador}, e {companheiro} já parte em velocidade!
+cobranca_rapida_ok | Muito esperto, {jogador}! A bola chega em {companheiro} com campo aberto!
+cobranca_rapida_erro | {jogador} cobra rápido demais e erra o passe.
+cobranca_rapida_erro | A pressa atrapalha: {marcador} intercepta a cobrança de {jogador}.
+cobranca_rapida_erro | {jogador} tenta surpreender, mas entrega nos pés de {marcador}.
+apoio_lateral | {jogador} recebe aberto e {companheiro} vem correndo por fora.
+apoio_lateral | {companheiro} sobe ao ataque e passa por {jogador} pedindo a bola.
+apoio_lateral | {jogador} prende na ponta enquanto {companheiro} aparece no apoio.
+apoio_lateral_ok | {jogador} toca na medida e {companheiro} chega à linha de fundo!
+apoio_lateral_ok | Boa tabela pelo lado: {companheiro} vai ao fundo!
+apoio_lateral_ok | {companheiro} recebe de {jogador} e prepara o cruzamento!
+apoio_lateral_erro | {jogador} erra o toque e a bola sai pela lateral.
+apoio_lateral_erro | O passe para {companheiro} foi forte demais.
+apoio_lateral_erro | A defesa corta o passe de {jogador} para {companheiro}.
+toque_na_area | {marcador} encosta em {jogador} dentro da área!
+toque_na_area | {jogador} sente o toque de {marcador} na grande área!
+toque_na_area | Contato dentro da área entre {jogador} e {marcador}!
+rolou_para_tras | {jogador} tem calma e rola para {companheiro}!
+rolou_para_tras | {jogador} olha e toca para trás, {companheiro} vem batendo!
+rolou_para_tras | Em vez de cair, {jogador} serve {companheiro}!
+queda_penalti | {jogador} vai ao chão e o árbitro aponta a marca! {marcador} não acredita!
+queda_penalti | Pênalti! O juiz viu o toque de {marcador} em {jogador}!
+queda_penalti | {jogador} cai na área e o apito soa: pênalti!
+queda_simulada | O árbitro não comprou a queda de {jogador} e vai mostrar o cartão!
+queda_simulada | {jogador} se jogou, e o juiz marca simulação!
+queda_simulada | {marcador} nem tocou direito: {jogador} será advertido.
+queda_ignorada | {jogador} pede pênalti, o árbitro manda seguir e {marcador} afasta.
+queda_ignorada | Nada marcado! {jogador} fica no chão reclamando.
+queda_ignorada | O juiz faz sinal de jogo normal e {marcador} sai com a bola.
+goleiro_sobe | Escanteio para o {time} no fim! {jogador} olha para o banco e pede para subir!
+goleiro_sobe | É a última chance do {time}, e {jogador} se aproxima do meio de campo!
+goleiro_sobe | O {time} vai para o tudo ou nada e {jogador} quer ir para a área!
+goleiro_cabeceia | {jogador} sobe no meio de todo mundo e cabeceia!
+goleiro_cabeceia | O goleiro chegou! {jogador} testa firme!
+goleiro_cabeceia | Incrível: {jogador} ganha de todos pelo alto!
+goleiro_nao_alcanca | A bola passa por {jogador} e a defesa afasta!
+goleiro_nao_alcanca | {jogador} salta, não alcança, e agora precisa voltar correndo!
+goleiro_nao_alcanca | A zaga corta antes de {jogador} chegar.
+gol_vazio | {jogador} pega a sobra e dispara para o gol vazio!
+gol_vazio | Contra-ataque mortal! {jogador} corre sozinho!
+gol_vazio | O goleiro está longe e {jogador} parte de frente para o gol!
+segurar_resultado | O {time} está na frente e {jogador} leva a bola para o canto.
+segurar_resultado | {jogador} olha para o relógio e protege a bola de {marcador}.
+segurar_resultado | Faltam poucos minutos e o {time} tenta esfriar o jogo com {jogador}.
+bandeirinha_ok | {jogador} prende na bandeirinha e cava mais um tempo precioso!
+bandeirinha_ok | {marcador} não consegue tirar a bola de {jogador} no canto do campo.
+bandeirinha_ok | O relógio corre: {jogador} segura tudo perto da bandeira.
+bandeirinha_erro | {marcador} rouba a bola de {jogador} na bandeirinha!
+bandeirinha_erro | {jogador} tenta prender, mas {marcador} leva a melhor!
+bandeirinha_erro | A catimba não deu certo: {jogador} perde a bola no canto.
+cera_goleiro | {jogador} demora para repor e a torcida adversária reclama.
+cera_goleiro | O árbitro aponta o relógio para {jogador}: vai ter acréscimo.
+cera_goleiro | {jogador} ajeita a bola devagar, sem pressa nenhuma.
+sentiu_o_ritmo | {jogador} coloca as mãos nos joelhos, sentindo o ritmo do jogo.
+sentiu_o_ritmo | {jogador} parece sem fôlego depois da última corrida.
+sentiu_o_ritmo | O desgaste aparece: {jogador} já não acompanha a jogada.
+torcida_canta | A torcida do {time} canta alto e o estádio treme.
+torcida_canta | As arquibancadas empurram o {time}.
+torcida_canta | Bandeiras no alto: a casa do {time} está em festa.
+bate_boca | {jogador} e {companheiro} discutem depois do erro na jogada.
+bate_boca | {jogador} cobra {companheiro} com gestos largos.
+bate_boca | Clima quente entre {jogador} e {companheiro} dentro de campo.
+curiosidade | A bola murcha e o árbitro pede uma nova.
+curiosidade | Um gandula demora a devolver a bola e leva bronca do juiz.
+curiosidade | O bandeirinha troca a bandeira, que rasgou com o vento.
+curiosidade | O árbitro para tudo para arrumar a chuteira.
