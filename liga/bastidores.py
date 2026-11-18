@@ -371,6 +371,17 @@ def aplicar_bastidor(estado, efeito, jogador_id):
         lancar(estado, clube["id"], "Multas", -1.0)
         ajustar_confianca(estado, -1)
         return f"O clube pagou {dinheiro(1.0)} de multa pela briga. Confiança -1."
+    if efeito == "arriscar_aquecimento" and jogador:
+        if random.random() < 0.35:
+            jogador["lesao"] = max(jogador["lesao"], 1)
+            if jogador["id"] in clube["titulares"]:
+                clube["titulares"].remove(jogador["id"])
+            return f"Não deu: {rotulo(jogador)} sentiu de novo e está fora. Outro entra no lugar."
+        jogador["energia"] = max(0, jogador["energia"] - 10)
+        return f"{rotulo(jogador)} vai para o jogo, mas perde 10 de energia."
+    if efeito == "renda_extra":
+        lancar(estado, clube["id"], "Receitas extras", 0.8)
+        return f"O clube recebe {dinheiro(0.8)} a mais."
     if efeito == "prometer_vitoria":
         estado["promessa"] = True
         ajustar_confianca(estado, 2)

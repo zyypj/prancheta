@@ -224,5 +224,201 @@
     "alvo": "nenhum",
     "texto": "Uma briga entre organizadas depois do jogo rendeu punição ao clube.",
     "efeito": "punicao_briga"
+  },
+  {
+    "id": "aquecimento",
+    "momento": "pre",
+    "peso": 2,
+    "alvo": "titular",
+    "texto": "{jogador} sentiu a coxa no aquecimento.",
+    "opcoes": [
+      {
+        "texto": "Arriscar: ele joga, com risco de lesão",
+        "efeito": "arriscar_aquecimento"
+      },
+      {
+        "texto": "Poupar e escalar outro no lugar",
+        "efeito": "poupar_jogador"
+      }
+    ]
+  },
+  {
+    "id": "gramado_pesado",
+    "momento": "pre",
+    "condicao": "fora",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "O gramado do {adversario} está pesado e o aquecimento desgastou o time.",
+    "efeito": "cansar_pouco"
+  },
+  {
+    "id": "casa_cheia",
+    "momento": "pre",
+    "condicao": "casa",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "Os ingressos para o jogo contra o {adversario} se esgotaram em poucas horas.",
+    "efeito": "renda_extra"
+  },
+  {
+    "id": "capitao",
+    "momento": "pre",
+    "peso": 2,
+    "alvo": "melhor",
+    "texto": "{jogador} pede a palavra no vestiário antes de enfrentar o {adversario}.",
+    "opcoes": [
+      {
+        "texto": "Deixar o discurso com ele",
+        "efeito": "motivar_jogador"
+      },
+      {
+        "texto": "Manter o foco na conversa tática",
+        "efeito": "confianca_mais_1"
+      }
+    ]
+  },
+  {
+    "id": "atraso_concentracao",
+    "momento": "pre",
+    "peso": 1,
+    "alvo": "titular",
+    "texto": "{jogador} chegou atrasado à concentração.",
+    "opcoes": [
+      {
+        "texto": "Aplicar multa",
+        "efeito": "multar_balada"
+      },
+      {
+        "texto": "Relevar desta vez",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "espiao",
+    "momento": "pre",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Um funcionário do {adversario} foi flagrado filmando o treino do seu time.",
+    "opcoes": [
+      {
+        "texto": "Denunciar à federação",
+        "efeito": "confianca_mais_1"
+      },
+      {
+        "texto": "Usar o caso para motivar o elenco",
+        "efeito": "motivar_titulares"
+      }
+    ]
+  },
+  {
+    "id": "recepcao_onibus",
+    "momento": "pre",
+    "condicao": "casa",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A organizada recebe o ônibus do time com sinalizadores e cantos.",
+    "efeito": "festa_no_estadio"
+  },
+  {
+    "id": "vestiario_dividido",
+    "momento": "pos",
+    "condicao": "empate",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "O empate com o {adversario} deixou o vestiário dividido.",
+    "opcoes": [
+      {
+        "texto": "Valorizar o ponto conquistado",
+        "efeito": "elogiar_jogadores"
+      },
+      {
+        "texto": "Cobrar mais intensidade",
+        "efeito": "cobrar_jogadores"
+      }
+    ]
+  },
+  {
+    "id": "vaias_empate",
+    "momento": "pos",
+    "condicao": "empate",
+    "torcida": true,
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A organizada vaiou o time depois do empate.",
+    "opcoes": [
+      {
+        "texto": "Ir até a arquibancada conversar",
+        "efeito": "dialogar_organizada"
+      },
+      {
+        "texto": "Seguir direto para o vestiário",
+        "efeito": "confianca_menos_1"
+      }
+    ]
+  },
+  {
+    "id": "gol_de_placa",
+    "momento": "pos",
+    "condicao": "vitoria",
+    "peso": 2,
+    "alvo": "artilheiro",
+    "texto": "O lance de {jogador} contra o {adversario} viralizou nas redes.",
+    "efeito": "motivar_jogador"
+  },
+  {
+    "id": "leilao_camisa",
+    "momento": "pos",
+    "condicao": "vitoria",
+    "peso": 1,
+    "alvo": "melhor",
+    "texto": "A camisa usada por {jogador} foi leiloada e rendeu um bom dinheiro.",
+    "efeito": "renda_extra"
+  },
+  {
+    "id": "bate_boca_vestiario",
+    "momento": "pos",
+    "condicao": "derrota",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "Houve bate-boca no vestiário depois da derrota para o {adversario}.",
+    "opcoes": [
+      {
+        "texto": "Cobrar os jogadores",
+        "efeito": "cobrar_jogadores"
+      },
+      {
+        "texto": "Reunir o grupo e assumir a culpa",
+        "efeito": "confianca_mais_1"
+      }
+    ]
+  },
+  {
+    "id": "presidente_cobra",
+    "momento": "pos",
+    "condicao": "derrota",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "O presidente desceu ao vestiário para exigir uma reação.",
+    "opcoes": [
+      {
+        "texto": "Prometer treino dobrado",
+        "efeito": "treinar_dobrado"
+      },
+      {
+        "texto": "Dizer que o trabalho é seu",
+        "efeito": "confianca_menos_1"
+      }
+    ]
+  },
+  {
+    "id": "voo_atrasado",
+    "momento": "pos",
+    "condicao": "fora",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "O voo de volta atrasou e o time chegou de madrugada.",
+    "efeito": "cansar_medio"
   }
 ]

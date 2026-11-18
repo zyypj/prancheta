@@ -310,10 +310,8 @@ def aplicar_efeito(estado, efeito, jogador_id, banco, valor_venda=None, comprado
     1 rodada de bônus e tira 3 de confiança; "negociacao_fracassou" mantém o alvo e tira 2 de confiança;
     "base" troca o jogador de linha com menor valor para escalar por um garoto da mesma posição, com qualidade
     sorteada entre 6 abaixo e 4 acima da força do clube (entre 40 e 92); "protesto" tira 5 de confiança;
-    "descanso" recupera 15 de energia de todo o elenco, até 100. Os demais efeitos (patrocínio, amistoso,
-    camisas, investidor, aumento, treinos, folga, loja, multa, chance para a base, festa e palestra) ficam em
-    EFEITOS_DA_SEMANA, uma função para cada. Os efeitos que dependem de alvo não fazem nada se ele não
-    existir.
+    "descanso" recupera 15 de energia de todo o elenco, até 100. Os demais efeitos ficam em EFEITOS_DA_SEMANA,
+    uma função para cada. Os efeitos que dependem de alvo não fazem nada se ele não existir.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -731,6 +729,268 @@ def efeito_palestra(estado, clube, jogador):
     return f"{nomes} saíram inspirados da palestra e estão em grande fase na próxima rodada."
 
 
+def animar_titulares(clube, quantidade):
+    """
+    Deixa titulares sorteados em grande fase na próxima rodada.
+
+    Args:
+        clube (dict): Clube do técnico.
+        quantidade (int): Quantos titulares animar.
+
+    Returns:
+        str: Nomes dos jogadores animados, separados por vírgula.
+    """
+    por_id = {atleta["id"]: atleta for atleta in clube["elenco"]}
+    titulares = [por_id[i] for i in clube["titulares"] if i in por_id]
+    escolhidos = random.sample(titulares, min(quantidade, len(titulares)))
+    for atleta in escolhidos:
+        atleta["fase"] = max(atleta["fase"], 1)
+    return ", ".join(rotulo(atleta) for atleta in escolhidos)
+
+
+def efeito_psicologo(estado, clube, jogador):
+    """
+    Paga R$ 0,8 mi e acaba com a insatisfação de todo o elenco.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not pagar(estado, clube, "Comissão técnica", 0.8):
+        return "O clube não tem caixa para a contratação. Nada mudou."
+    for atleta in clube["elenco"]:
+        atleta["insatisfeito"] = 0
+    return "O psicólogo chegou e o elenco voltou a ficar em paz."
+
+
+def efeito_reforma_ct(estado, clube, jogador):
+    """
+    Paga R$ 1,5 mi, dá +10 de energia ao elenco e +1 de confiança.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not pagar(estado, clube, "Estrutura", 1.5):
+        return "O clube não tem caixa para a reforma. Nada mudou."
+    mudar_energia(clube, 10)
+    ajustar_confianca(estado, 1)
+    return "Gramados novos: o elenco recupera 10 de energia e a diretoria aprova (confiança +1)."
+
+
+def efeito_investigar_vazamento(estado, clube, jogador):
+    """
+    Investiga o vazamento: confiança +1, mas um titular sorteado fica insatisfeito por 1 rodada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    ajustar_confianca(estado, 1)
+    suspeito = escolher_alvo(clube, "titular")
+    if not suspeito:
+        return "A diretoria apoiou a investigação. Confiança +1."
+    suspeito["insatisfeito"] = max(suspeito.get("insatisfeito", 0), 1)
+    return f"A diretoria apoiou (confiança +1), mas {rotulo(suspeito)} se sentiu acusado e ficou insatisfeito."
+
+
+def efeito_liberar_campanha(estado, clube, jogador):
+    """
+    Recebe R$ 0,8 mi pela campanha, e o jogador perde 15 de energia.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador da campanha.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    lancar(estado, clube["id"], "Patrocínios", 0.8)
+    jogador["energia"] = max(0, jogador["energia"] - 15)
+    return f"O clube recebe {dinheiro(0.8)}, e {rotulo(jogador)} chega cansado (-15 de energia)."
+
+
+def efeito_vetar_campanha(estado, clube, jogador):
+    """
+    Veta a campanha, e o jogador fica insatisfeito por 1 rodada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador da campanha.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    jogador["insatisfeito"] = max(jogador.get("insatisfeito", 0), 1)
+    return f"{rotulo(jogador)} perdeu o contrato e fica insatisfeito na próxima rodada."
+
+
+def efeito_jantar_elenco(estado, clube, jogador):
+    """
+    Paga R$ 0,3 mi e deixa três titulares sorteados em grande fase por 1 rodada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not pagar(estado, clube, "Confraternização", 0.3):
+        return "O clube não tem caixa para o jantar. Nada mudou."
+    return f"O jantar uniu o grupo: {animar_titulares(clube, 3)} chegam motivados."
+
+
+def efeito_contratar_analista(estado, clube, jogador):
+    """
+    Paga R$ 1 mi e dá +1 de passe aos titulares, até 99.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not pagar(estado, clube, "Comissão técnica", 1.0):
+        return "O clube não tem caixa para o estudo. Nada mudou."
+    for atleta in clube["elenco"]:
+        if atleta["id"] in clube["titulares"]:
+            atleta["pas"] = min(99, atleta["pas"] + 1)
+    return "O estudo ajudou: os titulares ganham +1 de passe."
+
+
+def efeito_multar_noitada(estado, clube, jogador):
+    """
+    Multa o jogador: R$ 0,3 mi para o clube, ele fica insatisfeito e a confiança sobe 1.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador flagrado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    lancar(estado, clube["id"], "Multas aplicadas", 0.3)
+    jogador["insatisfeito"] = max(jogador.get("insatisfeito", 0), 1)
+    ajustar_confianca(estado, 1)
+    return f"{rotulo(jogador)} foi multado e ficou insatisfeito. A diretoria aprovou: confiança +1."
+
+
+def efeito_perdoar_noitada(estado, clube, jogador):
+    """
+    Deixa a noitada passar: o jogador perde 15 de energia e a confiança cai 1.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador flagrado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    jogador["energia"] = max(0, jogador["energia"] - 15)
+    ajustar_confianca(estado, -1)
+    return f"{rotulo(jogador)} chega cansado (-15 de energia) e a diretoria reclamou: confiança -1."
+
+
+def efeito_acao_social(estado, clube, jogador):
+    """
+    A ação social soma 1 de confiança e deixa o jogador em grande fase por 1 rodada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador da ação.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    jogador["fase"] = max(jogador["fase"], 1)
+    ajustar_confianca(estado, 1)
+    return f"{rotulo(jogador)} chega motivado e a diretoria gostou da repercussão: confiança +1."
+
+
+def efeito_lesao_leve(estado, clube, jogador):
+    """
+    O jogador fica lesionado por 1 rodada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Jogador lesionado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not jogador:
+        return "Nada mudou."
+    jogador["lesao"] = max(jogador["lesao"], 1)
+    return f"{rotulo(jogador)} fica fora da próxima rodada."
+
+
+def efeito_premio_fair_play(estado, clube, jogador):
+    """
+    Recebe R$ 0,5 mi pelo prêmio de jogo limpo.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    lancar(estado, clube["id"], "Premiações", 0.5)
+    return f"O clube recebe {dinheiro(0.5)} pelo prêmio."
+
+
+def efeito_fisioterapeuta(estado, clube, jogador):
+    """
+    Paga R$ 0,7 mi e reduz em 1 rodada a lesão de cada jogador.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        clube (dict): Clube do técnico.
+        jogador (dict | None): Não usado.
+
+    Returns:
+        str: Mensagem do resultado.
+    """
+    if not pagar(estado, clube, "Comissão técnica", 0.7):
+        return "O clube não tem caixa para a contratação. Nada mudou."
+    for atleta in clube["elenco"]:
+        atleta["lesao"] = max(0, atleta["lesao"] - 1)
+    return "O fisioterapeuta chegou: os lesionados voltam 1 rodada antes."
+
+
 EFEITOS_DA_SEMANA = {
     "patrocinio": efeito_patrocinio,
     "amistoso": efeito_amistoso,
@@ -749,4 +1009,17 @@ EFEITOS_DA_SEMANA = {
     "esperar_chance": efeito_esperar_chance,
     "festa_torcida": efeito_festa_torcida,
     "palestra": efeito_palestra,
+    "psicologo": efeito_psicologo,
+    "reforma_ct": efeito_reforma_ct,
+    "investigar_vazamento": efeito_investigar_vazamento,
+    "liberar_campanha": efeito_liberar_campanha,
+    "vetar_campanha": efeito_vetar_campanha,
+    "jantar_elenco": efeito_jantar_elenco,
+    "contratar_analista": efeito_contratar_analista,
+    "multar_noitada": efeito_multar_noitada,
+    "perdoar_noitada": efeito_perdoar_noitada,
+    "acao_social": efeito_acao_social,
+    "lesao_leve": efeito_lesao_leve,
+    "premio_fair_play": efeito_premio_fair_play,
+    "fisioterapeuta": efeito_fisioterapeuta,
 }

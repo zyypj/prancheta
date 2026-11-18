@@ -244,5 +244,154 @@
     "alvo": "nenhum",
     "texto": "Um ídolo do clube faz uma palestra para o elenco antes do jogo.",
     "efeito": "palestra"
+  },
+  {
+    "id": "psicologo",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "O departamento médico sugere contratar um psicólogo esportivo.",
+    "opcoes": [
+      {
+        "texto": "Contratar por R$ 0,8 mi: acaba a insatisfação no elenco",
+        "efeito": "psicologo"
+      },
+      {
+        "texto": "Deixar para depois",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "reforma_ct",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Os gramados do CT estão gastos e o elenco reclama.",
+    "opcoes": [
+      {
+        "texto": "Reformar por R$ 1,5 mi: +10 de energia e confiança +1",
+        "efeito": "reforma_ct"
+      },
+      {
+        "texto": "Manter como está",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "vazamento",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "A escalação do time vazou para a imprensa antes do treino.",
+    "opcoes": [
+      {
+        "texto": "Investigar: a diretoria apoia, mas um titular fica insatisfeito",
+        "efeito": "investigar_vazamento"
+      },
+      {
+        "texto": "Ignorar e seguir o trabalho",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "campanha",
+    "peso": 2,
+    "alvo": "titular",
+    "texto": "Uma marca quer {jogador} numa campanha publicitária durante a semana.",
+    "opcoes": [
+      {
+        "texto": "Liberar: R$ 0,8 mi, mas ele perde 15 de energia",
+        "efeito": "liberar_campanha"
+      },
+      {
+        "texto": "Vetar: ele fica insatisfeito por 1 rodada",
+        "efeito": "vetar_campanha"
+      }
+    ]
+  },
+  {
+    "id": "jantar",
+    "peso": 2,
+    "alvo": "nenhum",
+    "texto": "O capitão sugere um jantar para unir o elenco.",
+    "opcoes": [
+      {
+        "texto": "Pagar R$ 0,3 mi: três titulares ficam motivados",
+        "efeito": "jantar_elenco"
+      },
+      {
+        "texto": "Agradecer e recusar",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "analista",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Um analista de desempenho oferece um estudo completo dos seus passes.",
+    "opcoes": [
+      {
+        "texto": "Investir R$ 1,0 mi: titulares ganham +1 de passe",
+        "efeito": "contratar_analista"
+      },
+      {
+        "texto": "Dispensar",
+        "efeito": "nada"
+      }
+    ]
+  },
+  {
+    "id": "noitada",
+    "peso": 2,
+    "alvo": "titular",
+    "texto": "Fotos de {jogador} numa festa em dia de concentração circulam na internet.",
+    "opcoes": [
+      {
+        "texto": "Multar: R$ 0,3 mi para o clube, ele fica insatisfeito e a diretoria aprova",
+        "efeito": "multar_noitada"
+      },
+      {
+        "texto": "Passar pano: ele perde energia e a diretoria reclama",
+        "efeito": "perdoar_noitada"
+      }
+    ]
+  },
+  {
+    "id": "acao_social",
+    "peso": 2,
+    "alvo": "melhor",
+    "texto": "{jogador} visitou um hospital infantil e a ação emocionou a cidade.",
+    "efeito": "acao_social"
+  },
+  {
+    "id": "escorregao",
+    "peso": 1,
+    "alvo": "titular",
+    "texto": "{jogador} escorregou em casa e torceu o tornozelo.",
+    "efeito": "lesao_leve"
+  },
+  {
+    "id": "fair_play",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "A federação premia o clube pela campanha de jogo limpo.",
+    "efeito": "premio_fair_play"
+  },
+  {
+    "id": "fisioterapeuta",
+    "peso": 1,
+    "alvo": "nenhum",
+    "texto": "Um fisioterapeuta renomado se oferece para atender o elenco.",
+    "opcoes": [
+      {
+        "texto": "Contratar por R$ 0,7 mi: lesionados voltam 1 rodada antes",
+        "efeito": "fisioterapeuta"
+      },
+      {
+        "texto": "Recusar",
+        "efeito": "nada"
+      }
+    ]
   }
 ]

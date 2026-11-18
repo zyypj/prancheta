@@ -41,6 +41,40 @@
           "efeito": "cobrar_jogador"
         }
       ]
+    },
+    {
+      "pergunta": "O {adversario} chega embalado. Isso preocupa?",
+      "respostas": [
+        {
+          "texto": "Vamos impor o nosso jogo e vencer.",
+          "efeito": "prometer_vitoria"
+        },
+        {
+          "texto": "É um adversário forte, mas estamos prontos.",
+          "efeito": "confianca_mais_1"
+        },
+        {
+          "texto": "O elenco está focado, confio neles.",
+          "efeito": "elogiar_jogadores"
+        }
+      ]
+    },
+    {
+      "pergunta": "O torcedor pode esperar um time ofensivo hoje?",
+      "respostas": [
+        {
+          "texto": "Vamos para cima desde o início.",
+          "efeito": "motivar_titulares"
+        },
+        {
+          "texto": "Depende do que o jogo pedir.",
+          "efeito": "nada"
+        },
+        {
+          "texto": "Precisamos primeiro acertar a defesa.",
+          "efeito": "confianca_mais_1"
+        }
+      ]
     }
   ],
   "vitoria": [
@@ -77,6 +111,23 @@
           "efeito": "cobrar_jogador"
         }
       ]
+    },
+    {
+      "pergunta": "Qual foi o segredo da vitória sobre o {adversario}?",
+      "respostas": [
+        {
+          "texto": "Trabalho do grupo na semana.",
+          "efeito": "elogiar_jogadores"
+        },
+        {
+          "texto": "A estratégia funcionou.",
+          "efeito": "confianca_mais_1"
+        },
+        {
+          "texto": "Ainda dá para jogar muito mais.",
+          "efeito": "cobrar_jogadores"
+        }
+      ]
     }
   ],
   "empate": [
@@ -94,6 +145,40 @@
         {
           "texto": "Esse resultado não serve para nós.",
           "efeito": "cobrar_jogadores"
+        }
+      ]
+    },
+    {
+      "pergunta": "O que faltou para vencer o {adversario}?",
+      "respostas": [
+        {
+          "texto": "Faltou caprichar na finalização.",
+          "efeito": "nada"
+        },
+        {
+          "texto": "Vamos treinar dobrado.",
+          "efeito": "treinar_dobrado"
+        },
+        {
+          "texto": "Os jogadores se entregaram, não tenho o que cobrar.",
+          "efeito": "elogiar_jogadores"
+        }
+      ]
+    },
+    {
+      "pergunta": "{jogador} teve chances. Ele deveria ter decidido?",
+      "respostas": [
+        {
+          "texto": "Ele vai marcar no próximo jogo.",
+          "efeito": "motivar_jogador"
+        },
+        {
+          "texto": "Futebol é assim.",
+          "efeito": "nada"
+        },
+        {
+          "texto": "Dele a gente espera mais.",
+          "efeito": "cobrar_jogador"
         }
       ]
     }
@@ -130,6 +215,23 @@
         {
           "texto": "O elenco é curto, precisamos de reforços.",
           "efeito": "pedir_reforco"
+        }
+      ]
+    },
+    {
+      "pergunta": "A torcida pede mudanças no time. Você vai mexer?",
+      "respostas": [
+        {
+          "texto": "Todos estão sendo avaliados.",
+          "efeito": "cobrar_jogadores"
+        },
+        {
+          "texto": "Confio neste grupo.",
+          "efeito": "elogiar_jogadores"
+        },
+        {
+          "texto": "A responsabilidade é minha.",
+          "efeito": "confianca_mais_2"
         }
       ]
     }
