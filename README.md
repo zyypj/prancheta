@@ -77,19 +77,22 @@ python main.py
 
    Acertar aumenta a chance da jogada (ou de defender) e errar diminui.
 
-   Cerca de 30% dos lances começam numa das 19 jogadas especiais, cada uma com as suas escolhas: tiro de meta,
+   Cerca de 30% dos lances começam numa das 26 jogadas especiais, cada uma com as suas escolhas: tiro de meta,
    lateral no ataque, contra-ataque de três contra dois, falta pelo lado, falta de longe, falta na meia-lua, sobra
    na entrada da área, erro do adversário na saída de bola, arrancada de um craque, pressão na saída do goleiro,
    escanteio conquistado, bola pelo alto, um contra um na linha de fundo, goleiro pressionado, virada de jogo,
-   dois contra um, levantamento da intermediária, pivô de costas e contra-ataque sofrido (aqui quem decide é
-   quem defende).
+   dois contra um, levantamento da intermediária, pivô de costas, bola nas costas da zaga, apoio do lateral,
+   cobrança rápida de falta, toque dentro da área e contra-ataque sofrido. Em linha de impedimento e contra-ataque
+   sofrido, quem decide é quem defende. No fim do jogo, quem perde pode mandar o goleiro para a área, e quem ganha
+   pode segurar a bola na bandeirinha.
 
    Em cada partida você tem **3 revelações**. Quando uma pergunta mostra a opção **R**, digite R e escolha uma
    única opção para ver a chance dela dar certo; a porcentagem fica ao lado do nome e aí você decide. Nos chutes,
    a porcentagem é a chance de gol. Na defesa, você escolhe o que o goleiro faz no cara a cara (sair abafando, esperar ou fechar o ângulo) e
    às vezes como bloquear um chute (carrinho, fechar o ângulo ou deixar para o goleiro). Ainda podem acontecer desvio,
    frango, bola tirada em cima da linha, VAR revisando pênalti, simulação, impedimento duvidoso, reclamação,
-   confusão, paralisação e chuva no meio do jogo, com centenas de frases de narração diferentes.
+   confusão, cera do goleiro, cansaço, bate-boca entre companheiros, paralisação e chuva no meio do jogo, com
+   centenas de frases de narração diferentes.
 6. No **Mercado da bola**, compre jogadores de outros clubes fazendo uma proposta, contrate jogadores sem clube
    pagando luvas ou venda um jogador escolhendo entre as ofertas recebidas. Em **Sugestões do olheiro** aparecem até
    seis contratações que cabem no caixa, com o motivo (vira titular, posição carente, jovem promissor ou reforço de
@@ -105,11 +108,13 @@ python main.py
    **objetivos da temporada**, como vencer 3 jogos seguidos ou chegar à semifinal da copa.
 9. Depois de cada jogo aparecem os resultados, a confiança, o desafio, o dinheiro da semana e as notícias do
    mercado. Em seguida vem um evento da semana (aumento de salário, folga, treino especial, joia da base pedindo
-   chance, proposta do exterior e outros) ou uma **discussão no vestiário**: pênalti perdido, expulsão, goleada,
+   chance, proposta do exterior, psicólogo, campanha publicitária, noitada e outros) ou uma **discussão no
+   vestiário**: pênalti perdido, expulsão, goleada,
    briga por posição ou vaidade entre artilheiros. Quem você apoia fica motivado; quem é contrariado fica
    insatisfeito e rende menos por algumas rodadas. O jogo salva sozinho ao fim de cada etapa.
-10. De vez em quando, antes ou depois do jogo, acontece um **bastidor** (jogador gripado, provocação do
-    adversário, ônibus atrasado, festa depois da vitória, bicho extra, revolta com a arbitragem) ou um evento da
+10. De vez em quando, antes ou depois do jogo, acontece um **bastidor** (jogador gripado, dor no aquecimento,
+    provocação do adversário, espião no treino, ônibus atrasado, festa depois da vitória, bicho extra, vestiário
+    dividido, cobrança do presidente, revolta com a arbitragem) ou um evento da
     **torcida organizada** (mosaico que empurra o time no jogo em casa, protesto no aeroporto, cobrança no CT,
     festa no desembarque, briga punida). A imprensa também chama para **entrevistas**, muito mais nos clubes
     grandes; prometer vitória agrada a torcida, mas a diretoria cobra se o time perder o jogo seguinte.
