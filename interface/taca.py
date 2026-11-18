@@ -37,6 +37,7 @@ MADEIRA = "#8a5a33"
 PELE = "#c58a5c"
 CABELO = "#5c3b22"
 CONFETE_CLARO = "#f2f2f2"
+BLOCOS_SEM_COR = {(True, True): "█", (True, False): "▀", (False, True): "▄", (False, False): " "}
 
 
 def suavizar(valor):
@@ -322,9 +323,25 @@ def pixels_do_quadro(cor, confetes, numero):
     return pixels
 
 
+def celula_sem_cor(superior, inferior):
+    """
+    Escolhe o bloco que mostra dois pixels em um terminal sem cores.
+
+    Args:
+        superior (str | None): Cor do pixel de cima, ou None se ele estiver vazio.
+        inferior (str | None): Cor do pixel de baixo, ou None se ele estiver vazio.
+
+    Returns:
+        tuple: Caractere e estilo vazio.
+    """
+    return BLOCOS_SEM_COR[(superior is not None, inferior is not None)], ""
+
+
 def texto_da_arte(pixels):
     """
     Converte a grade de cores em texto, juntando dois pixels em cada célula do terminal.
+
+    Em um terminal sem cores, a arte vira uma silhueta feita de blocos.
 
     Args:
         pixels (list[list]): Grade de cores da arte.
@@ -332,11 +349,12 @@ def texto_da_arte(pixels):
     Returns:
         Text: Texto do rich pronto para imprimir.
     """
+    celula = celula_sem_cor if console.no_color or console.color_system is None else celula_do_campo
     arte = Text(no_wrap=True, overflow="crop")
     for linha in range(0, ALTURA_ARTE, 2):
-        celulas = [celula_do_campo(cima, baixo) for cima, baixo in zip(pixels[linha], pixels[linha + 1])]
+        celulas = [celula(cima, baixo) for cima, baixo in zip(pixels[linha], pixels[linha + 1])]
         arte.append(RECUO_ARTE)
-        for estilo, grupo in groupby(celulas, key=lambda celula: celula[1]):
+        for estilo, grupo in groupby(celulas, key=lambda par: par[1]):
             arte.append("".join(caractere for caractere, _ in grupo), style=estilo)
         if linha < ALTURA_ARTE - 2:
             arte.append("\n")
