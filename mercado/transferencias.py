@@ -272,8 +272,8 @@ def tentar_comprar(estado, jogador, vendedor, oferta):
 
     A proposta é recusada de imediato se o elenco do técnico já tiver MAX_ELENCO (28) jogadores, se a oferta
     for maior que o caixa ou se o vendedor não puder liberar o jogador. Caso contrário, a chance de aceitar
-    cresce de forma linear com a razão entre oferta e preço pedido: é nula com 80% do pedido ou menos e certa
-    a partir de 110%.
+    cresce de forma linear com a razão entre oferta e preço pedido: é nula com 80% do pedido ou menos e chega
+    perto de dois terços logo abaixo do pedido. Oferecer o preço pedido ou mais sempre fecha o negócio.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -292,7 +292,7 @@ def tentar_comprar(estado, jogador, vendedor, oferta):
     if not pode_sair(vendedor, jogador):
         return False, f"O {vendedor['nome']} não vende: ficaria sem reposição para a posição."
     pedido = preco_pedido(vendedor, jogador)
-    chance = limitar((oferta / pedido - 0.8) / 0.3, 0, 1)
+    chance = 1 if oferta >= pedido else limitar((oferta / pedido - 0.8) / 0.3, 0, 1)
     if random.random() >= chance:
         return False, f"Proposta recusada. O {vendedor['nome']} quer {dinheiro(pedido)} por {rotulo(jogador)}."
     transferir(estado, jogador, vendedor, comprador, oferta)
