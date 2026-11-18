@@ -1,4 +1,6 @@
+import math
 import time
+from itertools import groupby
 
 from rich.text import Text
 
@@ -7,24 +9,67 @@ from elenco.escalacao import limitar, rotulo
 from interface.entrada import TECLADO_REAL, TERMINAL_REAL, console, desenhar_no_lugar, limpar, tecla_pressionada
 from partida.lances import minuto_texto
 
-LARGURA_ZONA = 17
-LARGURA_CAMPO = LARGURA_ZONA * 3 + 4
-SEPARADORES = (0, LARGURA_ZONA + 1, 2 * LARGURA_ZONA + 2, LARGURA_CAMPO - 1)
-ALTURA_CAMPO = 7
-LARGURA_AREA = 7
-LINHAS_FAIXA = {0: 1, 1: 3, 2: 5}
-LINHAS_FAIXA_AREA = {0: 2, 1: 3, 2: 4}
+COMPRIMENTO_REAL = 105
+LARGURA_REAL = 68
+RAIO_DO_CIRCULO = 9.15
+FUNDO_GRANDE_AREA = 16.5
+MEIA_LARGURA_GRANDE_AREA = 20.16
+FUNDO_PEQUENA_AREA = 5.5
+MEIA_LARGURA_PEQUENA_AREA = 9.16
+DISTANCIA_PENALTI = 11
+COLUNAS_GRAMADO = 57
+MARGEM_GOL = 2
+LARGURA_CAMPO = COLUNAS_GRAMADO + 2 * MARGEM_GOL
+LINHAS_CAMPO = 11
+ALTURA_PIXELS = LINHAS_CAMPO * 2
+CENTRO_X = LARGURA_CAMPO // 2
+CENTRO_Y = ALTURA_PIXELS // 2
+LARGURA_FAIXA_GRAMA = 5
+GRAMA_CLARA = "#3f8f45"
+GRAMA_ESCURA = "#35803b"
+COR_LINHA = "#eef3ea"
+COR_REDE = "#b9c2bd"
+COR_BOLA = "#ffffff"
+LINHAS_FAIXA = {0: 2, 1: 5, 2: 8}
+LINHAS_FAIXA_AREA = {0: 3, 1: 5, 2: 7}
+
+
+def coluna_em_metros(metros):
+    """
+    Converte a distância até a linha de fundo esquerda na coluna correspondente do desenho.
+
+    Args:
+        metros (float): Distância real, de 0 a 105 metros.
+
+    Returns:
+        int: Coluna do desenho do campo.
+    """
+    return MARGEM_GOL + round(metros / COMPRIMENTO_REAL * (COLUNAS_GRAMADO - 1))
+
+
+def recuo_em_pixels(metros):
+    """
+    Converte uma distância real no sentido da largura do campo em pixels do desenho.
+
+    Args:
+        metros (float): Distância real em metros.
+
+    Returns:
+        float: Distância em pixels, sem arredondar.
+    """
+    return metros / LARGURA_REAL * (CENTRO_Y - 1) * 2
+
+
 COLUNAS_ZONA = {
-    "saida": LARGURA_AREA // 2 + 1,
-    "defesa": (LARGURA_AREA + 1 + SEPARADORES[1]) // 2,
-    "meio": LARGURA_CAMPO // 2,
-    "intermediaria": SEPARADORES[2] - 3,
-    "linha_de_fundo": LARGURA_CAMPO - 3,
-    "ataque": (SEPARADORES[2] + LARGURA_CAMPO - 2 - LARGURA_AREA) // 2,
-    "area": LARGURA_CAMPO - 2 - LARGURA_AREA // 2,
+    "saida": coluna_em_metros(6),
+    "defesa": coluna_em_metros(25),
+    "meio": CENTRO_X,
+    "intermediaria": coluna_em_metros(66),
+    "ataque": coluna_em_metros(80),
+    "area": coluna_em_metros(95),
+    "linha_de_fundo": coluna_em_metros(103),
     "gol": LARGURA_CAMPO - 2,
 }
-GRAMADO = "on dark_green"
 PAUSAS_LONGAS = ("gol", "penalti_fim", "vermelho", "intervalo", "fim", "var", "lesao", "trave", "oportunidade")
 
 
@@ -54,8 +99,9 @@ def posicao_alvo(partida, clube_jogador):
 
     A coluna vem da zona da bola (saída, campo de defesa, meio, intermediária, entrada da área, linha de
     fundo, área ou gol), usando o meio-campo quando nenhum time tem a posse, e a linha vem da faixa do campo;
-    na linha de fundo, a bola fica colada na lateral de cima ou de baixo. Como o campo é desenhado com o clube
-    do jogador atacando para a direita, a coluna é espelhada quando a bola está com o adversário.
+    na linha de fundo, a bola fica colada na lateral de cima ou de baixo, e no gol ela entra na rede. Como o
+    campo é desenhado com o clube do jogador atacando para a direita, a coluna é espelhada quando a bola está
+    com o adversário.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -68,9 +114,9 @@ def posicao_alvo(partida, clube_jogador):
     faixa = bola.get("faixa", 1)
     zona = bola["zona"] if bola["time"] is not None else "meio"
     if zona == "gol":
-        linha = 3
+        linha = LINHAS_CAMPO // 2
     elif zona == "linha_de_fundo":
-        linha = ALTURA_CAMPO - 1 if faixa == 2 else 0
+        linha = LINHAS_CAMPO - 1 if faixa == 2 else 0
     elif zona == "area":
         linha = LINHAS_FAIXA_AREA[faixa]
     else:
@@ -81,46 +127,137 @@ def posicao_alvo(partida, clube_jogador):
     return coluna, linha
 
 
-def gramado_vazio():
+def cor_da_grama(coluna):
     """
-    Cria a grade de caracteres do campo sem a bola.
+    Devolve a cor da faixa de grama cortada em uma coluna do campo.
 
-    Desenha as divisórias entre as zonas, as traves nas duas pontas, as grandes áreas, as marcas de pênalti e
-    a marca do centro do campo.
+    Args:
+        coluna (int): Coluna do desenho.
 
     Returns:
-        list: Lista de linhas, cada uma uma lista de caracteres do gramado.
+        str | None: Cor da grama, ou None se a coluna fica fora do gramado, atrás dos gols.
     """
-    grade = [[" "] * LARGURA_CAMPO for _ in range(ALTURA_CAMPO)]
-    for linha in grade:
-        for separador in SEPARADORES:
-            linha[separador] = "│"
-    for linha in (2, 3, 4):
-        grade[linha][0] = "▌"
-        grade[linha][-1] = "▐"
-    esquerda = LARGURA_AREA + 1
-    direita = LARGURA_CAMPO - 2 - LARGURA_AREA
-    for coluna in range(1, esquerda):
-        grade[1][coluna] = grade[5][coluna] = "─"
-    for coluna in range(direita + 1, LARGURA_CAMPO - 1):
-        grade[1][coluna] = grade[5][coluna] = "─"
-    grade[1][esquerda], grade[5][esquerda] = "┐", "┘"
-    grade[1][direita], grade[5][direita] = "┌", "└"
-    for linha in (2, 3, 4):
-        grade[linha][esquerda] = "│"
-        grade[linha][direita] = "│"
-    grade[3][LARGURA_AREA // 2 + 1] = "·"
-    grade[3][LARGURA_CAMPO - 2 - LARGURA_AREA // 2] = "·"
-    grade[3][LARGURA_CAMPO // 2] = "·"
-    return grade
+    if not MARGEM_GOL <= coluna < LARGURA_CAMPO - MARGEM_GOL:
+        return None
+    faixa = (abs(coluna - CENTRO_X) + LARGURA_FAIXA_GRAMA // 2) // LARGURA_FAIXA_GRAMA
+    return GRAMA_CLARA if faixa % 2 == 0 else GRAMA_ESCURA
+
+
+def marcar(pixels, coluna, linha, cor=COR_LINHA):
+    """
+    Pinta um ponto do campo e os seus reflexos nos outros três quadrantes.
+
+    Args:
+        pixels (list): Grade de cores do campo.
+        coluna (int): Coluna do ponto no quadrante superior esquerdo.
+        linha (int): Linha do ponto no quadrante superior esquerdo.
+        cor (str): Cor do ponto. Padrão COR_LINHA.
+    """
+    for y in (linha, ALTURA_PIXELS - linha):
+        for x in (coluna, LARGURA_CAMPO - 1 - coluna):
+            pixels[y][x] = cor
+
+
+def marcar_arco(pixels, centro_x, inicio, fim, coluna_minima=0):
+    """
+    Pinta um arco de raio igual ao do círculo central, centrado na linha do meio da largura do campo.
+
+    Args:
+        pixels (list): Grade de cores do campo.
+        centro_x (int): Coluna do centro do arco.
+        inicio (int): Ângulo inicial em graus.
+        fim (int): Ângulo final em graus.
+        coluna_minima (int): Só pinta da coluna seguinte a esta em diante. Padrão 0.
+    """
+    raio_x = RAIO_DO_CIRCULO / COMPRIMENTO_REAL * (COLUNAS_GRAMADO - 1)
+    raio_y = recuo_em_pixels(RAIO_DO_CIRCULO)
+    for angulo in range(inicio, fim + 1, 5):
+        radianos = math.radians(angulo)
+        coluna = round(centro_x + raio_x * math.cos(radianos))
+        linha = round(CENTRO_Y - raio_y * math.sin(radianos))
+        if coluna > coluna_minima:
+            marcar(pixels, coluna, linha)
+
+
+def marcar_area(pixels, fundo, meia_largura):
+    """
+    Pinta o contorno de uma área a partir da linha de fundo.
+
+    Args:
+        pixels (list): Grade de cores do campo.
+        fundo (float): Profundidade da área em metros.
+        meia_largura (float): Metade da largura da área em metros.
+
+    Returns:
+        int: Coluna da linha frontal da área.
+    """
+    frente = coluna_em_metros(fundo)
+    topo = CENTRO_Y - round(recuo_em_pixels(meia_largura))
+    for coluna in range(MARGEM_GOL, frente + 1):
+        marcar(pixels, coluna, topo)
+    for linha in range(topo, CENTRO_Y + 1):
+        marcar(pixels, frente, linha)
+    return frente
+
+
+def gramado_vazio():
+    """
+    Cria a grade de cores do campo, sem a bola, com as medidas de um campo oficial.
+
+    Cada linha de texto do terminal vale dois pixels na vertical. A grade traz a grama cortada em faixas, as
+    linhas laterais e de fundo, a linha do meio com o círculo central, as grandes e pequenas áreas, as marcas
+    de pênalti com a meia-lua, os arcos de escanteio e os dois gols com a rede.
+
+    Returns:
+        list: Lista de linhas de pixels, cada uma com a cor de cada coluna, ou None onde não há campo.
+    """
+    pixels = [[None] * LARGURA_CAMPO for _ in range(ALTURA_PIXELS)]
+    for linha in range(1, ALTURA_PIXELS):
+        pixels[linha] = [cor_da_grama(coluna) for coluna in range(LARGURA_CAMPO)]
+    for coluna in range(MARGEM_GOL, CENTRO_X + 1):
+        marcar(pixels, coluna, 1)
+    for linha in range(1, CENTRO_Y + 1):
+        marcar(pixels, MARGEM_GOL, linha)
+        marcar(pixels, CENTRO_X, linha)
+    marcar_arco(pixels, CENTRO_X, 90, 180)
+    frente_da_area = marcar_area(pixels, FUNDO_GRANDE_AREA, MEIA_LARGURA_GRANDE_AREA)
+    marcar_area(pixels, FUNDO_PEQUENA_AREA, MEIA_LARGURA_PEQUENA_AREA)
+    marca_do_penalti = coluna_em_metros(DISTANCIA_PENALTI)
+    marcar(pixels, marca_do_penalti, CENTRO_Y)
+    marcar_arco(pixels, marca_do_penalti, 0, 90, frente_da_area)
+    marcar(pixels, MARGEM_GOL + 1, 2)
+    for coluna in range(MARGEM_GOL):
+        marcar(pixels, coluna, CENTRO_Y - 1, COR_REDE)
+    marcar(pixels, 0, CENTRO_Y, COR_REDE)
+    return pixels
+
+
+def celula_do_campo(superior, inferior):
+    """
+    Escolhe o caractere e o estilo que mostram dois pixels em uma única célula do terminal.
+
+    Args:
+        superior (str | None): Cor do pixel de cima, ou None se ele estiver vazio.
+        inferior (str | None): Cor do pixel de baixo, ou None se ele estiver vazio.
+
+    Returns:
+        tuple: Caractere e estilo do rich.
+    """
+    if superior == inferior:
+        return " ", f"on {superior}" if superior else ""
+    if superior is None:
+        return "▄", inferior
+    if inferior is None:
+        return "▀", superior
+    return "▀", f"{superior} on {inferior}"
 
 
 def desenhar_campo(coluna, linha):
     """
     Monta o desenho completo do campo com a bola na posição indicada.
 
-    Coloca a moldura superior e inferior, pinta o gramado de verde, troca o caractere da posição informada
-    pela bola e acrescenta embaixo os rótulos das zonas de defesa, meio e ataque.
+    Junta os pixels do gramado de dois em dois em cada célula do terminal, troca a célula da posição informada
+    pela bola e acrescenta embaixo os rótulos dos terços de defesa, meio e ataque.
 
     Args:
         coluna (int): Coluna da bola na grade do campo.
@@ -129,20 +266,21 @@ def desenhar_campo(coluna, linha):
     Returns:
         Text: Texto do rich com o campo pronto para imprimir.
     """
-    topo = "┌" + "┬".join("─" * LARGURA_ZONA for _ in range(3)) + "┐"
-    base = "└" + "┴".join("─" * LARGURA_ZONA for _ in range(3)) + "┘"
+    pixels = gramado_vazio()
     campo = Text()
-    campo.append(topo + "\n", style=f"white {GRAMADO}")
-    for indice_linha, caracteres in enumerate(gramado_vazio()):
-        for indice, caractere in enumerate(caracteres):
-            if indice_linha == linha and indice == coluna:
-                campo.append("●", style=f"bold bright_white {GRAMADO}")
-            else:
-                campo.append(caractere, style=f"white {GRAMADO}")
+    for indice_linha in range(LINHAS_CAMPO):
+        superior = pixels[indice_linha * 2]
+        inferior = pixels[indice_linha * 2 + 1]
+        celulas = [celula_do_campo(cima, baixo) for cima, baixo in zip(superior, inferior)]
+        if indice_linha == linha:
+            grama = cor_da_grama(coluna)
+            celulas[coluna] = ("●", f"bold {COR_BOLA} on {grama}" if grama else f"bold {COR_BOLA}")
+        for estilo, grupo in groupby(celulas, key=lambda celula: celula[1]):
+            campo.append("".join(caractere for caractere, _ in grupo), style=estilo)
         campo.append("\n")
-    campo.append(base + "\n", style=f"white {GRAMADO}")
-    rotulos = "DEFESA".center(LARGURA_ZONA + 1) + "MEIO".center(LARGURA_ZONA + 1) + "ATAQUE".center(LARGURA_ZONA + 1)
-    campo.append(" " + rotulos, style="dim")
+    terco = COLUNAS_GRAMADO // 3
+    rotulos = "DEFESA".center(terco) + "MEIO".center(terco) + "ATAQUE".center(terco)
+    campo.append(" " * MARGEM_GOL + rotulos, style="dim")
     return campo
 
 
