@@ -147,7 +147,7 @@ prancheta/
 ├── liga/              calendário, classificação, copa, temporada, carreira, finanças, desafios, eventos e vestiário
 ├── mercado/           valores, compras, vendas, jogadores livres e mercado dos outros clubes
 ├── elenco/            geração de jogadores, escalação, substituições e treino
-├── interface/         campo animado, telas, carreira, mercado, controles e leitura de entrada
+├── interface/         campo e taça animados, telas, carreira, mercado, controles e leitura de entrada
 ├── persistencia/      save, load, ranking e arquivos
 ├── dados/             times.json, nomes.txt, narracao.txt, eventos.json, ranking.csv e saves
 ├── docs/              GDD.docx editável

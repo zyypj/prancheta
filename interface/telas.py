@@ -33,6 +33,7 @@ from elenco.escalacao import (
 from elenco.treino import pode_treinar
 from interface.campo import barra
 from interface.entrada import console, ler_opcao, limpar, pausar
+from interface.taca import animar_taca
 from liga.copa import situacao_do_clube
 from liga.desafios import OBJETIVOS, desafio_da_etapa
 from liga.financas import extrato
@@ -940,34 +941,69 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
     pausar("Enter para continuar...")
 
 
+def linhas_do_titulo(estado, informacao):
+    """
+    Monta os textos da tela de campeão.
+
+    Na copa, traz o placar da final e o prêmio já recebido. Na liga, informa se o título veio na última rodada
+    ou com rodadas de antecedência e quando o prêmio será pago.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        informacao (dict): Dados da etapa, com "titulo" ("liga" ou "copa") e, na copa, o "jogo" da final.
+
+    Returns:
+        list[str]: Linhas com marcação do rich.
+    """
+    clube = clube_do_jogador(estado)
+    if informacao["titulo"] == "copa":
+        return [
+            f" [bold {clube['cor']}]{clube['nome']} é campeão da Copa Prancheta![/]",
+            linha_de_resultado(estado, informacao["jogo"]),
+            f" Prêmio de {dinheiro(PREMIO_TITULO_COPA)} já está no caixa.",
+        ]
+    divisao = divisao_do_jogador(estado)
+    pontos = estado["tabela"][clube["id"]]["pontos"]
+    restantes = TOTAL_RODADAS - len(estado["historico"])
+    if restantes:
+        faltam = "1 rodada" if restantes == 1 else f"{restantes} rodadas"
+        situacao = f" Faltando {faltam}, ninguém alcança mais os seus {pontos} pontos."
+    else:
+        situacao = f" Título confirmado na última rodada, com {pontos} pontos."
+    return [
+        f" [bold {clube['cor']}]{clube['nome']} é campeão da {DIVISOES[divisao]}![/]",
+        situacao,
+        f" O prêmio de {dinheiro(PREMIO_CAMPEAO[divisao])} entra no caixa no fim da temporada.",
+    ]
+
+
 def mostrar_titulo(estado, informacao):
     """
-    Anuncia o título conquistado pelo clube do usuário na etapa que acabou de terminar.
+    Anuncia o título conquistado na etapa que acabou de terminar, com a animação da taça.
 
-    Na copa, mostra o placar da final e o prêmio já recebido. Na liga, informa se o título veio na última
-    rodada ou com rodadas de antecedência e quando o prêmio será pago. Espera o usuário pressionar Enter.
+    Espera o usuário pressionar Enter.
 
     Args:
         estado (dict): Estado atual da temporada.
         informacao (dict): Dados da etapa, com "titulo" ("liga" ou "copa") e, na copa, o "jogo" da final.
     """
-    clube = clube_do_jogador(estado)
-    titulo("CAMPEÃO!")
-    if informacao["titulo"] == "copa":
-        console.print(f" [bold {clube['cor']}]{clube['nome']} é campeão da Copa Prancheta![/]\n")
-        console.print(linha_de_resultado(estado, informacao["jogo"]))
-        console.print(f"\n Prêmio de {dinheiro(PREMIO_TITULO_COPA)} já está no caixa.")
-    else:
-        divisao = divisao_do_jogador(estado)
-        pontos = estado["tabela"][clube["id"]]["pontos"]
-        restantes = TOTAL_RODADAS - len(estado["historico"])
-        console.print(f" [bold {clube['cor']}]{clube['nome']} é campeão da {DIVISOES[divisao]}![/]\n")
-        if restantes:
-            faltam = "1 rodada" if restantes == 1 else f"{restantes} rodadas"
-            console.print(f" Faltando {faltam}, ninguém alcança mais os seus {pontos} pontos.")
-        else:
-            console.print(f" Título confirmado na última rodada, com {pontos} pontos.")
-        console.print(f" O prêmio de {dinheiro(PREMIO_CAMPEAO[divisao])} entra no caixa no fim da temporada.")
+    linhas = linhas_do_titulo(estado, informacao)
+
+    def desenhar_tela(arte):
+        """
+        Imprime a tela de campeão com um quadro da taça.
+
+        Args:
+            arte (Text): Quadro da animação.
+        """
+        console.print(Panel.fit("[bold]CAMPEÃO![/]", border_style="green"))
+        console.print(arte)
+        console.print()
+        for linha in linhas:
+            console.print(linha)
+
+    limpar()
+    animar_taca(clube_do_jogador(estado)["cor"], desenhar_tela)
     pausar("Enter para continuar...")
 
 
