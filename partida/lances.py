@@ -103,6 +103,8 @@ LOCAIS = {
     "intermediaria": {"gol": 0.10, "alvo": -0.22},
     "sem_angulo": {"gol": 0.10, "alvo": -0.24},
 }
+PONTOS_DA_AREA = {"area": 5, "marca_penalti": 3, "pequena_area": 2}
+DESTINO_DA_COBRANCA = {"gol": "gol", "defesa": "pequena_area", "fora": "linha_do_gol"}
 LOCAIS_COM_BLOQUEIO = ("longe", "area", "primeira", "intermediaria")
 LOCAIS_COM_MINIJOGO = ("area", "longe", "intermediaria", "primeira", "sem_angulo", "voleio", "bicicleta")
 GOLEIRO_NO_CARA_A_CARA = (
@@ -337,7 +339,8 @@ def mover_bola(partida, time_id, zona, faixa=None):
     Args:
         partida (dict): Estado da partida.
         time_id (str | None): Time com a posse, ou None quando a bola está disputada.
-        zona (str): Zona do campo ("meio", "ataque", "area" ou "gol").
+        zona (str): Zona do campo, como "meio", "ataque" ou "area", ou um ponto exato do desenho, como
+            "marca_penalti", "pequena_area", "linha_do_gol", "escanteio" ou "gol".
         faixa (int | None): Faixa lateral (0, 1 ou 2). Padrão None, que sorteia uma faixa.
     """
     partida["bola"] = {"time": time_id, "zona": zona, "faixa": random.randint(0, 2) if faixa is None else faixa}
@@ -1127,6 +1130,27 @@ def chances_das_acoes(partida, atacante_id, zona, faixa, portador, marcador, def
     return chances
 
 
+def ponto_do_chute(partida, local):
+    """
+    Define de onde sai uma finalização, mantendo a bola no lado do campo em que ela já estava.
+
+    Chutes de dentro da área são sorteados entre a área em geral, a marca do pênalti e a pequena área, e a
+    narração acompanha o ponto sorteado. Os outros chutes saem da zona ligada ao local.
+
+    Args:
+        partida (dict): Estado da partida.
+        local (str): Local da finalização, uma das chaves de LOCAIS.
+
+    Returns:
+        tuple: Zona e faixa de onde a bola sai.
+    """
+    faixa = partida["bola"]["faixa"]
+    if local != "area":
+        return ZONA_DO_LOCAL.get(local, "area"), faixa
+    ponto = random.choices(list(PONTOS_DA_AREA), weights=list(PONTOS_DA_AREA.values()))[0]
+    return ponto, faixa if ponto == "area" else 1
+
+
 def finalizar(
     partida, atacante_id, finalizador, local, tipo="colocado", bonus=0.0, defesa="fechar", rebote=True, escanteio=True
 ):
@@ -1140,7 +1164,9 @@ def finalizar(
     do alvo, há 12% de chance de bater na trave, com 40% de chance de rebote. No alvo, a chance de gol compara
     finalização e reflexo do goleiro, ajustada pelo tipo de chute, e cai 0,03 no estilo jogo direto. Um gol
     pode ser salvo em cima da linha (3%) e uma defesa pode virar frango (3%). Se o goleiro defende, pode haver
-    rebote (22%) ou escanteio (35%). Atualiza chutes, chutes no alvo e o último local de finalização.
+    rebote (22%) ou escanteio (35%). Atualiza chutes, chutes no alvo e o último local de finalização. A bola
+    sai do ponto do chute (ponto_do_chute) e vai até onde o lance termina: a linha do gol na trave e no chute
+    para fora, e a pequena área na defesa do goleiro.
 
     Args:
         partida (dict): Estado da partida.
@@ -1158,7 +1184,8 @@ def finalizar(
     goleiro = goleiro_de(defensor)
     chute = CHUTES[tipo]
     partida["ultimo_local"] = local
-    mover_bola(partida, atacante_id, ZONA_DO_LOCAL.get(local, "area"))
+    zona_do_chute, faixa_do_chute = ponto_do_chute(partida, local)
+    mover_bola(partida, atacante_id, zona_do_chute, faixa_do_chute)
     if local in LOCAIS_COM_MINIJOGO:
         bonus += partida["controles"][atacante_id]["minijogo"](partida, atacante_id, "chute", local)
     atacante["chutes"] += 1
@@ -1173,7 +1200,7 @@ def finalizar(
             return
     registrar(
         partida,
-        f"chute_{local}",
+        f"chute_{zona_do_chute if local == 'area' else local}",
         {"jogador": rotulo(finalizador), "tipo": chute["texto"]},
         tipo="chute",
         time_id=atacante_id,
@@ -1193,10 +1220,12 @@ def finalizar(
     alvo += ajuste_alvo
     if random.random() >= limitar(alvo, 0.1, 0.95):
         if random.random() < 0.12:
+            mover_bola(partida, atacante_id, "linha_do_gol", 1)
             registrar(partida, "trave", {"jogador": rotulo(finalizador)}, tipo="trave", time_id=atacante_id)
             if rebote and random.random() < 0.4:
                 pegar_rebote(partida, atacante_id, defesa)
             return
+        mover_bola(partida, atacante_id, "linha_do_gol", random.choice((0, 2)))
         registrar(partida, "fora", {"jogador": rotulo(finalizador)}, tipo="fora", time_id=atacante_id)
         return
     atacante["no_alvo"] += 1
@@ -1204,6 +1233,7 @@ def finalizar(
     if random.random() < limitar(chance, 0.03, 0.9):
         if random.random() < 0.03:
             salvador = escolher_jogador(defensor, {"DEF": 6, "MEI": 1})
+            mover_bola(partida, atacante_id, "linha_do_gol", 1)
             registrar(partida, "salva_na_linha", {"marcador": rotulo(salvador)}, tipo="defesa", time_id=atacante_id)
             if escanteio and random.random() < 0.5:
                 cobrar_escanteio(partida, atacante_id, defesa)
@@ -1214,6 +1244,7 @@ def finalizar(
         registrar(partida, "frango", {"goleiro": nome_goleiro}, tipo="oportunidade", time_id=atacante_id)
         marcar_gol(partida, atacante_id, finalizador)
         return
+    mover_bola(partida, atacante_id, "pequena_area", 1)
     registrar(partida, "defesa", {"goleiro": nome_goleiro}, tipo="defesa", time_id=atacante_id)
     if rebote and random.random() < 0.22:
         pegar_rebote(partida, atacante_id, defesa)
@@ -1269,8 +1300,9 @@ def cobrar_escanteio(partida, atacante_id, defesa):
     """
     Resolve a cobrança de um escanteio.
 
-    O melhor batedor cobra; há 0,4% de chance de gol olímpico. Na cobrança curta, há 60% de chance de um
-    companheiro chutar de longe. Na primeira trave (45%) ou na segunda (38%, com bônus de 0,05), um jogador
+    A bola fica na marca de escanteio até a cobrança. O melhor batedor cobra; há 0,4% de chance de gol
+    olímpico. Na cobrança curta, há 60% de chance de um companheiro receber na entrada da área e chutar de
+    longe. Na primeira trave (45%) ou na segunda (38%, com bônus de 0,05), um jogador
     cabeceia. Fechado no goleiro, a bola pode entrar direto (2,5%), o goleiro pode socar para um rebote
     (42,5%) ou segurar. Na jogada ensaiada, metade das vezes um meia chega livre para bater da área. Nos
     demais casos a defesa afasta. Nenhuma finalização daqui gera novo escanteio.
@@ -1282,7 +1314,8 @@ def cobrar_escanteio(partida, atacante_id, defesa):
     """
     time = partida["times"][atacante_id]
     batedor = melhor_batedor(time)
-    mover_bola(partida, atacante_id, "area", random.choice((0, 2)))
+    canto = random.choice((0, 2))
+    mover_bola(partida, atacante_id, "escanteio", canto)
     registrar(partida, "escanteio", {"time": time["nome"]}, tipo="bola_parada", time_id=atacante_id)
     if random.random() < 0.004:
         partida["ultimo_local"] = "olimpico"
@@ -1302,6 +1335,7 @@ def cobrar_escanteio(partida, atacante_id, defesa):
         ],
     )
     if escolha == "fechado":
+        mover_bola(partida, atacante_id, "pequena_area", 1)
         sorteio = random.random()
         if sorteio < 0.025:
             registrar(
@@ -1318,14 +1352,17 @@ def cobrar_escanteio(partida, atacante_id, defesa):
     if escolha == "ensaiada":
         if random.random() < 0.5:
             jogador = escolher_jogador(time, {"MEI": 5, "ATA": 3}, excluir=batedor)
+            entregar_bola(partida, atacante_id, "area", canto, jogador)
             registrar(partida, "escanteio_ensaiado", {"jogador": rotulo(jogador)}, time_id=atacante_id)
             finalizar(partida, atacante_id, jogador, "area", "colocado", 0.04, defesa, escanteio=False)
         else:
+            mover_bola(partida, atacante_id, "area", canto)
             registrar(partida, "escanteio_ensaiado_erro", tipo="perda", time_id=atacante_id)
         return
     if escolha == "curto":
         if random.random() < 0.6:
             jogador = escolher_jogador(time, PESOS_PORTADOR["ataque"], excluir=batedor)
+            entregar_bola(partida, atacante_id, "ataque", canto, jogador)
             registrar(partida, "escanteio_curto", {"jogador": rotulo(jogador)}, time_id=atacante_id)
             finalizar(
                 partida,
@@ -1349,6 +1386,7 @@ def cobrar_escanteio(partida, atacante_id, defesa):
             escanteio=False,
         )
         return
+    mover_bola(partida, atacante_id, "area", canto)
     registrar(partida, "escanteio_afastado", tipo="perda", time_id=atacante_id)
 
 
@@ -1479,8 +1517,9 @@ def cobrar_penalti(partida, atacante_id):
     """
     Executa um pênalti marcado durante o jogo.
 
-    O melhor batedor cobra contra o goleiro adversário. Conta o chute e, conforme o desfecho, registra o
-    pênalti perdido, defendido ou convertido, atualizando gols do time e do batedor, narração e súmula.
+    O melhor batedor cobra da marca do pênalti contra o goleiro adversário. Conta o chute, leva a bola até
+    onde a cobrança terminou e, conforme o desfecho, registra o pênalti perdido, defendido ou convertido,
+    atualizando gols do time e do batedor, narração e súmula.
 
     Args:
         partida (dict): Estado da partida.
@@ -1490,7 +1529,7 @@ def cobrar_penalti(partida, atacante_id):
     atacante = partida["times"][atacante_id]
     goleiro = goleiro_de(partida["times"][defensor_id])
     batedor = melhor_batedor(atacante)
-    entregar_bola(partida, atacante_id, "area", 1, batedor)
+    entregar_bola(partida, atacante_id, "marca_penalti", 1, batedor)
     registrar(
         partida, "penalti", {"time": atacante["nome"], "jogador": rotulo(batedor)}, tipo="penalti", time_id=atacante_id
     )
@@ -1502,6 +1541,7 @@ def cobrar_penalti(partida, atacante_id):
         chave = "paradinha_esperou" if cobranca["esperou"] else "paradinha"
         nome = rotulo(goleiro) if goleiro else "o goleiro"
         registrar(partida, chave, {"jogador": rotulo(batedor), "goleiro": nome}, tipo="lance", time_id=atacante_id)
+    mover_bola(partida, atacante_id, DESTINO_DA_COBRANCA[desfecho], 1)
     if desfecho != "gol":
         partida["ocorrencias"].append({"tipo": "penalti_perdido", "time": atacante_id, "jogador": batedor["id"]})
     if desfecho == "fora":
@@ -1989,6 +2029,8 @@ def jogar_posse(partida, atacante_id, contra_ataque=False, portador=None, zona_i
                     return None
                 zona = PROXIMA_ZONA[zona]
                 continue
+            if acao == "tabelar":
+                entregar_bola(partida, atacante_id, "area", faixa, portador)
             registrar(partida, f"{acao}_ok", dados, time_id=atacante_id)
             if acao == "cruzar":
                 extra = (0.04 if faixa != 1 else 0.0) + (0.04 if zona == "linha_de_fundo" else 0.0)
@@ -2152,8 +2194,9 @@ def disputa_de_penaltis(partida):
             batedor = fila[cobrancas[time_id] % len(fila)]
             cobrancas[time_id] += 1
             goleiro = goleiro_de(partida["times"][outro(partida, time_id)])
-            entregar_bola(partida, time_id, "area", 1, batedor)
+            entregar_bola(partida, time_id, "marca_penalti", 1, batedor)
             desfecho = resolver_cobranca(partida, time_id, batedor, goleiro, minijogo=False)
+            mover_bola(partida, time_id, DESTINO_DA_COBRANCA[desfecho], 1)
             if desfecho == "gol":
                 partida["penaltis"][time_id] += 1
             dados = {

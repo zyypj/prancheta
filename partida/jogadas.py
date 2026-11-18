@@ -159,7 +159,7 @@ def lateral_no_ataque(partida, time_id, portador):
     """
     time = partida["times"][time_id]
     faixa = random.choice((0, 2))
-    entregar_bola(partida, time_id, "ataque", faixa, portador)
+    entregar_bola(partida, time_id, "lateral", faixa, portador)
     registrar(partida, "lateral", {"time": time["nome"], "jogador": rotulo(portador)}, time_id=time_id)
     escolha = perguntar(
         partida,
@@ -313,6 +313,7 @@ def falta_lateral(partida, time_id, portador):
     elif escolha == "ensaiada":
         if random.random() < 0.5:
             companheiro = escolher_jogador(time, PESOS_REBOTE, excluir=batedor)
+            entregar_bola(partida, time_id, "area", 1, companheiro)
             registrar(partida, "ensaiada_ok", {"jogador": rotulo(companheiro)}, time_id=time_id)
             finalizar(partida, time_id, companheiro, "area", "colocado", 0.05, "fechar")
         else:
@@ -438,6 +439,7 @@ def sobra_na_entrada(partida, time_id, portador):
     if escolha == "lencol":
         dados = {"jogador": rotulo(jogador), "marcador": rotulo(marcador)}
         if random.random() < chance_lencol:
+            entregar_bola(partida, time_id, "area", partida["bola"]["faixa"], jogador)
             registrar(partida, "lencol_ok", dados, time_id=time_id)
             finalizar(partida, time_id, jogador, "area", "colocado", 0.08, "fechar")
             return None
@@ -566,6 +568,7 @@ def arrancada(partida, time_id, portador):
         return contra_golpe(partida, time_id, "meio", 0.15)
     if escolha == "driblar_dois":
         if random.random() < chance_dois:
+            entregar_bola(partida, time_id, "area", 1, craque)
             registrar(partida, "driblou_dois", dados, tipo="oportunidade", time_id=time_id)
             cara_a_cara(partida, time_id, craque, 0.08, "fechar")
             return None
@@ -894,6 +897,7 @@ def goleiro_pressionado(partida, time_id, portador):
         if random.random() < chance_drible:
             registrar(partida, "goleiro_driblou", dados, tipo="oportunidade", time_id=time_id)
             return jogar_posse(partida, time_id, zona_inicial="defesa")
+        entregar_bola(partida, adversario_id, "area", 1, atacante)
         registrar(partida, "goleiro_perdeu", dados, tipo="oportunidade", time_id=adversario_id)
         finalizar(partida, adversario_id, atacante, "area", "colocado", 0.25, "fechar")
         return None
@@ -905,6 +909,7 @@ def goleiro_pressionado(partida, time_id, portador):
     if random.random() < 0.8:
         registrar(partida, "goleiro_tocou", {"goleiro": rotulo(goleiro), "jogador": rotulo(zagueiro)}, time_id=time_id)
         return jogar_posse(partida, time_id, portador=zagueiro, zona_inicial="defesa")
+    entregar_bola(partida, adversario_id, "area", 1, atacante)
     registrar(partida, "interceptou_saida", dados, tipo="oportunidade", time_id=adversario_id)
     finalizar(partida, adversario_id, atacante, "area", "colocado", 0.05, "fechar")
     return None

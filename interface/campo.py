@@ -66,10 +66,18 @@ COLUNAS_ZONA = {
     "meio": CENTRO_X,
     "intermediaria": coluna_em_metros(66),
     "ataque": coluna_em_metros(80),
+    "lateral": coluna_em_metros(80),
     "area": coluna_em_metros(95),
+    "marca_penalti": LARGURA_CAMPO - 1 - coluna_em_metros(DISTANCIA_PENALTI),
+    "pequena_area": coluna_em_metros(101),
     "linha_de_fundo": coluna_em_metros(103),
+    "linha_do_gol": LARGURA_CAMPO - 1 - MARGEM_GOL,
+    "escanteio": LARGURA_CAMPO - 1 - MARGEM_GOL,
     "gol": LARGURA_CAMPO - 2,
 }
+ZONAS_NO_CENTRO = ("gol", "marca_penalti", "pequena_area")
+ZONAS_NA_BEIRA = ("linha_de_fundo", "escanteio", "lateral")
+ZONAS_PERTO_DO_GOL = ("area", "linha_do_gol")
 PAUSAS_LONGAS = ("gol", "penalti_fim", "vermelho", "intervalo", "fim", "var", "lesao", "trave", "oportunidade")
 
 
@@ -97,11 +105,10 @@ def posicao_alvo(partida, clube_jogador):
     """
     Calcula onde a bola deve aparecer no desenho do campo.
 
-    A coluna vem da zona da bola (saída, campo de defesa, meio, intermediária, entrada da área, linha de
-    fundo, área ou gol), usando o meio-campo quando nenhum time tem a posse, e a linha vem da faixa do campo;
-    na linha de fundo, a bola fica colada na lateral de cima ou de baixo, e no gol ela entra na rede. Como o
-    campo é desenhado com o clube do jogador atacando para a direita, a coluna é espelhada quando a bola está
-    com o adversário.
+    A coluna vem da zona da bola, usando o meio-campo quando nenhum time tem a posse, e a linha vem da faixa
+    do campo. Na marca do pênalti, na pequena área e no gol a bola fica no centro; na linha de fundo, no
+    escanteio e no lateral, ela fica colada na beira de cima ou de baixo. Como o campo é desenhado com o clube
+    do jogador atacando para a direita, a coluna é espelhada quando a bola está com o adversário.
 
     Args:
         partida (dict): Estado da partida em andamento.
@@ -113,11 +120,11 @@ def posicao_alvo(partida, clube_jogador):
     bola = partida["bola"]
     faixa = bola.get("faixa", 1)
     zona = bola["zona"] if bola["time"] is not None else "meio"
-    if zona == "gol":
+    if zona in ZONAS_NO_CENTRO:
         linha = LINHAS_CAMPO // 2
-    elif zona == "linha_de_fundo":
+    elif zona in ZONAS_NA_BEIRA:
         linha = LINHAS_CAMPO - 1 if faixa == 2 else 0
-    elif zona == "area":
+    elif zona in ZONAS_PERTO_DO_GOL:
         linha = LINHAS_FAIXA_AREA[faixa]
     else:
         linha = LINHAS_FAIXA[faixa]

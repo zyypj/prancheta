@@ -197,12 +197,17 @@ substituicao | Substituição no {time}: sai {sai}, entra {entra}.
 substituicao | Mexe o {time}: {entra} entra no lugar de {sai}.
 chute_longe | {jogador} arrisca {tipo} de fora da área!
 chute_longe | {jogador} solta a bomba de longe, {tipo}!
-chute_longe | {jogador} tenta da intermediária, {tipo}!
+chute_longe | {jogador} tenta da meia-lua, {tipo}!
 chute_longe | {jogador} ajeita e bate {tipo} da entrada da área!
 chute_longe | Tentativa de longe! {jogador} chuta {tipo}!
 chute_area | {jogador} bate {tipo} dentro da área!
-chute_area | {jogador} finaliza {tipo} da marca do pênalti!
-chute_area | {jogador} gira e bate {tipo} na pequena área!
+chute_area | {jogador} ajeita entre os zagueiros e bate {tipo}!
+chute_marca_penalti | {jogador} finaliza {tipo} da marca do pênalti!
+chute_marca_penalti | Na altura do pênalti, {jogador} bate {tipo}!
+chute_marca_penalti | {jogador} recebe na marca da cal e chuta {tipo}!
+chute_pequena_area | {jogador} gira e bate {tipo} na pequena área!
+chute_pequena_area | Debaixo do gol! {jogador} finaliza {tipo}!
+chute_pequena_area | {jogador} aparece na pequena área e chuta {tipo}!
 chute_area | {jogador} domina na área e finaliza {tipo}!
 chute_area | {jogador} chega batendo {tipo}!
 chute_cara | {jogador} bate {tipo} na saída do goleiro!
