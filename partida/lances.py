@@ -172,7 +172,7 @@ FORCAS_PENALTI = ("colocado", "forte", "paradinha")
 PESO_DIFERENCA = 0.005
 PESO_MEIO = 0.006
 PESO_FINALIZACAO = 0.004
-FATOR_GOL = 1.55
+FATOR_GOL = 1.8
 PESOS_PORTADOR = {
     "defesa": {"DEF": 5, "MEI": 3},
     "meio": {"MEI": 5, "DEF": 1, "ATA": 2},
