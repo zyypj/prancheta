@@ -3,11 +3,16 @@ import random
 from config import (
     AGENTES_LIVRES,
     CHANCE_CONVITE,
+    CHANCE_CONVITE_NO_JOGO,
     CHANCE_JOIA_DA_BASE,
+    CHANCE_MAXIMA_DEMISSAO,
     COMPOSICAO_ELENCO,
+    CONFIANCA_EM_RISCO,
     CONFIANCA_INICIAL,
     DIVISOES,
+    ESPERA_ENTRE_CONVITES,
     EVOLUCAO_POR_IDADE,
+    FOLGA_DE_FORCA_NO_CONVITE,
     FOLGA_DOS_TITULARES,
     IDADE_APOSENTADORIA,
     IDADE_LIMITE,
@@ -20,6 +25,7 @@ from config import (
     PROPOSTAS_NA_JANELA,
     REPUTACAO_INICIAL,
     REPUTACAO_MAXIMA,
+    RODADAS_PARA_JULGAR,
     VERSAO_SAVE,
     ZONA_ACESSO,
     ZONA_REBAIXAMENTO,
@@ -31,7 +37,14 @@ from liga.copa import criar_copa
 from liga.eventos import criar_proposta, nomes_em_uso, novo_garoto
 from liga.financas import lancar
 from liga.tabela import criar_tabela, posicao_do_clube, registrar_resultado
-from liga.temporada import classificacao, clube_do_jogador, ultimos_resultados
+from liga.temporada import (
+    classificacao,
+    clube_do_jogador,
+    meta_cumprida,
+    posicao_atual,
+    titulo_garantido,
+    ultimos_resultados,
+)
 from mercado.transferencias import criar_agente_livre, dinheiro, noticia, quantos_na_posicao
 from partida.simulacao import simular_partida
 
@@ -228,13 +241,80 @@ def propostas_de_emprego(estado, motivo):
     return [{"clube_id": clube["id"], "motivo": texto} for clube in escolhidos]
 
 
+def chance_de_demissao(estado, letra):
+    """
+    Calcula a chance de a diretoria demitir o técnico logo depois de um jogo.
+
+    Só há risco depois de uma derrota, a partir de RODADAS_PARA_JULGAR (3) rodadas da liga, com o clube fora da
+    meta e a confiança abaixo de CONFIANCA_EM_RISCO (30). Cada ponto de confiança abaixo desse limite soma 1,5%
+    e cada derrota seguida além da primeira soma 5%, até CHANCE_MAXIMA_DEMISSAO (60%).
+
+    Args:
+        estado (dict): Estado da carreira.
+        letra (str | None): Resultado do técnico na etapa ("V", "E" ou "D"), ou None se ele não jogou.
+
+    Returns:
+        float: Chance de demissão, entre 0 e CHANCE_MAXIMA_DEMISSAO.
+    """
+    risco = CONFIANCA_EM_RISCO - estado["confianca"]
+    if letra != "D" or risco <= 0 or len(estado["historico"]) < RODADAS_PARA_JULGAR:
+        return 0
+    if meta_cumprida(estado, posicao_atual(estado)):
+        return 0
+    derrotas = 0
+    for resultado in reversed(estado["ultimos"]):
+        if resultado != "D":
+            break
+        derrotas += 1
+    return min(CHANCE_MAXIMA_DEMISSAO, risco * 0.015 + (derrotas - 1) * 0.05)
+
+
+def convites_depois_do_jogo(estado, letra):
+    """
+    Sorteia propostas de clubes melhores depois de uma vitória do técnico.
+
+    Só há convite com o clube dentro da meta, a partir de RODADAS_PARA_JULGAR (3) rodadas da liga e sem título
+    já garantido, com CHANCE_CONVITE_NO_JOGO (12%). Interessam-se de 1 a 2 clubes de patamar maior, ou do mesmo
+    patamar com força pelo menos FOLGA_DE_FORCA_NO_CONVITE (3) acima, até a reputação mais 1 ou um patamar acima
+    do atual. Depois de um convite, passam ESPERA_ENTRE_CONVITES (4) etapas até o próximo.
+
+    Args:
+        estado (dict): Estado da carreira.
+        letra (str | None): Resultado do técnico na etapa ("V", "E" ou "D"), ou None se ele não jogou.
+
+    Returns:
+        list[dict]: Propostas com o identificador do clube e o motivo do interesse.
+    """
+    if letra != "V" or len(estado["historico"]) < RODADAS_PARA_JULGAR:
+        return []
+    if estado["etapa"] < estado.get("convite_liberado_em", 0) or titulo_garantido(estado):
+        return []
+    if not meta_cumprida(estado, posicao_atual(estado)) or random.random() >= CHANCE_CONVITE_NO_JOGO:
+        return []
+    atual = clube_do_jogador(estado)
+    nivel_atual = patamar(atual)
+    limite = max(estado.get("reputacao", 2) + 1, nivel_atual + 1)
+    candidatos = [
+        clube
+        for clube in estado["clubes"].values()
+        if nivel_atual < patamar(clube) <= limite
+        or (patamar(clube) == nivel_atual and clube["forca"] >= atual["forca"] + FOLGA_DE_FORCA_NO_CONVITE)
+    ]
+    if not candidatos:
+        return []
+    estado["convite_liberado_em"] = estado["etapa"] + ESPERA_ENTRE_CONVITES
+    escolhidos = random.sample(candidatos, min(len(candidatos), random.randint(1, 2)))
+    return [{"clube_id": clube["id"], "motivo": "quer contratar você"} for clube in escolhidos]
+
+
 def assumir_clube(estado, clube_id):
     """
     Troca o clube comandado pelo técnico.
 
     O clube antigo passa para a IA, que refaz a escalação. No novo clube, a confiança da diretoria começa em
     CONFIANCA_INICIAL e os desafios, objetivos, extrato e treino da temporada recomeçam do zero; os últimos
-    resultados passam a ser os do novo clube. A troca vira notícia.
+    resultados passam a ser os do novo clube e novos convites esperam ESPERA_ENTRE_CONVITES (4) etapas. A troca
+    vira notícia.
 
     Args:
         estado (dict): Estado da carreira.
@@ -246,6 +326,7 @@ def assumir_clube(estado, clube_id):
     estado["confianca"] = CONFIANCA_INICIAL
     estado["demitido"] = False
     estado["ultimos"] = ultimos_resultados(estado, clube_id)
+    estado["convite_liberado_em"] = estado["etapa"] + ESPERA_ENTRE_CONVITES
     estado["objetivos"] = []
     estado["desafios_cumpridos"] = 0
     estado["financas"] = {}
@@ -547,7 +628,16 @@ def nova_temporada(estado, banco, confianca):
             "financas": {},
         }
     )
-    for chave in ("desafio", "treino_etapa", "torcida_extra", "promessa", "extrato_etapa", "classificacao_final"):
+    temporarios = (
+        "desafio",
+        "treino_etapa",
+        "torcida_extra",
+        "promessa",
+        "extrato_etapa",
+        "classificacao_final",
+        "convite_liberado_em",
+    )
+    for chave in temporarios:
         estado.pop(chave, None)
     return {
         "aposentados": relatorio["aposentados"],

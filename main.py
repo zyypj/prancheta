@@ -34,6 +34,8 @@ from liga.carreira import (
     assumir_clube,
     atualizar_reputacao,
     avaliar_diretoria,
+    chance_de_demissao,
+    convites_depois_do_jogo,
     fechar_divisoes,
     migrar_save,
     nova_temporada,
@@ -340,6 +342,49 @@ def jogar_partida_do_jogador(estado, recursos, escolha):
     return resultado
 
 
+def decidir_futuro_do_tecnico(estado, letra):
+    """
+    Resolve o que acontece com o técnico logo depois de um jogo.
+
+    Depois de uma derrota com a diretoria sem paciência, ele pode ser demitido ou receber um aviso. Depois de
+    uma vitória com o clube dentro da meta, pode receber propostas de clubes melhores; ao aceitar uma, a
+    passagem pelo clube atual vai para o ranking e para a carreira, e ele assume o novo clube na hora.
+
+    Args:
+        estado (dict): Estado da carreira.
+        letra (str | None): Resultado do técnico na etapa, ou None se ele não jogou.
+
+    Returns:
+        bool: True se o técnico foi demitido ou trocou de clube.
+    """
+    clube = clube_do_jogador(estado)
+    chance = chance_de_demissao(estado, letra)
+    if chance:
+        if random.random() < chance:
+            estado["demitido"] = True
+            telas.mostrar_mensagem(
+                f"Depois de mais uma derrota, a diretoria do {clube['nome']} perdeu a paciência e demitiu você.",
+                "bold red",
+            )
+            return True
+        telas.mostrar_mensagem(
+            f"A diretoria do {clube['nome']} está insatisfeita: novos tropeços podem custar o seu cargo.",
+            "bold yellow",
+        )
+        return False
+    propostas = convites_depois_do_jogo(estado, letra)
+    if not propostas:
+        return False
+    escolha = escolher_proposta(estado, propostas, "PROPOSTA DE EMPREGO", f"Ficar no {clube['nome']}")
+    if not escolha:
+        return False
+    novo = estado["clubes"][escolha]
+    registrar_resumo(estado, resumo_final(estado, f"saiu para o {novo['nome']}"))
+    assumir_clube(estado, escolha)
+    telas.mostrar_mensagem(f"Você é o novo técnico do {novo['nome']}! Meta: {meta_do_clube(novo)[0]}.", "bold green")
+    return True
+
+
 def jogar_etapa(estado, recursos):
     """
     Disputa a etapa atual da temporada, seja uma rodada da liga ou uma fase da copa.
@@ -347,9 +392,9 @@ def jogar_etapa(estado, recursos):
     Joga a partida do clube do jogador (se ele estiver na etapa), com os bastidores de antes e depois do jogo,
     avalia o desafio da diretoria, simula os outros jogos, registra a súmula, fecha a rodada ou a fase, anuncia
     o título conquistado nela, confere os objetivos da temporada e faz os aniversários da etapa. Depois
-    movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento
-    da semana (e, se ele não foi uma proposta, talvez uma proposta por um jogador) e salva o jogo
-    automaticamente.
+    movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa e resolve o futuro
+    do técnico. Se ele seguir no clube, sorteia o evento da semana (e, se ele não foi uma proposta, talvez uma
+    proposta por um jogador). Por fim, salva o jogo automaticamente.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -389,8 +434,9 @@ def jogar_etapa(estado, recursos):
     noticias = movimentar_mercado(estado, recursos["nomes"])
     telas.mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias)
     avancar_etapa(estado)
-    if not temporada_acabou(estado) and not evento_da_semana(estado, recursos, resultado):
-        proposta_da_semana(estado, recursos)
+    if not temporada_acabou(estado) and not decidir_futuro_do_tecnico(estado, informacao["letra"]):
+        if not evento_da_semana(estado, recursos, resultado):
+            proposta_da_semana(estado, recursos)
     if salvar_jogo(estado):
         console.print(" [dim]Jogo salvo automaticamente.[/]")
 

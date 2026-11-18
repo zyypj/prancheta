@@ -673,20 +673,22 @@ def meta_cumprida(estado, posicao):
     return posicao <= meta_do_clube(clube_do_jogador(estado))[1]
 
 
-def resumo_final(estado):
+def resumo_final(estado, saida=None):
     """
     Monta o resumo da temporada do técnico, usado na tela final e no ranking.
 
     A pontuação é (pontos × 10 + saldo × 2 + bônus) multiplicada pelo multiplicador do nível do clube, nunca
     abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta, BONUS_TITULO (200) pelo título da Série
     A (metade pelo da Série B) e BONUS_COPA (250) pelo título da copa, mais BONUS_DESAFIO (25) por desafio da
-    diretoria cumprido e BONUS_OBJETIVO (60) por objetivo da temporada alcançado; técnico demitido não recebe
-    os bônus de meta e de título da liga. O desfecho informa a demissão (com a etapa em que aconteceu), o
-    título (feito histórico se o clube não for grande), o acesso, o rebaixamento, a meta cumprida ou não, e
-    acrescenta o título da copa quando houver e, a partir da segunda temporada, o número dela.
+    diretoria cumprido e BONUS_OBJETIVO (60) por objetivo da temporada alcançado; técnico demitido ou que
+    trocou de clube no meio da temporada não recebe os bônus de meta e de título da liga. O desfecho informa a
+    demissão ou a saída (com a etapa em que aconteceu), o título (feito histórico se o clube não for grande), o
+    acesso, o rebaixamento, a meta cumprida ou não, e acrescenta o título da copa quando houver e, a partir da
+    segunda temporada, o número dela.
 
     Args:
         estado (dict): Estado atual da temporada.
+        saida (str | None): Texto da saída do técnico para outro clube, se houver. Padrão None.
 
     Returns:
         dict: Técnico, clube, divisão, temporada, posição, pontos, saldo, pontuação, desfecho, se a meta foi
@@ -697,17 +699,19 @@ def resumo_final(estado):
     divisao = clube.get("divisao", 1)
     linha = estado["tabela"][clube["id"]]
     posicao = posicao_atual(estado)
-    titulo = posicao == 1 and not estado["demitido"]
+    interrompida = estado["demitido"] or saida is not None
+    titulo = posicao == 1 and not interrompida
     copa = estado["copa"]["campeao"] == clube["id"]
-    cumpriu = meta_cumprida(estado, posicao) and not estado["demitido"]
+    cumpriu = meta_cumprida(estado, posicao) and not interrompida
     bonus_titulo = BONUS_TITULO if divisao == 1 else BONUS_TITULO // 2
     bonus = (BONUS_META if cumpriu else 0) + (bonus_titulo if titulo else 0) + (BONUS_COPA if copa else 0)
     desafios = estado.get("desafios_cumpridos", 0)
     objetivos = len(estado.get("objetivos", []))
     bonus += desafios * BONUS_DESAFIO + objetivos * BONUS_OBJETIVO
     pontuacao = round((linha["pontos"] * 10 + saldo(linha) * 2 + bonus) * nivel["multiplicador"])
-    if estado["demitido"]:
-        desfecho = f"demitido ({descricao_etapa(AGENDA[max(0, estado['etapa'] - 1)])})"
+    if interrompida:
+        motivo = saida or "demitido"
+        desfecho = f"{motivo} ({descricao_etapa(AGENDA[max(0, estado['etapa'] - 1)])})"
     elif titulo and divisao == 2:
         desfecho = "campeão da Série B"
     elif titulo and clube["nivel"] != "grande":

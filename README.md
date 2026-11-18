@@ -118,8 +118,12 @@ python main.py
     - Cumpriu a meta: contrato renovado e, às vezes, convites de clubes maiores.
     - Não cumpriu, mas jogou bem (confiança alta, perto da meta, longe na copa, objetivos e desafios): pode ganhar
       uma segunda chance, com a confiança mais baixa.
-    - Demitido (também no meio da temporada, se a confiança zerar): chegam propostas de outros clubes, conforme a
-      sua reputação, e você pode assumir um deles ou encerrar a carreira.
+    - Demitido: chegam propostas de outros clubes, conforme a sua reputação, e você pode assumir um deles ou
+      encerrar a carreira.
+
+    Isso também pode acontecer **logo depois de um jogo**. Com o time fora da meta e a confiança baixa, uma derrota
+    pode custar o cargo, e a confiança zerada demite na hora. Com o time dentro da meta, uma vitória pode trazer
+    proposta de um clube melhor: se aceitar, você assume o novo clube na mesma temporada.
 12. Cada jogador faz aniversário numa semana diferente da temporada (os do seu elenco aparecem nos resultados). Na
     virada de temporada, os jovens evoluem, os veteranos caem e os mais velhos se aposentam. A base sobe garotos para completar os elencos, às vezes com uma joia. A força de cada clube é
     recalculada pelo elenco, chegam novos jogadores sem clube e abre uma janela de transferências com propostas
@@ -130,8 +134,8 @@ Em todas as narrações, súmulas e mensagens, o jogador aparece com a posição
 
 ## Objetivo
 
-- Em cada temporada: cumprir a meta do clube. Ser demitido (confiança da diretoria em 0, ou a diretoria não
-  renovar no fim) não acaba o jogo: você pode aceitar outra proposta e seguir a carreira.
+- Em cada temporada: cumprir a meta do clube. Ser demitido (depois de um jogo ruim, com a confiança da diretoria
+  em 0 ou sem renovação no fim) não acaba o jogo: você pode aceitar outra proposta e seguir a carreira.
 - A carreira termina quando você recusa todas as propostas depois de uma demissão.
 - Pontuação: (pontos × 10 + saldo × 2 + bônus) × dificuldade do clube. Ser campeão da copa vale +250 de bônus, cada
   desafio cumprido +25 e cada objetivo da temporada +60. Cada temporada (ou passagem por um clube) vai para o
