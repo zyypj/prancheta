@@ -13,6 +13,8 @@ from config import (
     NIVEIS,
     NOME_JOGO,
     NOMES_ESTILOS,
+    PREMIO_CAMPEAO,
+    PREMIO_TITULO_COPA,
     TOTAL_RODADAS,
     VAGAS_SERIE_B_COPA,
     VERSAO,
@@ -935,6 +937,37 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
         console.print("\n [bold]Mercado da bola:[/]")
         for texto_noticia in noticias:
             console.print(f"  • {texto_noticia}")
+    pausar("Enter para continuar...")
+
+
+def mostrar_titulo(estado, informacao):
+    """
+    Anuncia o título conquistado pelo clube do usuário na etapa que acabou de terminar.
+
+    Na copa, mostra o placar da final e o prêmio já recebido. Na liga, informa se o título veio na última
+    rodada ou com rodadas de antecedência e quando o prêmio será pago. Espera o usuário pressionar Enter.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        informacao (dict): Dados da etapa, com "titulo" ("liga" ou "copa") e, na copa, o "jogo" da final.
+    """
+    clube = clube_do_jogador(estado)
+    titulo("CAMPEÃO!")
+    if informacao["titulo"] == "copa":
+        console.print(f" [bold {clube['cor']}]{clube['nome']} é campeão da Copa Prancheta![/]\n")
+        console.print(linha_de_resultado(estado, informacao["jogo"]))
+        console.print(f"\n Prêmio de {dinheiro(PREMIO_TITULO_COPA)} já está no caixa.")
+    else:
+        divisao = divisao_do_jogador(estado)
+        pontos = estado["tabela"][clube["id"]]["pontos"]
+        restantes = TOTAL_RODADAS - len(estado["historico"])
+        console.print(f" [bold {clube['cor']}]{clube['nome']} é campeão da {DIVISOES[divisao]}![/]\n")
+        if restantes:
+            faltam = "1 rodada" if restantes == 1 else f"{restantes} rodadas"
+            console.print(f" Faltando {faltam}, ninguém alcança mais os seus {pontos} pontos.")
+        else:
+            console.print(f" Título confirmado na última rodada, com {pontos} pontos.")
+        console.print(f" O prêmio de {dinheiro(PREMIO_CAMPEAO[divisao])} entra no caixa no fim da temporada.")
     pausar("Enter para continuar...")
 
 

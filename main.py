@@ -345,10 +345,11 @@ def jogar_etapa(estado, recursos):
     Disputa a etapa atual da temporada, seja uma rodada da liga ou uma fase da copa.
 
     Joga a partida do clube do jogador (se ele estiver na etapa), com os bastidores de antes e depois do jogo,
-    avalia o desafio da diretoria, simula os outros jogos, registra a súmula, fecha a rodada ou a fase,
-    confere os objetivos da temporada e faz os aniversários da etapa. Depois movimenta o mercado dos outros
-    clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento da semana (e, se ele não foi
-    uma proposta, talvez uma proposta por um jogador) e salva o jogo automaticamente.
+    avalia o desafio da diretoria, simula os outros jogos, registra a súmula, fecha a rodada ou a fase, anuncia
+    o título conquistado nela, confere os objetivos da temporada e faz os aniversários da etapa. Depois
+    movimenta o mercado dos outros clubes, mostra os resultados, avança para a próxima etapa, sorteia o evento
+    da semana (e, se ele não foi uma proposta, talvez uma proposta por um jogador) e salva o jogo
+    automaticamente.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -380,6 +381,8 @@ def jogar_etapa(estado, recursos):
             registrar_sumula(estado, resultado, f"copa-{valor}", f"Temporada {temporada}, {descricao_etapa(etapa)}")
         informacao = fechar_fase_copa(estado, resultados)
         titulo_tela = f"RESULTADOS — {descricao_etapa(etapa).upper()}"
+    if informacao["titulo"]:
+        telas.mostrar_titulo(estado, informacao)
     informacao["desafio"] = desafio
     informacao["objetivos"] = atualizar_objetivos(estado)
     informacao["aniversarios"] = comemorar_aniversarios(estado)

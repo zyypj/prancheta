@@ -21,6 +21,7 @@ from config import (
     METAS,
     NIVEIS,
     NOMES_FASES,
+    PONTOS_VITORIA,
     PREMIO_EMPATE,
     PREMIO_VITORIA,
     REPUTACAO_INICIAL,
@@ -365,6 +366,26 @@ def posicao_atual(estado):
     return posicao_do_clube(classificacao(estado), estado["clube_id"])
 
 
+def titulo_garantido(estado):
+    """
+    Verifica se o clube do jogador já não pode mais perder o título da sua divisão.
+
+    Com a liga encerrada, basta estar em primeiro. Antes disso, a vantagem de pontos sobre o segundo colocado
+    precisa ser maior do que os pontos que ainda estão em disputa. Técnico demitido não conquista o título.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        bool: True se o título da liga está garantido.
+    """
+    linhas = classificacao(estado)
+    if estado["demitido"] or posicao_do_clube(linhas, estado["clube_id"]) != 1:
+        return False
+    restantes = TOTAL_RODADAS - len(estado["historico"])
+    return restantes == 0 or linhas[0]["pontos"] > linhas[1]["pontos"] + restantes * PONTOS_VITORIA
+
+
 def gols_do_clube(clube_id, resultado):
     """
     Obtém os gols marcados e sofridos por um clube em um jogo.
@@ -526,15 +547,17 @@ def fechar_rodada(estado, resultados):
     Registra cada resultado na tabela, paga os prêmios e a bilheteria do mandante, guarda a rodada no
     histórico e paga a cota de TV a todos os clubes. Depois calcula a variação de confiança pelo jogo do clube
     do jogador, atualiza a sequência dos últimos 5 resultados, aplica a confiança, prepara os elencos e avança
-    o número da rodada.
+    o número da rodada. Também indica se o título da liga foi garantido nesta rodada.
 
     Args:
         estado (dict): Estado atual da temporada.
         resultados (list[dict]): Resultados de todos os jogos da rodada, incluindo o do jogador.
 
     Returns:
-        dict: Letra do resultado do jogador, variação da confiança e titulares trocados.
+        dict: Letra do resultado do jogador, variação da confiança, titulares trocados e o título conquistado
+            na rodada ("liga" ou None).
     """
+    ja_garantido = titulo_garantido(estado)
     rodada = []
     for resultado in resultados:
         registrar_resultado(estado["tabela"], resultado)
@@ -551,7 +574,8 @@ def fechar_rodada(estado, resultados):
     ajustar_confianca(estado, variacao)
     trocados = preparar_elencos(estado)
     estado["rodada"] += 1
-    return {"letra": letra, "variacao": variacao, "trocados": trocados}
+    conquistou = titulo_garantido(estado) and not ja_garantido
+    return {"letra": letra, "variacao": variacao, "trocados": trocados, "titulo": "liga" if conquistou else None}
 
 
 def fechar_fase_copa(estado, resultados):
@@ -562,7 +586,7 @@ def fechar_fase_copa(estado, resultados):
     clube do jogador jogou, avançar conta como "V" e soma
     CONFIANCA_AVANCO_COPA (3), ou CONFIANCA_TITULO_COPA (10) na final; ser eliminado conta como "D" e aplica
     CONFIANCA_QUEDA_COPA (-4), com CONFIANCA_ZEBRA (4) a menos se o adversário era mais fraco por mais de
-    DIFERENCA_FAVORITISMO (5). Por fim, prepara os elencos.
+    DIFERENCA_FAVORITISMO (5). Por fim, prepara os elencos e indica se o clube do jogador ganhou a final.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -570,7 +594,7 @@ def fechar_fase_copa(estado, resultados):
 
     Returns:
         dict: Letra do resultado do jogador (ou None se ele não jogou), variação da confiança, titulares
-            trocados e o jogo do jogador.
+            trocados, o jogo do jogador e o título conquistado na fase ("copa" ou None).
     """
     fase = etapa_atual(estado)[1]
     jogo = registrar_fase(estado, fase, resultados)
@@ -591,7 +615,14 @@ def fechar_fase_copa(estado, resultados):
         estado["ultimos"] = (estado["ultimos"] + [letra])[-5:]
         ajustar_confianca(estado, variacao)
     trocados = preparar_elencos(estado)
-    return {"letra": letra, "variacao": variacao, "trocados": trocados, "jogo": jogo}
+    conquistou = fase == FASES_COPA[-1] and estado["copa"]["campeao"] == estado["clube_id"]
+    return {
+        "letra": letra,
+        "variacao": variacao,
+        "trocados": trocados,
+        "jogo": jogo,
+        "titulo": "copa" if conquistou else None,
+    }
 
 
 def avancar_etapa(estado):
