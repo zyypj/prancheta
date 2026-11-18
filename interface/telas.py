@@ -20,7 +20,14 @@ from config import (
     ZONA_G4,
     ZONA_REBAIXAMENTO,
 )
-from elenco.escalacao import disponivel, escalar_automatico, rotulo, valor_de_mercado
+from elenco.escalacao import (
+    CRITERIOS_ESCALACAO,
+    disponivel,
+    escalar_automatico,
+    escalar_por_criterio,
+    rotulo,
+    valor_de_mercado,
+)
 from elenco.treino import pode_treinar
 from interface.campo import barra
 from interface.entrada import console, ler_opcao, limpar, pausar
@@ -489,13 +496,47 @@ def desenho_formacao(clube, largura=88):
     )
 
 
+def escalar_pelo_menu(clube):
+    """
+    Pergunta o critério da escalação automática e escala o time com ele.
+
+    Args:
+        clube (dict): Dados do clube, cujos titulares são alterados.
+
+    Returns:
+        str: Mensagem sobre o resultado, ou texto vazio se o usuário voltar sem escolher.
+    """
+    criterios = list(CRITERIOS_ESCALACAO)
+    console.print(
+        " "
+        + "   ".join(f"[bold]{n}[/] {CRITERIOS_ESCALACAO[c]}" for n, c in enumerate(criterios, start=1))
+        + "   [bold]0[/] Voltar"
+    )
+    opcao = ler_opcao(0, len(criterios))
+    if not opcao:
+        return ""
+    criterio = criterios[opcao - 1]
+    elenco = clube["elenco"]
+    formacao = clube["plano"]["formacao"]
+    clube["titulares"] = escalar_por_criterio(elenco, formacao, criterio)
+    if criterio == "melhores":
+        return "Escalados os melhores disponíveis, sem considerar o cansaço."
+    if criterio == "descansados":
+        return "Escalados os melhores, poupando quem está cansado."
+    repetidos = len(set(clube["titulares"]) & set(escalar_por_criterio(elenco, formacao, "melhores")))
+    if not repetidos:
+        return "Escalados os reservas."
+    verbo = "completa" if repetidos == 1 else "completam"
+    return f"Escalados os reservas. {repetidos} do time principal {verbo} as posições sem reserva."
+
+
 def editar_plano(clube):
     """
     Exibe a tela do plano de jogo e permite alterá-lo até o usuário voltar.
 
     Mostra a formação, o estilo, a ofensividade, a intensidade e o desenho dos titulares. As opções são trocar
     a formação (o time é reescalado automaticamente), trocar o estilo, ajustar a ofensividade e a intensidade
-    de 1 a 5, fazer a escalação automática, trocar um titular ou voltar com 0.
+    de 1 a 5, fazer a escalação automática pelo critério escolhido, trocar um titular ou voltar com 0.
 
     Args:
         clube (dict): Dados do clube, cujo plano e titulares são alterados.
@@ -547,8 +588,7 @@ def editar_plano(clube):
                 ler_opcao(0, 5, " Intensidade (1 a 5, mais alta cansa mais, 0 mantém) > ") or plano["intensidade"]
             )
         elif escolha == 5:
-            clube["titulares"] = escalar_automatico(clube["elenco"], plano["formacao"])
-            mensagem = "Escalados os melhores disponíveis."
+            mensagem = escalar_pelo_menu(clube)
         else:
             mensagem = trocar_titular(clube)
 

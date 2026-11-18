@@ -18,6 +18,11 @@ AJUSTES = {
     "ATA": {"fin": 4, "pas": -6, "des": -24, "fis": 0, "ref": -60},
 }
 TITULARES_POR_POSICAO = {"GOL": 1, "DEF": 4, "MEI": 4, "ATA": 2}
+CRITERIOS_ESCALACAO = {
+    "melhores": "Melhores",
+    "descansados": "Melhores e descansados",
+    "reservas": "Reservas",
+}
 
 
 def limitar(valor, minimo, maximo):
@@ -306,13 +311,64 @@ def valor_para_escalar(jogador):
     return (jogador["qualidade"] + bonus) * fator_energia(jogador["energia"])
 
 
+def nota_sem_cansaco(jogador):
+    """
+    Calcula a nota do jogador sem levar a energia em conta.
+
+    Args:
+        jogador (dict): Jogador avaliado.
+
+    Returns:
+        int: Qualidade somada ao ajuste de moral.
+    """
+    return jogador["qualidade"] + ajuste_de_moral(jogador)
+
+
+def nota_com_descanso(jogador):
+    """
+    Calcula a nota do jogador valorizando quem está descansado.
+
+    Toda a faixa de energia conta: o multiplicador vai de 0,7 com energia zero até 1,0 com energia cheia.
+
+    Args:
+        jogador (dict): Jogador avaliado.
+
+    Returns:
+        float: Nota sem cansaço multiplicada pelo fator de descanso.
+    """
+    return nota_sem_cansaco(jogador) * (0.7 + 0.3 * jogador["energia"] / 100)
+
+
+def preencher_formacao(candidatos, formacao):
+    """
+    Escolhe 11 jogadores para uma formação, respeitando a ordem de preferência recebida.
+
+    Preenche primeiro um goleiro e as vagas de defensores, meias e atacantes da formação com os primeiros de
+    cada posição. Se ainda faltarem jogadores, completa com os primeiros de linha restantes, de qualquer
+    posição.
+
+    Args:
+        candidatos (list[dict]): Jogadores disponíveis, do preferido para o menos preferido.
+        formacao (str): Formação tática, por exemplo "4-4-2".
+
+    Returns:
+        list[str]: Identificadores dos jogadores escolhidos, podendo ter menos de 11 se faltarem disponíveis.
+    """
+    defensores, meias, atacantes = FORMACOES[formacao]
+    vagas = {"GOL": 1, "DEF": defensores, "MEI": meias, "ATA": atacantes}
+    escolhidos = []
+    for posicao, quantidade in vagas.items():
+        da_posicao = [jogador for jogador in candidatos if jogador["pos"] == posicao and jogador not in escolhidos]
+        escolhidos.extend(da_posicao[:quantidade])
+    restantes = [jogador for jogador in candidatos if jogador not in escolhidos and jogador["pos"] != "GOL"]
+    while len(escolhidos) < 11 and restantes:
+        escolhidos.append(restantes.pop(0))
+    return [jogador["id"] for jogador in escolhidos]
+
+
 def escalar_automatico(elenco, formacao):
     """
-    Monta automaticamente os 11 titulares para uma formação.
-
-    Considera só os jogadores disponíveis, ordenados pelo valor para escalar. Preenche primeiro um goleiro e
-    as vagas de defensores, meias e atacantes da formação com os melhores de cada posição. Se ainda faltarem
-    jogadores, completa com os melhores de linha restantes, de qualquer posição.
+    Monta automaticamente os 11 titulares para uma formação, ordenando os disponíveis pelo valor para escalar.
 
     Args:
         elenco (list[dict]): Jogadores do clube.
@@ -321,17 +377,36 @@ def escalar_automatico(elenco, formacao):
     Returns:
         list[str]: Identificadores dos jogadores escolhidos, podendo ter menos de 11 se faltarem disponíveis.
     """
-    defensores, meias, atacantes = FORMACOES[formacao]
-    vagas = {"GOL": 1, "DEF": defensores, "MEI": meias, "ATA": atacantes}
     livres = sorted([jogador for jogador in elenco if disponivel(jogador)], key=valor_para_escalar, reverse=True)
-    escolhidos = []
-    for posicao, quantidade in vagas.items():
-        da_posicao = [jogador for jogador in livres if jogador["pos"] == posicao and jogador not in escolhidos]
-        escolhidos.extend(da_posicao[:quantidade])
-    restantes = [jogador for jogador in livres if jogador not in escolhidos and jogador["pos"] != "GOL"]
-    while len(escolhidos) < 11 and restantes:
-        escolhidos.append(restantes.pop(0))
-    return [jogador["id"] for jogador in escolhidos]
+    return preencher_formacao(livres, formacao)
+
+
+def escalar_por_criterio(elenco, formacao, criterio):
+    """
+    Monta os 11 titulares seguindo um dos critérios de CRITERIOS_ESCALACAO.
+
+    "melhores" ordena pela nota sem cansaço e "descansados" pela nota com descanso. "reservas" deixa de fora
+    o time principal, que é o escalado por "melhores", e prefere os reservas mais bem avaliados com descanso;
+    numa posição sem reservas suficientes, entram os jogadores mais fracos do time principal naquela posição.
+
+    Args:
+        elenco (list[dict]): Jogadores do clube.
+        formacao (str): Formação tática, por exemplo "4-4-2".
+        criterio (str): Chave de CRITERIOS_ESCALACAO.
+
+    Returns:
+        list[str]: Identificadores dos jogadores escolhidos, podendo ter menos de 11 se faltarem disponíveis.
+    """
+    livres = [jogador for jogador in elenco if disponivel(jogador)]
+    melhores = sorted(livres, key=nota_sem_cansaco, reverse=True)
+    if criterio == "melhores":
+        return preencher_formacao(melhores, formacao)
+    if criterio == "descansados":
+        return preencher_formacao(sorted(livres, key=nota_com_descanso, reverse=True), formacao)
+    principais = set(preencher_formacao(melhores, formacao))
+    reservas = sorted([j for j in livres if j["id"] not in principais], key=nota_com_descanso, reverse=True)
+    time_principal = sorted([j for j in livres if j["id"] in principais], key=nota_sem_cansaco)
+    return preencher_formacao(reservas + time_principal, formacao)
 
 
 def completar_titulares(clube):
