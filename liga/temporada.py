@@ -843,7 +843,8 @@ def resumo_final(estado, saida=None):
     BONUS_TITULO (200) pelo título da Série A (metade pelo da Série B) e BONUS_COPA (250) pelo título da copa,
     mais bonus_por_desafio por desafio da diretoria cumprido e BONUS_OBJETIVO (60) por objetivo da temporada
     alcançado; técnico demitido ou que trocou de clube no meio da temporada não recebe os bônus de meta e de
-    título da liga. O desfecho informa a demissão ou a saída (com a etapa em que aconteceu), o título (feito histórico se o clube não for grande), o
+    título da liga. O desfecho informa a demissão ou a saída (com a etapa em que aconteceu), o título (feito
+    histórico se o clube não for grande), o
     acesso, o rebaixamento, a meta cumprida ou não, e acrescenta o título da copa quando houver e, a partir da
     segunda temporada, o número dela.
 
