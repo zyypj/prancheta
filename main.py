@@ -12,6 +12,7 @@ from config import (
     CONFIANCA_INICIAL,
     CONFIANCA_RENOVADO,
     CONFIANCA_SEGUNDA_CHANCE,
+    FORMATO_PADRAO,
     PASTA_SUMULAS,
     VERSAO_SAVE,
 )
@@ -61,6 +62,7 @@ from liga.temporada import (
     mata_mata,
     meta_do_clube,
     resumo_final,
+    saldo_da_ida,
     simular_outros_jogos,
     temporada_acabou,
 )
@@ -124,7 +126,10 @@ def novo_jogo(recursos):
     clube_id = telas.escolher_clube(recursos["clubes"])
     if clube_id is None:
         return None
-    return criar_estado_novo(tecnico, clube_id, recursos["clubes"], recursos["nomes"])
+    formato = telas.escolher_formato()
+    if formato is None:
+        return None
+    return criar_estado_novo(tecnico, clube_id, recursos["clubes"], recursos["nomes"], formato)
 
 
 def montar_partida(estado, recursos, modo, velocidade):
@@ -158,6 +163,7 @@ def montar_partida(estado, recursos, modo, velocidade):
         partida["torcida"] = torcida_extra
     partida["modo"] = modo
     partida["velocidade"] = velocidade
+    partida["saldo_ida"] = saldo_da_ida(estado, (casa_id, fora_id))
     return partida
 
 
@@ -461,9 +467,11 @@ def jogar_etapa(estado, recursos):
         titulo_tela = f"RESULTADOS DA RODADA {valor}"
     else:
         if resultado:
-            registrar_sumula(estado, resultado, f"copa-{valor}", f"Temporada {temporada}, {descricao_etapa(etapa)}")
+            registrar_sumula(
+                estado, resultado, f"copa-{valor}", f"Temporada {temporada}, {descricao_etapa(estado, etapa)}"
+            )
         informacao = fechar_fase_copa(estado, resultados)
-        titulo_tela = f"RESULTADOS — {descricao_etapa(etapa).upper()}"
+        titulo_tela = f"RESULTADOS — {descricao_etapa(estado, etapa).upper()}"
     if informacao["titulo"]:
         telas.mostrar_titulo(estado, informacao)
     informacao["desafio"] = desafio
@@ -587,8 +595,8 @@ def virar_temporada(estado, recursos):
     Confere os objetivos finais, grava o resumo, fecha as divisões (prêmios, acesso e rebaixamento) e deixa a
     diretoria decidir se o técnico fica. Renovado, ele pode receber convites de clubes maiores; com a segunda
     chance, fica com a confiança mais baixa; demitido (ou se a confiança zerou na última etapa), recebe
-    propostas de outros clubes ou encerra a carreira. Depois começa a nova temporada, mostra o que mudou e
-    abre a janela de transferências.
+    propostas de outros clubes ou encerra a carreira. Depois o técnico escolhe o formato, começa a nova
+    temporada, vê o que mudou e abre a janela de transferências.
 
     Args:
         estado (dict): Estado da temporada que acabou.
@@ -620,8 +628,9 @@ def virar_temporada(estado, recursos):
         if escolha:
             assumir_clube(estado, escolha)
             confianca = CONFIANCA_INICIAL
+    formato = telas.escolher_formato(estado.get("formato", FORMATO_PADRAO))
     with console.status("Preparando a nova temporada..."):
-        relatorio = nova_temporada(estado, recursos["nomes"], confianca)
+        relatorio = nova_temporada(estado, recursos["nomes"], confianca, formato)
     mostrar_nova_temporada(estado, relatorio)
     janela_de_transferencias(estado, recursos)
     salvar_jogo(estado)

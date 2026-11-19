@@ -4,18 +4,17 @@ from rich.table import Table
 from rich.text import Text
 
 from config import (
-    BONUS_DESAFIO,
     BONUS_OBJETIVO,
     CLASSIFICADOS_DIRETO_COPA,
     DIVISOES,
     ESTILOS,
     FORMACOES,
+    FORMATOS_TEMPORADA,
     NIVEIS,
     NOME_JOGO,
     NOMES_ESTILOS,
     PREMIO_CAMPEAO,
     PREMIO_TITULO_COPA,
-    TOTAL_RODADAS,
     VAGAS_SERIE_B_COPA,
     VERSAO,
     ZONA_ACESSO,
@@ -40,17 +39,23 @@ from liga.financas import extrato
 from liga.tabela import posicao_do_clube, saldo
 from liga.temporada import (
     adversario_de,
+    bonus_por_desafio,
     classificacao,
     clube_do_jogador,
     descricao_etapa,
     divisao_do_jogador,
     etapa_atual,
+    formato_da_temporada,
     jogo_do_jogador,
     jogo_neutro,
     jogos_da_rodada,
     mata_mata,
     meta_do_clube,
+    perna_da_etapa,
+    placar_agregado,
     posicao_atual,
+    saldo_da_ida,
+    total_rodadas,
     ultimos_resultados,
 )
 from mercado.transferencias import dinheiro
@@ -188,6 +193,28 @@ def local_do_jogo(estado, jogo, clube_id):
     return "em casa" if jogo[0] == clube_id else "fora de casa"
 
 
+def escolher_formato(atual=None):
+    """
+    Mostra os formatos de temporada e lê o escolhido.
+
+    Args:
+        atual (str | None): Formato da temporada anterior, marcado na lista. Sem ele, a opção 0 volta.
+
+    Returns:
+        str | None: Chave do formato escolhido, ou None se o usuário voltou.
+    """
+    titulo("FORMATO DA TEMPORADA")
+    chaves = list(FORMATOS_TEMPORADA)
+    for numero, chave in enumerate(chaves, start=1):
+        dados = FORMATOS_TEMPORADA[chave]
+        marca = " [dim](última temporada)[/]" if chave == atual else ""
+        console.print(f" [bold]{numero}[/] {dados['nome']}: {dados['descricao']}{marca}")
+    if atual is None:
+        console.print(" [bold]0[/] Voltar")
+    escolha = ler_opcao(0 if atual is None else 1, len(chaves))
+    return chaves[escolha - 1] if escolha else None
+
+
 OPCOES_CENTRAL = (
     "Próximo jogo",
     "Elenco",
@@ -224,7 +251,7 @@ def mostrar_central(estado):
     titulo(f"CENTRAL DO CLUBE — {clube['nome'].upper()}")
     console.print(
         f" Técnico: [bold]{estado['tecnico']}[/]   Temporada {estado.get('temporada', 1)}"
-        f" · [bold]{DIVISOES[clube.get('divisao', 1)]}[/]"
+        f" ({formato_da_temporada(estado)['nome']}) · [bold]{DIVISOES[clube.get('divisao', 1)]}[/]"
     )
     console.print(
         f" Meta: [bold]{meta_do_clube(clube)[0]}[/]   Posição na {DIVISOES[clube.get('divisao', 1)]}:"
@@ -235,7 +262,7 @@ def mostrar_central(estado):
         f"   Últimos jogos: {texto_ultimos(estado['ultimos'])}"
     )
     console.print(f" Confiança da diretoria: {barra(estado['confianca'], 20)}")
-    console.print(f"\n Próximo compromisso: [bold]{descricao_etapa(etapa_atual(estado))}[/]")
+    console.print(f"\n Próximo compromisso: [bold]{descricao_etapa(estado, etapa_atual(estado))}[/]")
     jogo = jogo_do_jogador(estado)
     if jogo:
         adversario = estado["clubes"][adversario_de(jogo, clube["id"])]
@@ -707,8 +734,8 @@ def mostrar_rodadas(estado):
     """
     while True:
         titulo("RODADAS E HISTÓRICO")
-        console.print(f" Rodada atual: {estado['rodada']}/{TOTAL_RODADAS}")
-        numero = ler_opcao(0, TOTAL_RODADAS, " Qual rodada ver? (0 volta) > ")
+        console.print(f" Rodada atual: {min(estado['rodada'], total_rodadas(estado))}/{total_rodadas(estado)}")
+        numero = ler_opcao(0, total_rodadas(estado), " Qual rodada ver? (0 volta) > ")
         if numero == 0:
             return
         titulo(f"RODADA {numero} — {DIVISOES[divisao_do_jogador(estado)].upper()}")
@@ -766,10 +793,20 @@ def pre_jogo(estado):
     clube = clube_do_jogador(estado)
     jogo = jogo_do_jogador(estado)
     adversario = estado["clubes"][adversario_de(jogo, clube["id"])]
-    titulo(f"PRÉ-JOGO — {descricao_etapa(etapa_atual(estado)).upper()}")
+    titulo(f"PRÉ-JOGO — {descricao_etapa(estado, etapa_atual(estado)).upper()}")
     console.print(f" {texto_jogo(estado, jogo)} ({local_do_jogo(estado, jogo, clube['id'])})")
     console.print(f" Força: {clube['nome']} {clube['forca']}  x  {adversario['nome']} {adversario['forca']}")
-    if mata_mata(estado):
+    perna = perna_da_etapa(estado)
+    if perna == 1:
+        console.print(" [yellow]Jogo de ida: a vaga será decidida na volta.[/]")
+    elif perna == 2:
+        saldo = saldo_da_ida(estado, jogo)
+        saldo_do_clube = saldo if jogo[0] == clube["id"] else -saldo
+        console.print(
+            f" [yellow]Jogo de volta: você traz saldo de {saldo_do_clube:+d} da ida."
+            " Se o agregado empatar, a vaga vai para os pênaltis.[/]"
+        )
+    elif mata_mata(estado):
         console.print(" [yellow]Mata-mata: se empatar, a vaga é decidida nos pênaltis.[/]")
     plano = clube["plano"]
     console.print(
@@ -828,9 +865,14 @@ def mostrar_fim_de_jogo(estado, resultado):
         f" [bold {casa['cor']}]{casa['nome']}[/] [bold]{resultado['gm']} x {resultado['gv']}[/]"
         f" [bold {fora['cor']}]{fora['nome']}[/]"
     )
+    agregado = placar_agregado(estado, resultado)
+    if agregado:
+        console.print(f" [bold]Agregado: {casa['nome']} {agregado[0]} x {agregado[1]} {fora['nome']}[/]")
     if resultado.get("penaltis"):
         vencedor = estado["clubes"][resultado["vencedor"]]["nome"]
         console.print(f" [bold yellow]{texto_penaltis_resultado(estado, resultado)} — {vencedor} avança![/]")
+    elif agregado:
+        console.print(f" [bold yellow]{estado['clubes'][resultado['vencedor']]['nome']} avança![/]")
     console.print()
     estatisticas = resultado["estatisticas"]
     tabela = Table(header_style="bold")
@@ -863,7 +905,9 @@ def linha_de_resultado(estado, resultado):
     fora = estado["clubes"][resultado["visitante"]]
     destaque = " [yellow]◄[/]" if estado["clube_id"] in (casa["id"], fora["id"]) else ""
     penaltis = texto_penaltis_resultado(estado, resultado)
-    extra = f" [dim]({penaltis})[/]" if penaltis else ""
+    agregado = placar_agregado(estado, resultado)
+    detalhes = ([f"agregado {agregado[0]} x {agregado[1]}"] if agregado else []) + ([penaltis] if penaltis else [])
+    extra = f" [dim]({', '.join(detalhes)})[/]" if detalhes else ""
     return f" {casa['nome']:>22} [bold]{resultado['gm']} x {resultado['gv']}[/] {fora['nome']}{extra}{destaque}"
 
 
@@ -898,7 +942,9 @@ def mostrar_resultados(estado, titulo_tela, resultados, informacao, noticias):
         for resultado in resultados:
             console.print(linha_de_resultado(estado, resultado))
     jogo = informacao.get("jogo")
-    if jogo:
+    if jogo and informacao.get("ida"):
+        console.print("\n [bold]Jogo de ida disputado: a vaga será decidida na volta.[/]")
+    elif jogo:
         if estado["copa"]["campeao"] == estado["clube_id"]:
             console.print("\n [bold green]CAMPEÃO DA COPA![/]")
         elif jogo["vencedor"] == estado["clube_id"]:
@@ -964,7 +1010,7 @@ def linhas_do_titulo(estado, informacao):
         ]
     divisao = divisao_do_jogador(estado)
     pontos = estado["tabela"][clube["id"]]["pontos"]
-    restantes = TOTAL_RODADAS - len(estado["historico"])
+    restantes = total_rodadas(estado) - len(estado["historico"])
     if restantes:
         faltam = "1 rodada" if restantes == 1 else f"{restantes} rodadas"
         situacao = f" Faltando {faltam}, ninguém alcança mais os seus {pontos} pontos."
@@ -1076,7 +1122,7 @@ def mostrar_final(resumo):
     if resumo.get("copa"):
         console.print(" [bold green]Campeão da copa: bônus de 250 na pontuação.[/]")
     if resumo.get("desafios"):
-        console.print(f" Desafios da diretoria cumpridos: {resumo['desafios']} (+{resumo['desafios'] * BONUS_DESAFIO})")
+        console.print(f" Desafios da diretoria cumpridos: {resumo['desafios']} (+{resumo['bonus_desafios']})")
     if resumo.get("objetivos"):
         console.print(f" Objetivos da temporada: {resumo['objetivos']} (+{resumo['objetivos'] * BONUS_OBJETIVO})")
     console.print(f" Pontuação no ranking: [bold]{resumo['pontuacao']}[/]")
@@ -1139,7 +1185,7 @@ def escolher_save(saves):
             save["tecnico"],
             save["clube"],
             str(save.get("temporada", 1)),
-            str(min(save["rodada"], TOTAL_RODADAS)),
+            str(min(save["rodada"], save["total_rodadas"])),
             save["salvo_em"],
         )
     console.print(tabela)
@@ -1481,11 +1527,16 @@ def mostrar_copa(estado):
     if copa["campeao"]:
         console.print(f"\n [bold green]Campeão: {estado['clubes'][copa['campeao']]['nome']}[/]")
     console.print(f"\n Seu clube: {situacao_do_clube(copa, estado['clube_id'])}")
+    regra = (
+        "Ida e volta em todas as fases: empate no agregado vai para os pênaltis."
+        if formato_da_temporada(estado)["copa_ida_e_volta"]
+        else "Jogo único, empate vai para os pênaltis e a final é em campo neutro."
+    )
     console.print(
         f" [dim]Os {CLASSIFICADOS_DIRETO_COPA} primeiros da Série A na última temporada (na primeira, os mais fortes)"
         " vão direto às quartas; só os piores colocados da Série A e os"
         f" {VAGAS_SERIE_B_COPA} melhores da Série B disputam a preliminar."
-        " Jogo único, empate vai para os pênaltis e a final é em campo neutro.[/]"
+        f" {regra}[/]"
     )
     pausar()
 
@@ -1520,7 +1571,10 @@ def mostrar_financas(estado):
         " por rodada da liga e prêmio por resultado."
     )
     cumpridos = estado.get("desafios_cumpridos", 0)
-    console.print(f"\n [bold]Desafios da diretoria cumpridos:[/] {cumpridos} (+{BONUS_DESAFIO} pontos cada no ranking)")
+    pontos_por_desafio = round(bonus_por_desafio(estado))
+    console.print(
+        f"\n [bold]Desafios da diretoria cumpridos:[/] {cumpridos} (+{pontos_por_desafio} pontos cada no ranking)"
+    )
     console.print(f"\n [bold]Objetivos da temporada[/] (+{BONUS_OBJETIVO} pontos e +R$ 2,0 mi cada):")
     feitos = estado.get("objetivos", [])
     for chave, texto in OBJETIVOS.items():

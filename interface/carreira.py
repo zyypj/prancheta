@@ -6,7 +6,7 @@ from interface.campo import barra
 from interface.entrada import confirmar, console, ler_opcao, pausar
 from interface.telas import titulo
 from liga.carreira import situacao_na_nova_copa
-from liga.temporada import clube_do_jogador, meta_do_clube, posicao_atual
+from liga.temporada import clube_do_jogador, formato_da_temporada, meta_do_clube, posicao_atual
 from mercado.transferencias import dinheiro
 
 
@@ -146,6 +146,7 @@ def mostrar_nova_temporada(estado, relatorio):
         f" [bold {clube['cor']}]{clube['nome']}[/] na {DIVISOES[clube.get('divisao', 1)]}"
         f"   Meta: [bold]{meta_do_clube(clube)[0]}[/]"
     )
+    console.print(f" Formato: [bold]{formato_da_temporada(estado)['nome']}[/]")
     console.print(f" Confiança da diretoria: {barra(estado['confianca'], 20)}")
     console.print(f" Copa: {situacao_na_nova_copa(estado)}")
     antes, depois = relatorio["forca"]

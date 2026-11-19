@@ -31,7 +31,9 @@ python main.py
 2. Na **Central do clube** você vê o elenco (com idade e valor de mercado), ajusta o plano de jogo, treina o
    elenco, consulta a classificação das duas divisões, a chave da copa e o histórico das rodadas, entra no mercado
    da bola, vê a página de qualquer clube, acompanha a carreira e salva o jogo.
-3. A temporada alterna liga e copa. Cada divisão tem 9 rodadas em turno único, jogadas ao mesmo tempo. A copa reúne a
+3. Ao começar cada temporada, você escolhe o formato: **Rápida** (liga só de ida e copa em jogo único), **Média**
+   (liga de ida e volta, com 18 rodadas) ou **Completa** (liga e copa de ida e volta, com placar agregado e
+   pênaltis se ele empatar). A temporada alterna liga e copa, e as divisões jogam as rodadas ao mesmo tempo. A copa reúne a
    Série A e os 2 melhores da Série B: os 4 primeiros da Série A na temporada anterior (na primeira, os mais fortes)
    vão direto às quartas, e só os piores colocados da Série A e os clubes da Série B jogam a fase preliminar. Depois
    vêm quartas, semifinal e final em campo neutro, sempre em jogo único: empate vai para a disputa de pênaltis,
