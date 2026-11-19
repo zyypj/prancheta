@@ -42,15 +42,16 @@ def gerar_calendario(ids):
     return turno
 
 
-def gerar_calendario_das_divisoes(clubes):
+def gerar_calendario_das_divisoes(clubes, quantidade_de_turnos=1):
     """
     Gera o calendário das duas divisões, que jogam as rodadas ao mesmo tempo.
 
-    Cada divisão tem o seu turno único gerado por gerar_calendario, e a rodada N do calendário junta os
-    jogos da rodada N das duas divisões.
+    Cada divisão tem o seu turno gerado por gerar_calendario, e a rodada N do calendário junta os jogos da
+    rodada N das duas divisões. Com dois turnos, o returno repete a ordem do turno com os mandos invertidos.
 
     Args:
         clubes (dict): Clubes da temporada, indexados pelo identificador, cada um com a sua divisão.
+        quantidade_de_turnos (int): 1 para turno único ou 2 para ida e volta. Padrão 1.
 
     Returns:
         list[list[tuple[str, str]]]: Lista de rodadas, cada uma com os jogos das duas divisões no formato
@@ -62,7 +63,10 @@ def gerar_calendario_das_divisoes(clubes):
         for divisao in divisoes
     ]
     rodadas = max(len(turno) for turno in turnos)
-    return [[jogo for turno in turnos if numero < len(turno) for jogo in turno[numero]] for numero in range(rodadas)]
+    ida = [[jogo for turno in turnos if numero < len(turno) for jogo in turno[numero]] for numero in range(rodadas)]
+    if quantidade_de_turnos == 1:
+        return ida
+    return ida + [[(fora, casa) for casa, fora in rodada] for rodada in ida]
 
 
 def jogo_do_clube(rodada, clube_id):

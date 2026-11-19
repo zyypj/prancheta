@@ -1,3 +1,4 @@
+import math
 import random
 from datetime import datetime
 
@@ -18,6 +19,8 @@ from config import (
     CONFIANCA_ZEBRA,
     DIFERENCA_FAVORITISMO,
     FASES_COPA,
+    FORMATO_PADRAO,
+    FORMATOS_TEMPORADA,
     METAS,
     NIVEIS,
     NOMES_FASES,
@@ -33,21 +36,30 @@ from config import (
 from elenco.escalacao import completar_titulares, escalar_automatico, gerar_elenco
 from elenco.substituicoes import preparar_proxima_rodada
 from liga.calendario import gerar_calendario_das_divisoes, jogo_do_clube
-from liga.copa import criar_copa, fase_neutra, preparar_fase, registrar_fase
+from liga.copa import (
+    confrontos_da_perna,
+    criar_copa,
+    fase_da_etapa,
+    fase_neutra,
+    jogo_de_ida,
+    preparar_fase,
+    registrar_fase,
+    registrar_ida,
+)
 from liga.financas import lancar, receber_bilheteria, receber_cota_tv
 from liga.tabela import criar_tabela, ordenar_tabela, posicao_do_clube, registrar_resultado, saldo
 from mercado.transferencias import gerar_agentes_livres
 from partida.simulacao import simular_partida
 
 
-def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
+def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes, formato=FORMATO_PADRAO):
     """
     Cria o estado inicial de uma nova temporada.
 
     Copia cada clube base, com a sua divisão, define o caixa inicial conforme o nível do clube, gera o elenco
     com nomes que não se repetem (guardando o último número de identificador usado) e escala os titulares
-    automaticamente. Em seguida monta o calendário das duas
-    divisões, a copa, os agentes livres e a tabela zerada, começando com a confiança da diretoria em
+    automaticamente. Em seguida monta o calendário das duas divisões conforme o formato da temporada, a copa, os
+    agentes livres e a tabela zerada, começando com a confiança da diretoria em
     CONFIANCA_INICIAL. A reputação do técnico começa conforme o nível do clube escolhido (REPUTACAO_INICIAL),
     com um ponto a menos na Série B, e a carreira começa na temporada 1.
 
@@ -56,6 +68,7 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
         clube_id (str): Identificador do clube escolhido pelo jogador.
         clubes_base (list[dict]): Clubes lidos de times.json.
         banco_nomes (dict): Banco de nomes usado para gerar os jogadores.
+        formato (str): Chave de FORMATOS_TEMPORADA. Padrão FORMATO_PADRAO.
 
     Returns:
         dict: Estado completo da nova temporada.
@@ -77,7 +90,8 @@ def criar_estado_novo(tecnico, clube_id, clubes_base, banco_nomes):
         "tecnico": tecnico,
         "clube_id": clube_id,
         "clubes": clubes,
-        "calendario": gerar_calendario_das_divisoes(clubes),
+        "formato": formato,
+        "calendario": gerar_calendario_das_divisoes(clubes, FORMATOS_TEMPORADA[formato]["turnos"]),
         "copa": criar_copa(clubes),
         "livres": gerar_agentes_livres(banco_nomes, usados),
         "etapa": 0,
@@ -153,6 +167,72 @@ def ids_da_divisao(estado, divisao):
     return [clube_id for clube_id, clube in estado["clubes"].items() if clube.get("divisao", 1) == divisao]
 
 
+def formato_da_temporada(estado):
+    """
+    Obtém os dados do formato da temporada; saves antigos usam o formato padrão.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        dict: Dados do formato em FORMATOS_TEMPORADA.
+    """
+    return FORMATOS_TEMPORADA[estado.get("formato", FORMATO_PADRAO)]
+
+
+def montar_agenda(formato):
+    """
+    Monta a sequência de etapas de um formato, espalhando as fases da copa entre as rodadas da liga.
+
+    A fase de número i entra depois da rodada arredondada para cima de i × rodadas ÷ (fases + 1). Nas fases de ida
+    e volta, cada perna é uma etapa, com valor como "quartas_ida" ou "quartas_volta".
+
+    Args:
+        formato (str): Chave de FORMATOS_TEMPORADA.
+
+    Returns:
+        list[tuple]: Etapas no formato (competição, rodada ou fase).
+    """
+    dados = FORMATOS_TEMPORADA[formato]
+    rodadas = TOTAL_RODADAS * dados["turnos"]
+    fases = list(FASES_COPA)
+    if dados["copa_ida_e_volta"]:
+        fases = [f"{fase}_{perna}" for fase in FASES_COPA for perna in ("ida", "volta")]
+    depois_da_rodada = {math.ceil(i * rodadas / (len(fases) + 1)): fase for i, fase in enumerate(fases, start=1)}
+    agenda = []
+    for rodada in range(1, rodadas + 1):
+        agenda.append(("liga", rodada))
+        if rodada in depois_da_rodada:
+            agenda.append(("copa", depois_da_rodada[rodada]))
+    return agenda
+
+
+def agenda_da_temporada(estado):
+    """
+    Monta a agenda da temporada atual.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        list[tuple]: Etapas da temporada, em ordem.
+    """
+    return montar_agenda(estado.get("formato", FORMATO_PADRAO))
+
+
+def total_rodadas(estado):
+    """
+    Informa quantas rodadas a liga tem na temporada atual.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        int: Quantidade de rodadas do calendário.
+    """
+    return len(estado["calendario"])
+
+
 def etapa_atual(estado):
     """
     Obtém a etapa da agenda que está sendo disputada.
@@ -163,25 +243,40 @@ def etapa_atual(estado):
     Returns:
         tuple | None: Competição ("liga" ou "copa") e rodada ou fase, ou None se a agenda já terminou.
     """
-    if estado["etapa"] >= len(AGENDA):
-        return None
-    return AGENDA[estado["etapa"]]
+    agenda = agenda_da_temporada(estado)
+    return agenda[estado["etapa"]] if estado["etapa"] < len(agenda) else None
 
 
-def descricao_etapa(etapa):
+def perna_da_etapa(estado):
+    """
+    Informa qual perna da copa está sendo disputada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        int: 0 na liga e em jogo único, 1 na ida e 2 na volta.
+    """
+    etapa = etapa_atual(estado)
+    return fase_da_etapa(etapa[1])[1] if etapa and etapa[0] == "copa" else 0
+
+
+def descricao_etapa(estado, etapa):
     """
     Monta o texto que identifica uma etapa da agenda.
 
     Args:
+        estado (dict): Estado atual da temporada.
         etapa (tuple): Competição ("liga" ou "copa") e rodada ou fase.
 
     Returns:
-        str: Texto como "Liga — rodada 3/9" ou "Copa — Semifinal".
+        str: Texto como "Liga — rodada 3/9", "Copa — Semifinal" ou "Copa — Final (volta)".
     """
     competicao, valor = etapa
     if competicao == "liga":
-        return f"Liga — rodada {valor}/{TOTAL_RODADAS}"
-    return f"Copa — {NOMES_FASES[valor]}"
+        return f"Liga — rodada {valor}/{total_rodadas(estado)}"
+    fase, perna = fase_da_etapa(valor)
+    return f"Copa — {NOMES_FASES[fase]}" + {0: "", 1: " (ida)", 2: " (volta)"}[perna]
 
 
 def fazer_aniversario(jogador, etapa):
@@ -209,8 +304,8 @@ def comemorar_aniversarios(estado):
     """
     Faz os aniversários da etapa atual, em todos os elencos e entre os jogadores sem clube.
 
-    Cada jogador faz aniversário uma vez por temporada, ao fim da etapa sorteada para ele, então as idades vão
-    mudando ao longo do ano e não todas de uma vez na virada.
+    Cada jogador faz aniversário uma vez por temporada, então as idades vão mudando ao longo do ano e não todas de
+    uma vez na virada. O dia sorteado é uma das posições de AGENDA, proporcional ao tamanho da temporada atual.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -218,7 +313,10 @@ def comemorar_aniversarios(estado):
     Returns:
         list[dict]: Jogadores do clube do técnico que fizeram aniversário.
     """
-    etapa = estado["etapa"]
+    total = len(agenda_da_temporada(estado))
+    etapa = estado["etapa"] * len(AGENDA) // total
+    if estado["etapa"] and (estado["etapa"] - 1) * len(AGENDA) // total == etapa:
+        return []
     do_tecnico = []
     for clube in estado["clubes"].values():
         for jogador in clube["elenco"]:
@@ -248,7 +346,7 @@ def jogos_da_etapa(estado):
     """
     Obtém os jogos da etapa atual, seja uma rodada da liga ou uma fase da copa.
 
-    Na copa, os confrontos da fase são montados se ainda não existirem.
+    Na copa, os confrontos da fase são montados se ainda não existirem, com os mandos invertidos na volta.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -259,12 +357,13 @@ def jogos_da_etapa(estado):
     competicao, valor = etapa_atual(estado)
     if competicao == "liga":
         return jogos_da_rodada(estado, valor)
-    return preparar_fase(estado["copa"], valor)
+    fase, perna = fase_da_etapa(valor)
+    return confrontos_da_perna(estado["copa"], fase, perna)
 
 
 def jogo_neutro(estado):
     """
-    Indica se os jogos da etapa atual são em campo neutro, o que só acontece na final da copa.
+    Indica se os jogos da etapa atual são em campo neutro, o que só acontece na final da copa em jogo único.
 
     Args:
         estado (dict): Estado atual da temporada.
@@ -273,20 +372,57 @@ def jogo_neutro(estado):
         bool: True se a etapa for uma fase neutra da copa.
     """
     competicao, valor = etapa_atual(estado)
-    return competicao == "copa" and fase_neutra(valor)
+    return competicao == "copa" and fase_da_etapa(valor)[1] == 0 and fase_neutra(valor)
 
 
 def mata_mata(estado):
     """
-    Indica se a etapa atual é eliminatória, ou seja, uma fase da copa.
+    Indica se a partida da etapa atual pode ir aos pênaltis: jogo único ou volta da copa.
 
     Args:
         estado (dict): Estado atual da temporada.
 
     Returns:
-        bool: True se a etapa for da copa.
+        bool: True se a etapa for da copa e não for um jogo de ida.
     """
-    return etapa_atual(estado)[0] == "copa"
+    return etapa_atual(estado)[0] == "copa" and perna_da_etapa(estado) != 1
+
+
+def saldo_da_ida(estado, jogo):
+    """
+    Calcula o saldo que o mandante da volta trouxe da ida.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        jogo (tuple[str, str]): Jogo da etapa, como (mandante, visitante).
+
+    Returns:
+        int | None: Saldo de gols do mandante na ida, ou None se o jogo não é uma volta.
+    """
+    if perna_da_etapa(estado) != 2:
+        return None
+    ida = jogo_de_ida(estado["copa"], fase_da_etapa(etapa_atual(estado)[1])[0], *jogo)
+    feitos, sofridos = gols_do_clube(jogo[0], ida)
+    return feitos - sofridos
+
+
+def placar_agregado(estado, resultado):
+    """
+    Soma ida e volta do ponto de vista dos clubes de um jogo de volta.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        resultado (dict): Resultado do jogo.
+
+    Returns:
+        tuple[int, int] | None: Gols do mandante e do visitante da volta no agregado, ou None fora das voltas.
+    """
+    jogo = (resultado["mandante"], resultado["visitante"])
+    if perna_da_etapa(estado) != 2:
+        return None
+    ida = jogo_de_ida(estado["copa"], fase_da_etapa(etapa_atual(estado)[1])[0], *jogo)
+    feitos, sofridos = gols_do_clube(jogo[0], ida)
+    return resultado["gm"] + feitos, resultado["gv"] + sofridos
 
 
 def jogo_do_jogador(estado):
@@ -331,7 +467,14 @@ def simular_outros_jogos(estado, frases):
     """
     jogo = jogo_do_jogador(estado)
     return [
-        simular_partida(estado["clubes"][casa], estado["clubes"][fora], frases, jogo_neutro(estado), mata_mata(estado))
+        simular_partida(
+            estado["clubes"][casa],
+            estado["clubes"][fora],
+            frases,
+            jogo_neutro(estado),
+            mata_mata(estado),
+            saldo_da_ida(estado, (casa, fora)),
+        )
         for casa, fora in jogos_da_etapa(estado)
         if (casa, fora) != jogo
     ]
@@ -382,7 +525,7 @@ def titulo_garantido(estado):
     linhas = classificacao(estado)
     if estado["demitido"] or posicao_do_clube(linhas, estado["clube_id"]) != 1:
         return False
-    restantes = TOTAL_RODADAS - len(estado["historico"])
+    restantes = total_rodadas(estado) - len(estado["historico"])
     return restantes == 0 or linhas[0]["pontos"] > linhas[1]["pontos"] + restantes * PONTOS_VITORIA
 
 
@@ -582,8 +725,9 @@ def fechar_fase_copa(estado, resultados):
     """
     Encerra uma fase da copa.
 
-    Registra os resultados da fase e paga a bilheteria de cada jogo (dividida na final, em campo neutro). Se o
-    clube do jogador jogou, avançar conta como "V" e soma
+    Registra os resultados da fase e paga a bilheteria de cada jogo (dividida na final em campo neutro). Na ida,
+    nada é decidido e o jogo do clube do jogador conta como um jogo da liga para a confiança. No jogo único ou na
+    volta, se o clube do jogador jogou, avançar conta como "V" e soma
     CONFIANCA_AVANCO_COPA (3), ou CONFIANCA_TITULO_COPA (10) na final; ser eliminado conta como "D" e aplica
     CONFIANCA_QUEDA_COPA (-4), com CONFIANCA_ZEBRA (4) a menos se o adversário era mais fraco por mais de
     DIFERENCA_FAVORITISMO (5). Por fim, prepara os elencos e indica se o clube do jogador ganhou a final.
@@ -594,15 +738,17 @@ def fechar_fase_copa(estado, resultados):
 
     Returns:
         dict: Letra do resultado do jogador (ou None se ele não jogou), variação da confiança, titulares
-            trocados, o jogo do jogador e o título conquistado na fase ("copa" ou None).
+            trocados, o jogo do jogador, se foi uma ida e o título conquistado na fase ("copa" ou None).
     """
-    fase = etapa_atual(estado)[1]
-    jogo = registrar_fase(estado, fase, resultados)
+    fase, perna = fase_da_etapa(etapa_atual(estado)[1])
+    jogo = registrar_ida(estado, fase, resultados) if perna == 1 else registrar_fase(estado, fase, resultados)
     for resultado in resultados:
-        receber_bilheteria(estado, resultado, fase_neutra(fase))
+        receber_bilheteria(estado, resultado, perna == 0 and fase_neutra(fase))
     variacao = 0
     letra = None
-    if jogo:
+    if jogo and perna == 1:
+        letra, variacao = variacao_de_confianca(estado, jogo)
+    elif jogo:
         passou = jogo["vencedor"] == estado["clube_id"]
         letra = "V" if passou else "D"
         if passou:
@@ -612,15 +758,17 @@ def fechar_fase_copa(estado, resultados):
             variacao = CONFIANCA_QUEDA_COPA
             if diferenca_de_forca(estado, adversario) > DIFERENCA_FAVORITISMO:
                 variacao -= CONFIANCA_ZEBRA
+    if jogo:
         estado["ultimos"] = (estado["ultimos"] + [letra])[-5:]
         ajustar_confianca(estado, variacao)
     trocados = preparar_elencos(estado)
-    conquistou = fase == FASES_COPA[-1] and estado["copa"]["campeao"] == estado["clube_id"]
+    conquistou = perna != 1 and fase == FASES_COPA[-1] and estado["copa"]["campeao"] == estado["clube_id"]
     return {
         "letra": letra,
         "variacao": variacao,
         "trocados": trocados,
         "jogo": jogo,
+        "ida": perna == 1,
         "titulo": "copa" if conquistou else None,
     }
 
@@ -640,7 +788,7 @@ def avancar_etapa(estado):
     if proxima is None:
         estado["encerrado"] = True
     elif proxima[0] == "copa":
-        preparar_fase(estado["copa"], proxima[1])
+        preparar_fase(estado["copa"], fase_da_etapa(proxima[1])[0])
 
 
 def temporada_acabou(estado):
@@ -673,16 +821,29 @@ def meta_cumprida(estado, posicao):
     return posicao <= meta_do_clube(clube_do_jogador(estado))[1]
 
 
+def bonus_por_desafio(estado):
+    """
+    Calcula quanto cada desafio cumprido vale no ranking, proporcional ao tamanho da temporada.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+
+    Returns:
+        float: BONUS_DESAFIO (25) na temporada rápida e menos nas temporadas com mais etapas.
+    """
+    return BONUS_DESAFIO * len(AGENDA) / len(agenda_da_temporada(estado))
+
+
 def resumo_final(estado, saida=None):
     """
     Monta o resumo da temporada do técnico, usado na tela final e no ranking.
 
-    A pontuação é (pontos × 10 + saldo × 2 + bônus) multiplicada pelo multiplicador do nível do clube, nunca
-    abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta, BONUS_TITULO (200) pelo título da Série
-    A (metade pelo da Série B) e BONUS_COPA (250) pelo título da copa, mais BONUS_DESAFIO (25) por desafio da
-    diretoria cumprido e BONUS_OBJETIVO (60) por objetivo da temporada alcançado; técnico demitido ou que
-    trocou de clube no meio da temporada não recebe os bônus de meta e de título da liga. O desfecho informa a
-    demissão ou a saída (com a etapa em que aconteceu), o título (feito histórico se o clube não for grande), o
+    A pontuação é (pontos × 10 + saldo × 2, divididos pelos turnos da liga, + bônus) multiplicada pelo
+    multiplicador do nível do clube, nunca abaixo de zero. Os bônus são BONUS_META (300) por cumprir a meta,
+    BONUS_TITULO (200) pelo título da Série A (metade pelo da Série B) e BONUS_COPA (250) pelo título da copa,
+    mais bonus_por_desafio por desafio da diretoria cumprido e BONUS_OBJETIVO (60) por objetivo da temporada
+    alcançado; técnico demitido ou que trocou de clube no meio da temporada não recebe os bônus de meta e de
+    título da liga. O desfecho informa a demissão ou a saída (com a etapa em que aconteceu), o título (feito histórico se o clube não for grande), o
     acesso, o rebaixamento, a meta cumprida ou não, e acrescenta o título da copa quando houver e, a partir da
     segunda temporada, o número dela.
 
@@ -707,11 +868,14 @@ def resumo_final(estado, saida=None):
     bonus = (BONUS_META if cumpriu else 0) + (bonus_titulo if titulo else 0) + (BONUS_COPA if copa else 0)
     desafios = estado.get("desafios_cumpridos", 0)
     objetivos = len(estado.get("objetivos", []))
-    bonus += desafios * BONUS_DESAFIO + objetivos * BONUS_OBJETIVO
-    pontuacao = round((linha["pontos"] * 10 + saldo(linha) * 2 + bonus) * nivel["multiplicador"])
+    bonus_desafios = round(desafios * bonus_por_desafio(estado))
+    bonus += bonus_desafios + objetivos * BONUS_OBJETIVO
+    desempenho = (linha["pontos"] * 10 + saldo(linha) * 2) / formato_da_temporada(estado)["turnos"]
+    pontuacao = round((desempenho + bonus) * nivel["multiplicador"])
     if interrompida:
         motivo = saida or "demitido"
-        desfecho = f"{motivo} ({descricao_etapa(AGENDA[max(0, estado['etapa'] - 1)])})"
+        etapa = agenda_da_temporada(estado)[max(0, estado["etapa"] - 1)]
+        desfecho = f"{motivo} ({descricao_etapa(estado, etapa)})"
     elif titulo and divisao == 2:
         desfecho = "campeão da Série B"
     elif titulo and clube["nivel"] != "grande":
@@ -745,6 +909,7 @@ def resumo_final(estado, saida=None):
         "meta": meta_do_clube(clube)[0],
         "copa": copa,
         "desafios": desafios,
+        "bonus_desafios": bonus_desafios,
         "objetivos": objetivos,
         "data": datetime.now().strftime("%d/%m/%Y"),
     }

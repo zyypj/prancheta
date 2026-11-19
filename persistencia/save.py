@@ -81,6 +81,7 @@ def listar_saves():
                     "clube": estado["clubes"][estado["clube_id"]]["nome"],
                     "temporada": estado.get("temporada", 1),
                     "rodada": estado["rodada"],
+                    "total_rodadas": len(estado["calendario"]),
                     "salvo_em": estado.get("salvo_em", "-"),
                 }
             )

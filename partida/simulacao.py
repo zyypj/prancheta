@@ -336,7 +336,7 @@ def plano_ia(clube, adversario, em_casa):
     return plano
 
 
-def simular_partida(clube_casa, clube_fora, frases, neutro=False, mata_mata=False):
+def simular_partida(clube_casa, clube_fora, frases, neutro=False, mata_mata=False, saldo_ida=None):
     """
     Simula uma partida inteira entre dois clubes controlados pela inteligência artificial.
 
@@ -351,6 +351,7 @@ def simular_partida(clube_casa, clube_fora, frases, neutro=False, mata_mata=Fals
         neutro (bool): Se o jogo é em campo neutro. Padrão False.
         mata_mata (bool): Se a partida é de mata-mata, com disputa de pênaltis em caso de empate. Padrão
             False.
+        saldo_ida (int | None): Saldo do mandante na ida, quando a partida é uma volta. Padrão None.
 
     Returns:
         dict: Resultado da partida, com mandante, visitante, placar, cartões vermelhos, vencedor, pênaltis,
@@ -364,4 +365,5 @@ def simular_partida(clube_casa, clube_fora, frases, neutro=False, mata_mata=Fals
         plano_ia(clube_fora, clube_casa, False),
         neutro,
     )
+    partida["saldo_ida"] = saldo_ida
     return jogar_partida(partida, {clube_casa["id"]: CONTROLE_IA, clube_fora["id"]: CONTROLE_IA}, mata_mata=mata_mata)

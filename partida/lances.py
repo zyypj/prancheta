@@ -257,6 +257,7 @@ def criar_partida(clube_casa, clube_fora, frases, plano_casa=None, plano_fora=No
         "fora": clube_fora["id"],
         "neutro": neutro,
         "penaltis": None,
+        "saldo_ida": None,
         "times": {
             clube_casa["id"]: montar_time(clube_casa, plano_casa or clube_casa["plano"], not neutro),
             clube_fora["id"]: montar_time(clube_fora, plano_fora or clube_fora["plano"], False),
@@ -2211,9 +2212,24 @@ def disputa_de_penaltis(partida):
     anotar_sumula(partida, texto_penaltis(partida))
 
 
+def vantagem_da_casa(partida):
+    """
+    Calcula a vantagem do mandante, somando o saldo da ida quando a partida é uma volta.
+
+    Args:
+        partida (dict): Estado da partida.
+
+    Returns:
+        int: Gols do mandante menos os do visitante, mais o saldo da ida.
+    """
+    casa = partida["times"][partida["casa"]]
+    fora = partida["times"][partida["fora"]]
+    return casa["gols"] - fora["gols"] + (partida["saldo_ida"] or 0)
+
+
 def vencedor_da_partida(partida):
     """
-    Define o vencedor da partida pelo placar ou, em caso de empate, pelos pênaltis.
+    Define o vencedor pelo placar, pelo agregado nas voltas ou, em caso de empate, pelos pênaltis.
 
     Args:
         partida (dict): Estado da partida.
@@ -2223,8 +2239,9 @@ def vencedor_da_partida(partida):
     """
     casa = partida["times"][partida["casa"]]
     fora = partida["times"][partida["fora"]]
-    if casa["gols"] != fora["gols"]:
-        return casa["id"] if casa["gols"] > fora["gols"] else fora["id"]
+    vantagem = vantagem_da_casa(partida)
+    if vantagem:
+        return casa["id"] if vantagem > 0 else fora["id"]
     if partida["penaltis"]:
         return casa["id"] if partida["penaltis"][casa["id"]] > partida["penaltis"][fora["id"]] else fora["id"]
     return None

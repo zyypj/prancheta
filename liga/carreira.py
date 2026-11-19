@@ -1,6 +1,7 @@
 import random
 
 from config import (
+    AGENDA,
     AGENTES_LIVRES,
     BONUS_DEMISSAO_BOATO,
     CHANCE_CONVITE,
@@ -15,6 +16,7 @@ from config import (
     EVOLUCAO_POR_IDADE,
     FOLGA_DE_FORCA_NO_CONVITE,
     FOLGA_DOS_TITULARES,
+    FORMATOS_TEMPORADA,
     IDADE_APOSENTADORIA,
     IDADE_LIMITE,
     MAX_ELENCO,
@@ -39,6 +41,7 @@ from liga.eventos import criar_proposta, nomes_em_uso, novo_garoto
 from liga.financas import lancar
 from liga.tabela import criar_tabela, posicao_do_clube, registrar_resultado
 from liga.temporada import (
+    agenda_da_temporada,
     classificacao,
     clube_do_jogador,
     meta_cumprida,
@@ -116,7 +119,8 @@ def avaliar_diretoria(estado, resumo):
     Quem cumpriu a meta é renovado. Quem não cumpriu ainda pode ganhar uma segunda chance se jogou bem: a
     nota parte da confiança da diretoria, perde 6 pontos por posição abaixo da meta e 15 se o clube caiu, e
     ganha 10 pela semifinal ou final da copa, 25 pelo título dela, 4 por objetivo da temporada e 5 por ter
-    cumprido 6 desafios ou mais. A chance de continuar é (nota - 15) × 1,5 por cento, entre 5% e 90%.
+    cumprido 6 desafios ou mais (número proporcional nas temporadas longas). A chance de continuar é
+    (nota - 15) × 1,5 por cento, entre 5% e 90%.
 
     Args:
         estado (dict): Estado da temporada que acabou.
@@ -151,7 +155,7 @@ def avaliar_diretoria(estado, resumo):
     if resumo["objetivos"]:
         nota += 4 * resumo["objetivos"]
         a_favor.append(f"{resumo['objetivos']} objetivo(s) da temporada")
-    if resumo["desafios"] >= 6:
+    if resumo["desafios"] >= round(6 * len(agenda_da_temporada(estado)) / len(AGENDA)):
         nota += 5
         a_favor.append(f"{resumo['desafios']} desafios da diretoria cumpridos")
     chance = limitar(round((nota - 15) * 1.5), 5, 90)
@@ -617,20 +621,21 @@ def ordem_da_copa(estado):
     return {1: serie_a, 2: serie_b}
 
 
-def nova_temporada(estado, banco, confianca):
+def nova_temporada(estado, banco, confianca, formato):
     """
     Começa a próxima temporada da carreira.
 
     Guarda a numeração dos identificadores (proteger_numeracao), renova os elencos de todos os clubes
     (evolução pela idade, aposentadorias e garotos da base) e a lista de
     jogadores sem clube, recalcula a força de cada clube, refaz as escalações, gera o calendário das duas
-    divisões e a copa pela classificação anterior, zera a tabela, o histórico, as súmulas, os desafios, os
-    objetivos e o extrato, e define a confiança inicial da diretoria.
+    divisões no formato escolhido e a copa pela classificação anterior, zera a tabela, o histórico, as súmulas,
+    os desafios, os objetivos e o extrato, e define a confiança inicial da diretoria.
 
     Args:
         estado (dict): Estado da carreira, com as divisões já trocadas por fechar_divisoes.
         banco (dict): Banco de nomes.
         confianca (int): Confiança da diretoria no começo da temporada.
+        formato (str): Chave de FORMATOS_TEMPORADA.
 
     Returns:
         dict: O que mudou no clube do técnico: aposentados, garotos da base, maiores evoluções e quedas,
@@ -653,7 +658,8 @@ def nova_temporada(estado, banco, confianca):
     variacoes = sorted(relatorio["variacoes"], key=lambda par: par[1], reverse=True)
     estado.update(
         {
-            "calendario": gerar_calendario_das_divisoes(estado["clubes"]),
+            "formato": formato,
+            "calendario": gerar_calendario_das_divisoes(estado["clubes"], FORMATOS_TEMPORADA[formato]["turnos"]),
             "copa": criar_copa(estado["clubes"], ordem_da_copa(estado)),
             "tabela": criar_tabela(list(estado["clubes"])),
             "historico": [],

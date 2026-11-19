@@ -10,6 +10,8 @@ from config import (
 )
 from liga.financas import lancar
 
+CAMPOS_DO_RESUMO = ("mandante", "visitante", "gm", "gv", "penaltis", "vencedor")
+
 
 def montar_confrontos(ids):
     """
@@ -80,6 +82,22 @@ def criar_copa(clubes, ordem=None):
     }
 
 
+def fase_da_etapa(valor):
+    """
+    Separa o valor de uma etapa da copa na fase e na perna do confronto.
+
+    Args:
+        valor (str): Valor da etapa, como "final", "quartas_ida" ou "quartas_volta".
+
+    Returns:
+        tuple[str, int]: Nome da fase e perna: 0 para jogo único, 1 para ida e 2 para volta.
+    """
+    for sufixo, perna in (("_ida", 1), ("_volta", 2)):
+        if valor.endswith(sufixo):
+            return valor[: -len(sufixo)], perna
+    return valor, 0
+
+
 def preparar_fase(copa, fase):
     """
     Define os confrontos de uma fase da copa, caso ainda não existam.
@@ -104,6 +122,85 @@ def preparar_fase(copa, fase):
         confrontos = [(vivos[indice], vivos[indice + 1]) for indice in range(0, len(vivos) - 1, 2)]
     copa["confrontos"][fase] = confrontos
     return confrontos
+
+
+def confrontos_da_perna(copa, fase, perna):
+    """
+    Lista os jogos de uma perna da fase, invertendo os mandos na volta.
+
+    Args:
+        copa (dict): Estrutura da copa na temporada.
+        fase (str): Nome da fase.
+        perna (int): 0 para jogo único, 1 para ida e 2 para volta.
+
+    Returns:
+        list[tuple[str, str]]: Jogos no formato (mandante, visitante).
+    """
+    confrontos = preparar_fase(copa, fase)
+    return [(fora, casa) for casa, fora in confrontos] if perna == 2 else confrontos
+
+
+def jogo_de_ida(copa, fase, time_a, time_b):
+    """
+    Procura o resultado da ida entre dois clubes.
+
+    Args:
+        copa (dict): Estrutura da copa na temporada.
+        fase (str): Nome da fase.
+        time_a (str): Identificador de um clube.
+        time_b (str): Identificador do outro clube.
+
+    Returns:
+        dict | None: Resumo da ida, ou None se ela não existe.
+    """
+    idas = copa.get("idas", {}).get(fase, [])
+    return next((jogo for jogo in idas if {jogo["mandante"], jogo["visitante"]} == {time_a, time_b}), None)
+
+
+def registrar_ida(estado, fase, resultados):
+    """
+    Guarda os resultados da ida de uma fase, sem definir quem avança.
+
+    Args:
+        estado (dict): Estado atual da temporada.
+        fase (str): Nome da fase.
+        resultados (list[dict]): Resultados dos jogos de ida.
+
+    Returns:
+        dict | None: Resultado do jogo do clube do jogador ou None se ele não disputou a fase.
+    """
+    estado["copa"].setdefault("idas", {})[fase] = [
+        {campo: resultado.get(campo) for campo in CAMPOS_DO_RESUMO} for resultado in resultados
+    ]
+    return next((r for r in resultados if estado["clube_id"] in (r["mandante"], r["visitante"])), None)
+
+
+def resumo_do_confronto(copa, fase, resultado):
+    """
+    Resume um confronto decidido, somando a ida quando a fase tem dois jogos.
+
+    No resumo de ida e volta, mandante e visitante seguem a ordem da ida e os gols são os do agregado.
+
+    Args:
+        copa (dict): Estrutura da copa na temporada.
+        fase (str): Nome da fase.
+        resultado (dict): Resultado do jogo único ou da volta.
+
+    Returns:
+        dict: Mandante, visitante, gols, pênaltis e vencedor do confronto.
+    """
+    resumo = {campo: resultado.get(campo) for campo in CAMPOS_DO_RESUMO}
+    ida = jogo_de_ida(copa, fase, resultado["mandante"], resultado["visitante"])
+    if ida:
+        resumo.update(
+            {
+                "mandante": ida["mandante"],
+                "visitante": ida["visitante"],
+                "gm": ida["gm"] + resultado["gv"],
+                "gv": ida["gv"] + resultado["gm"],
+            }
+        )
+    return resumo
 
 
 def jogo_na_fase(copa, fase, clube_id):
@@ -139,7 +236,8 @@ def registrar_fase(estado, fase, resultados):
     """
     Registra os resultados de uma fase da copa e atualiza os classificados.
 
-    Guarda um resumo de cada jogo, soma PREMIO_FASE_COPA ao caixa de cada vencedor e atualiza a lista de
+    Guarda um resumo de cada confronto (com o placar agregado, se houve ida e volta), soma PREMIO_FASE_COPA ao
+    caixa de cada vencedor e atualiza a lista de
     classificados: na fase preliminar os vencedores se juntam aos classificados diretos; nas demais fases os
     vencedores passam a ser os classificados, na ordem dos confrontos. Na final, define o campeão e soma
     também PREMIO_TITULO_COPA ao caixa dele. Se o clube do jogador perdeu, anota a fase em que foi eliminado.
@@ -147,24 +245,22 @@ def registrar_fase(estado, fase, resultados):
     Args:
         estado (dict): Estado atual da temporada.
         fase (str): Nome da fase disputada.
-        resultados (list[dict]): Resultados de todos os jogos da fase.
+        resultados (list[dict]): Resultados dos jogos únicos ou das voltas da fase.
 
     Returns:
         dict | None: Resultado do jogo do clube do jogador ou None se ele não disputou a fase.
     """
     copa = estado["copa"]
-    copa["resultados"][fase] = [
-        {chave: resultado.get(chave) for chave in ("mandante", "visitante", "gm", "gv", "penaltis", "vencedor")}
-        for resultado in resultados
-    ]
-    vencedores = [resultado["vencedor"] for resultado in resultados]
+    resumos = [resumo_do_confronto(copa, fase, resultado) for resultado in resultados]
+    copa["resultados"][fase] = resumos
+    vencedores = [resumo["vencedor"] for resumo in resumos]
     for clube_id in vencedores:
         lancar(estado, clube_id, "Premiação da copa", PREMIO_FASE_COPA)
     if fase == "preliminar":
         copa["classificados"] = copa["classificados"] + vencedores
     else:
         ordem = list(copa["confrontos"][fase])
-        por_jogo = {(r["mandante"], r["visitante"]): r["vencedor"] for r in resultados}
+        por_jogo = {(r["mandante"], r["visitante"]): r["vencedor"] for r in resumos}
         copa["classificados"] = [por_jogo[jogo] for jogo in ordem]
     if fase == FASES_COPA[-1]:
         copa["campeao"] = vencedores[0]

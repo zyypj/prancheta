@@ -19,6 +19,7 @@ from partida.lances import (
     registrar,
     resultado_da_partida,
     sortear_eventos_do_lance,
+    vantagem_da_casa,
 )
 
 NARRACAO_DO_INICIO = {"defesa": "ganhou_na_defesa", "meio": "meio_ganhou", "intermediaria": "ganhou_na_intermediaria"}
@@ -76,7 +77,8 @@ def jogar_partida(partida, controles, exibir=None, mata_mata=False):
 
     Configura os controles e a exibição, narra o início e a chuva, e joga os dois tempos lance a lance,
     avançando o relógio a cada lance até o limite de 45 minutos mais os acréscimos sorteados. No intervalo,
-    pausa os dois times. Em jogos de mata-mata que terminam empatados, decide nos pênaltis.
+    pausa os dois times. Em jogos de mata-mata que terminam empatados, considerando a ida quando houver, decide
+    nos pênaltis.
 
     Args:
         partida (dict): Estado da partida criado por criar_partida.
@@ -111,7 +113,7 @@ def jogar_partida(partida, controles, exibir=None, mata_mata=False):
             registrar(partida, "intervalo", {"placar": placar(partida)}, tipo="intervalo")
             pausar_todos(partida, "intervalo")
     registrar(partida, "fim", {"placar": placar(partida)}, tipo="fim")
-    if mata_mata and partida["times"][partida["casa"]]["gols"] == partida["times"][partida["fora"]]["gols"]:
+    if mata_mata and vantagem_da_casa(partida) == 0:
         disputa_de_penaltis(partida)
     partida["encerrada"] = True
     return resultado_da_partida(partida)

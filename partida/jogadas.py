@@ -27,6 +27,7 @@ from partida.lances import (
     perguntar,
     registrar,
     revisar_penalti,
+    vantagem_da_casa,
 )
 
 CHANCE_JOGADA_ESPECIAL = 0.3
@@ -1212,16 +1213,17 @@ def contra_ataque_sofrido(partida, time_id, portador):
 
 def diferenca_no_placar(partida, time_id):
     """
-    Calcula a vantagem de um time no placar.
+    Calcula a vantagem de um time no placar, incluindo a ida quando a partida é uma volta.
 
     Args:
         partida (dict): Estado da partida.
         time_id (str): Time avaliado.
 
     Returns:
-        int: Gols do time menos os gols do adversário.
+        int: Saldo de gols do time na disputa.
     """
-    return partida["times"][time_id]["gols"] - partida["times"][outro(partida, time_id)]["gols"]
+    vantagem = vantagem_da_casa(partida)
+    return vantagem if time_id == partida["casa"] else -vantagem
 
 
 def perdendo_no_fim(partida, time_id):

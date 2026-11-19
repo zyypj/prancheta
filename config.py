@@ -47,6 +47,27 @@ PREMIO_CAMPEAO = {1: 6.0, 2: 3.0}
 PREMIO_ACESSO = 2.0
 
 TOTAL_RODADAS = 9
+FORMATO_PADRAO = "rapida"
+FORMATOS_TEMPORADA = {
+    "rapida": {
+        "nome": "Rápida",
+        "descricao": "liga só de ida (9 rodadas) e copa em jogo único",
+        "turnos": 1,
+        "copa_ida_e_volta": False,
+    },
+    "media": {
+        "nome": "Média",
+        "descricao": "liga de ida e volta (18 rodadas) e copa em jogo único",
+        "turnos": 2,
+        "copa_ida_e_volta": False,
+    },
+    "completa": {
+        "nome": "Completa",
+        "descricao": "liga de ida e volta (18 rodadas) e copa de ida e volta",
+        "turnos": 2,
+        "copa_ida_e_volta": True,
+    },
+}
 FASES_COPA = ("preliminar", "quartas", "semifinal", "final")
 NOMES_FASES = {
     "preliminar": "Fase preliminar",
