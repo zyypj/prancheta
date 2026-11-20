@@ -182,4 +182,4 @@ prancheta/
 - Samuel Henrique
 - Eguiedson Cardoso
 - Otavio Rodrigues
-- Lucas Henrique
+- Lucas Oliveira
