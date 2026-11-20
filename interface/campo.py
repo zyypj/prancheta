@@ -1,5 +1,6 @@
 import math
 import time
+from collections import Counter
 from itertools import groupby
 
 from rich.text import Text
@@ -39,6 +40,8 @@ COR_LINHA = "#eef3ea"
 COR_REDE = "#b9c2bd"
 COR_BOLA = "#ffffff"
 BOLA_DESENHADA = "⚽"
+COR_BOLA_NA_LINHA = "#1a1a1a"
+MARCAS_DO_CAMPO = (COR_LINHA, COR_REDE)
 LINHAS_FAIXA = {0: 2, 1: 5, 2: 8}
 LINHAS_FAIXA_AREA = {0: 3, 1: 5, 2: 7}
 
@@ -268,6 +271,58 @@ def celula_do_campo(superior, inferior):
     return "▀", f"{superior} on {inferior}"
 
 
+def fundo_da_bola(cores):
+    """
+    Escolhe a cor de fundo das células que a bola ocupa, a partir dos pixels que ela cobre.
+
+    Se metade ou mais desses pixels forem linha ou rede, o fundo fica com essa cor, para a marcação não ser
+    cortada por um retângulo de grama. Senão, o fundo é a grama mais comum embaixo da bola.
+
+    Args:
+        cores (list): Cores dos pixels cobertos pela bola, com None fora do campo.
+
+    Returns:
+        str | None: Cor do fundo, ou None se a bola está fora do gramado.
+    """
+    marcas = [cor for cor in cores if cor in MARCAS_DO_CAMPO]
+    if marcas and len(marcas) * 2 >= len(cores):
+        return Counter(marcas).most_common(1)[0][0]
+    grama = [cor for cor in cores if cor and cor not in MARCAS_DO_CAMPO]
+    return Counter(grama).most_common(1)[0][0] if grama else None
+
+
+def inicio_da_bola_desenhada(superior, inferior, coluna):
+    """
+    Escolhe as duas células em que a bola de futebol é desenhada, perto da coluna dela.
+
+    Entre as posições que vão de duas células à esquerda a uma à direita, fica a que cobre menos linhas do
+    campo, para a bola não apagar uma linha vertical; no empate, a mais próxima da coluna original.
+
+    Args:
+        superior (list): Cores dos pixels de cima da linha de texto.
+        inferior (list): Cores dos pixels de baixo da linha de texto.
+        coluna (int): Coluna da bola na grade do campo.
+
+    Returns:
+        int: Coluna da primeira das duas células.
+    """
+    candidatos = [inicio for inicio in (coluna, coluna - 1, coluna + 1, coluna - 2) if 0 <= inicio <= LARGURA_CAMPO - 2]
+
+    def linhas_cobertas(inicio):
+        """
+        Conta quantos pixels de linha ou rede a bola cobriria começando nessa coluna.
+
+        Args:
+            inicio (int): Coluna da primeira célula.
+
+        Returns:
+            int: Quantidade de pixels de marcação cobertos.
+        """
+        return sum(cor in MARCAS_DO_CAMPO for cor in superior[inicio : inicio + 2] + inferior[inicio : inicio + 2])
+
+    return min(candidatos, key=linhas_cobertas)
+
+
 def desenhar_campo(coluna, linha):
     """
     Monta o desenho completo do campo com a bola na posição indicada.
@@ -275,7 +330,8 @@ def desenhar_campo(coluna, linha):
     Junta os pixels do gramado de dois em dois em cada célula do terminal, troca a célula da posição informada
     pela bola e acrescenta embaixo os rótulos dos terços de defesa, meio e ataque. Nos terminais que mostram
     emoji (TEM_EMOJI: Windows Terminal, Windows 11 e terminais conhecidos), a bola é a de futebol, branca com
-    gomos pretos, e ocupa duas células; nos outros, é um círculo branco.
+    gomos pretos, e ocupa duas células; nos outros, é um círculo branco, que fica escuro sobre as linhas. O fundo
+    da bola segue o que está embaixo dela (fundo_da_bola).
 
     Args:
         coluna (int): Coluna da bola na grade do campo.
@@ -291,12 +347,14 @@ def desenhar_campo(coluna, linha):
         inferior = pixels[indice_linha * 2 + 1]
         celulas = [celula_do_campo(cima, baixo) for cima, baixo in zip(superior, inferior)]
         if indice_linha == linha:
-            grama = cor_da_grama(coluna)
             if TEM_EMOJI:
-                inicio = min(coluna, LARGURA_CAMPO - 2)
-                celulas[inicio : inicio + 2] = [(BOLA_DESENHADA, f"on {grama}" if grama else "")]
+                inicio = inicio_da_bola_desenhada(superior, inferior, coluna)
+                fundo = fundo_da_bola(superior[inicio : inicio + 2] + inferior[inicio : inicio + 2])
+                celulas[inicio : inicio + 2] = [(BOLA_DESENHADA, f"on {fundo}" if fundo else "")]
             else:
-                celulas[coluna] = ("●", f"bold {COR_BOLA} on {grama}" if grama else f"bold {COR_BOLA}")
+                fundo = fundo_da_bola([superior[coluna], inferior[coluna]])
+                cor = COR_BOLA_NA_LINHA if fundo in MARCAS_DO_CAMPO else COR_BOLA
+                celulas[coluna] = ("●", f"bold {cor} on {fundo}" if fundo else f"bold {cor}")
         for estilo, grupo in groupby(celulas, key=lambda celula: celula[1]):
             campo.append("".join(caractere for caractere, _ in grupo), style=estilo)
         campo.append("\n")
