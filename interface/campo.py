@@ -6,7 +6,15 @@ from rich.text import Text
 
 from config import NOMES_ESTILOS, PAUSA_RAPIDA
 from elenco.escalacao import limitar, rotulo
-from interface.entrada import TECLADO_REAL, TERMINAL_REAL, console, desenhar_no_lugar, limpar, tecla_pressionada
+from interface.entrada import (
+    TECLADO_REAL,
+    TEM_EMOJI,
+    TERMINAL_REAL,
+    console,
+    desenhar_no_lugar,
+    limpar,
+    tecla_pressionada,
+)
 from partida.lances import minuto_texto
 
 COMPRIMENTO_REAL = 105
@@ -30,6 +38,7 @@ GRAMA_ESCURA = "#35803b"
 COR_LINHA = "#eef3ea"
 COR_REDE = "#b9c2bd"
 COR_BOLA = "#ffffff"
+BOLA_DESENHADA = "⚽"
 LINHAS_FAIXA = {0: 2, 1: 5, 2: 8}
 LINHAS_FAIXA_AREA = {0: 3, 1: 5, 2: 7}
 
@@ -264,7 +273,9 @@ def desenhar_campo(coluna, linha):
     Monta o desenho completo do campo com a bola na posição indicada.
 
     Junta os pixels do gramado de dois em dois em cada célula do terminal, troca a célula da posição informada
-    pela bola e acrescenta embaixo os rótulos dos terços de defesa, meio e ataque.
+    pela bola e acrescenta embaixo os rótulos dos terços de defesa, meio e ataque. Nos terminais que mostram
+    emoji (TEM_EMOJI), a bola é a de futebol, branca com gomos pretos, e ocupa duas células; nos outros, é um
+    círculo branco.
 
     Args:
         coluna (int): Coluna da bola na grade do campo.
@@ -281,7 +292,11 @@ def desenhar_campo(coluna, linha):
         celulas = [celula_do_campo(cima, baixo) for cima, baixo in zip(superior, inferior)]
         if indice_linha == linha:
             grama = cor_da_grama(coluna)
-            celulas[coluna] = ("●", f"bold {COR_BOLA} on {grama}" if grama else f"bold {COR_BOLA}")
+            if TEM_EMOJI:
+                inicio = min(coluna, LARGURA_CAMPO - 2)
+                celulas[inicio : inicio + 2] = [(BOLA_DESENHADA, f"on {grama}" if grama else "")]
+            else:
+                celulas[coluna] = ("●", f"bold {COR_BOLA} on {grama}" if grama else f"bold {COR_BOLA}")
         for estilo, grupo in groupby(celulas, key=lambda celula: celula[1]):
             campo.append("".join(caractere for caractere, _ in grupo), style=estilo)
         campo.append("\n")

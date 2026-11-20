@@ -10,6 +10,12 @@ else:
 
 EM_IDE = "PYCHARM_HOSTED" in os.environ
 TERMINAL_REAL = sys.stdout.isatty()
+TERMINAIS_COM_EMOJI = ("vscode", "iTerm.app", "WezTerm", "Apple_Terminal")
+TEM_EMOJI = (
+    TERMINAL_REAL
+    and not EM_IDE
+    and ("WT_SESSION" in os.environ or os.environ.get("TERM_PROGRAM") in TERMINAIS_COM_EMOJI)
+)
 TECLADO_REAL = sys.stdin.isatty()
 console = Console(highlight=False, force_terminal=True if EM_IDE else None, legacy_windows=False if EM_IDE else None)
 
