@@ -11,13 +11,16 @@ else:
 EM_IDE = "PYCHARM_HOSTED" in os.environ
 TERMINAL_REAL = sys.stdout.isatty()
 TERMINAIS_COM_EMOJI = ("vscode", "iTerm.app", "WezTerm", "Apple_Terminal")
+PRIMEIRA_VERSAO_DO_WINDOWS_11 = 22000
+TECLADO_REAL = sys.stdin.isatty()
+console = Console(highlight=False, force_terminal=True if EM_IDE else None, legacy_windows=False if EM_IDE else None)
+WINDOWS_11 = os.name == "nt" and sys.getwindowsversion().build >= PRIMEIRA_VERSAO_DO_WINDOWS_11
 TEM_EMOJI = (
     TERMINAL_REAL
     and not EM_IDE
-    and ("WT_SESSION" in os.environ or os.environ.get("TERM_PROGRAM") in TERMINAIS_COM_EMOJI)
+    and not console.legacy_windows
+    and ("WT_SESSION" in os.environ or os.environ.get("TERM_PROGRAM") in TERMINAIS_COM_EMOJI or WINDOWS_11)
 )
-TECLADO_REAL = sys.stdin.isatty()
-console = Console(highlight=False, force_terminal=True if EM_IDE else None, legacy_windows=False if EM_IDE else None)
 
 
 def limpar():

@@ -274,8 +274,8 @@ def desenhar_campo(coluna, linha):
 
     Junta os pixels do gramado de dois em dois em cada célula do terminal, troca a célula da posição informada
     pela bola e acrescenta embaixo os rótulos dos terços de defesa, meio e ataque. Nos terminais que mostram
-    emoji (TEM_EMOJI), a bola é a de futebol, branca com gomos pretos, e ocupa duas células; nos outros, é um
-    círculo branco.
+    emoji (TEM_EMOJI: Windows Terminal, Windows 11 e terminais conhecidos), a bola é a de futebol, branca com
+    gomos pretos, e ocupa duas células; nos outros, é um círculo branco.
 
     Args:
         coluna (int): Coluna da bola na grade do campo.
